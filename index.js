@@ -19,6 +19,11 @@ const paymentVerificationRoutes = require('./server/routes/payment-verification'
 
 const app = express();
 
+// Route root to Member UI directly
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'member-ui.html'));
+});
+
 // Middleware
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5000',
