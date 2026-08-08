@@ -1,0 +1,18 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+package-lock.json
+uploads/
+logs/
+*.log
+.DS_Store
+# public/
+public/build/
+public/static/
+dist/
+build/
+.idea/
+.vscode/
+*.rar
+payment.rar

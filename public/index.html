@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Amount Management System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; background: #f5f5f5; }
+        .navbar { background: #1f2937; color: white; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .navbar h1 { margin: 0; font-size: 24px; }
+        .logout-btn { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .container { display: flex; height: 100vh; }
+        .sidebar { width: 220px; background: #f3f4f6; padding: 20px 0; border-right: 1px solid #e5e7eb; overflow-y: auto; }
+        .sidebar button { display: block; width: 100%; padding: 12px 20px; background: transparent; border: none; text-align: left; cursor: pointer; color: #374151; font-size: 14px; transition: all 0.3s; }
+        .sidebar button.active { background: #2563eb; color: white; font-weight: bold; }
+        .sidebar button:hover { background: #e5e7eb; }
+        .main { flex: 1; overflow-y: auto; padding: 20px; }
+        .page { display: none; max-width: 1200px; margin: 0 auto; }
+        .page.active { display: block; }
+        .page-title { font-size: 32px; margin-bottom: 20px; color: #1f2937; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card h3 { color: #6b7280; font-size: 14px; margin-bottom: 10px; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #2563eb; margin: 0; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h3 { margin-bottom: 15px; }
+        .form { display: flex; flex-direction: column; gap: 10px; }
+        .form input, .form select, .form textarea { padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: inherit; }
+        .form input:focus, .form select:focus, .form textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #f3f4f6; padding: 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; }
+        td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        tr:hover { background: #f9fafb; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #78350f; }
+        .btn-primary { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-success { padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px; }
+        .btn-danger { padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-small { padding: 6px 12px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px; }
+        .empty-message { text-align: center; padding: 20px; color: #6b7280; font-style: italic; }
+        .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+        .login-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; }
+        .login-card h1 { text-align: center; margin-bottom: 30px; color: #1f2937; }
+        .alert { padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; }
+        .alert-error { background: #fee2e2; color: #7f1d1d; border-left: 4px solid #ef4444; }
+        .alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <!-- LOGIN PAGE -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <h1>💰 Amount Management System</h1>
+            <div id="loginError" class="alert alert-error hidden"></div>
+            <form id="loginForm" class="form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Login</button>
+            </form>
+            <p style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px;">
+                Demo: admin / Admin@123456
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp" class="hidden">
+        <nav class="navbar">
+            <h1>💰 Amount Management System</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </nav>
+
+        <div class="container">
+            <aside class="sidebar">
+                <button class="nav-btn active" onclick="showPage('dashboard')">📊 Dashboard</button>
+                <button class="nav-btn" onclick="showPage('members')">👥 Members</button>
+                <button class="nav-btn" onclick="showPage('payments')">💳 Payments</button>
+                <button class="nav-btn" onclick="showPage('withdrawals')">💸 Withdrawals</button>
+                <button class="nav-btn" onclick="showPage('transactions')">📜 Transactions</button>
+                <button class="nav-btn" onclick="showPage('reports')">📈 Reports</button>
+                <button class="nav-btn" onclick="showPage('import-export')">📁 Import/Export</button>
+            </aside>
+
+            <main class="main">
+                <!-- DASHBOARD -->
+                <div id="dashboard" class="page active">
+                    <h2 class="page-title">Dashboard</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Members</h3>
+                            <p class="stat-value" id="totalMembers">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Collected</h3>
+                            <p class="stat-value" id="totalCollected">₹0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Withdrawn</h3>
+                            <p class="stat-value" id="totalWithdrawn">₹0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Current Balance</h3>
+                            <p class="stat-value" id="currentBalance">₹0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Recent Transactions</h3>
+                        <table id="recentTransactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Member</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MEMBERS -->
+                <div id="members" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Members</h2>
+                        <button class="btn-primary" onclick="toggleAddMember()">+ Add Member</button>
+                    </div>
+                    <div id="addMemberForm" class="card hidden">
+                        <h3>Add New Member</h3>
+                        <form class="form" onsubmit="addMember(event)">
+                            <input type="text" id="memberId" placeholder="Member ID" required>
+                            <input type="text" id="memberName" placeholder="Name" required>
+                            <input type="email" id="memberEmail" placeholder="Email (optional)">
+                            <input type="tel" id="memberPhone" placeholder="Phone (optional)">
+                            <button type="submit" class="btn-primary">Create Member</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <table id="membersTable">
+                            <thead>
+                                <tr>
+                                    <th>Member ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Total Paid</th>
+                                    <th>Total Withdrawn</th>
+                                    <th>Balance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PAYMENTS -->
+                <div id="payments" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Payments</h2>
+                        <button class="btn-primary" onclick="toggleAddPayment()">+ Add Payment</button>
+                    </div>
+                    <div id="addPaymentForm" class="card hidden">
+                        <h3>Add New Payment</h3>
+                        <form class="form" onsubmit="addPayment(event)">
+                            <select id="paymentMember" required>
+                                <option value="">Select Member</option>
+                            </select>
+                            <input type="text" id="paymentMonth" placeholder="Month (e.g., June 2026)">
+                            <input type="date" id="paymentDate" required>
+                            <input type="number" id="paymentAmount" placeholder="Amount" required>
+                            <select id="paymentStatus">
+                                <option value="PAID">PAID</option>
+                                <option value="PENDING">PENDING</option>
+                            </select>
+                            <select id="paymentMethod">
+                                <option value="UPI">UPI</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                            <textarea id="paymentNotes" placeholder="Notes (optional)" rows="2"></textarea>
+                            <button type="submit" class="btn-primary">Create Payment</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <table id="paymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Member</th>
+                                    <th>Month</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Method</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- WITHDRAWALS -->
+                <div id="withdrawals" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Withdrawals</h2>
+                        <button class="btn-primary" onclick="toggleAddWithdrawal()">+ Add Withdrawal</button>
+                    </div>
+                    <div id="addWithdrawalForm" class="card hidden">
+                        <h3>Add New Withdrawal</h3>
+                        <form class="form" onsubmit="addWithdrawal(event)">
+                            <select id="withdrawalMember" required>
+                                <option value="">Select Member</option>
+                            </select>
+                            <input type="text" id="withdrawalMonth" placeholder="Month (e.g., June 2026)">
+                            <input type="date" id="withdrawalDate" required>
+                            <input type="number" id="withdrawalAmount" placeholder="Amount" required>
+                            <input type="text" id="withdrawalReason" placeholder="Reason">
+                            <textarea id="withdrawalNotes" placeholder="Notes (optional)" rows="2"></textarea>
+                            <button type="submit" class="btn-primary">Create Withdrawal</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <table id="withdrawalsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Member</th>
+                                    <th>Month</th>
+                                    <th>Amount</th>
+                                    <th>Reason</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TRANSACTIONS -->
+                <div id="transactions" class="page">
+                    <h2 class="page-title">Transaction History</h2>
+                    <div class="card">
+                        <table id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Member</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- REPORTS -->
+                <div id="reports" class="page">
+                    <h2 class="page-title">Reports</h2>
+                    <div class="card">
+                        <h3>Member-wise Summary</h3>
+                        <table id="reportsTable">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Total Paid</th>
+                                    <th>Total Withdrawn</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- IMPORT/EXPORT -->
+                <div id="import-export" class="page">
+                    <h2 class="page-title">Import / Export</h2>
+                    <div class="card">
+                        <h3>📥 Import from Excel</h3>
+                        <input type="file" id="importFile" accept=".xlsx,.xls" onchange="handleImport(event)" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; width: 100%;">
+                        <small style="color: #6b7280; margin-top: 10px; display: block;">Expected columns: NAME, AMOUNT, MONTH, SATATUS, PAYMENT MODE</small>
+                    </div>
+                    <div class="card">
+                        <h3>📥 Export to Excel</h3>
+                        <button class="btn-success" onclick="exportMembers()">📄 Export Members</button>
+                        <button class="btn-success" onclick="exportPayments()">📄 Export Payments</button>
+                        <button class="btn-success" onclick="exportWithdrawals()">📄 Export Withdrawals</button>
+                        <button class="btn-success" onclick="exportSummary()">📄 Export Summary</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // ============ DATA STATE ============
+        let data = {
+            members: JSON.parse(localStorage.getItem('members') || '[]'),
+            payments: JSON.parse(localStorage.getItem('payments') || '[]'),
+            withdrawals: JSON.parse(localStorage.getItem('withdrawals') || '[]')
+        };
+
+        // ============ AUTHENTICATION ============
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (username === 'admin' && password === 'Admin@123456') {
+                document.getElementById('loginPage').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                loadData();
+            } else {
+                document.getElementById('loginError').textContent = 'Invalid credentials';
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        });
+
+        function logout() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+        }
+
+        // ============ NAVIGATION ============
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageName).classList.add('active');
+
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (pageName === 'dashboard') updateDashboard();
+            else if (pageName === 'members') updateMembers();
+            else if (pageName === 'payments') updatePayments();
+            else if (pageName === 'withdrawals') updateWithdrawals();
+            else if (pageName === 'transactions') updateTransactions();
+            else if (pageName === 'reports') updateReports();
+        }
+
+        // ============ MEMBERS ============
+        function toggleAddMember() {
+            document.getElementById('addMemberForm').classList.toggle('hidden');
+        }
+
+        function addMember(e) {
+            e.preventDefault();
+            const member = {
+                id: Date.now(),
+                member_id: document.getElementById('memberId').value,
+                name: document.getElementById('memberName').value,
+                email: document.getElementById('memberEmail').value,
+                phone: document.getElementById('memberPhone').value
+            };
+            data.members.push(member);
+            saveData();
+            document.getElementById('memberId').value = '';
+            document.getElementById('memberName').value = '';
+            document.getElementById('memberEmail').value = '';
+            document.getElementById('memberPhone').value = '';
+            toggleAddMember();
+            updateMembers();
+            updatePayments();
+            updateWithdrawals();
+        }
+
+        function deleteMember(id) {
+            if (confirm('Delete this member?')) {
+                data.members = data.members.filter(m => m.id !== id);
+                saveData();
+                updateMembers();
+            }
+        }
+
+        function getMemberStats(memberId) {
+            const paid = data.payments.filter(p => p.member_id === memberId && p.status === 'PAID');
+            const withdrawn = data.withdrawals.filter(w => w.member_id === memberId);
+            return {
+                totalPaid: paid.reduce((s, p) => s + parseFloat(p.amount), 0),
+                totalWithdrawn: withdrawn.reduce((s, w) => s + parseFloat(w.amount), 0)
+            };
+        }
+
+        // ============ PAYMENTS ============
+        function toggleAddPayment() {
+            document.getElementById('addPaymentForm').classList.toggle('hidden');
+            updateMemberSelects();
+        }
+
+        function addPayment(e) {
+            e.preventDefault();
+            const payment = {
+                id: Date.now(),
+                member_id: document.getElementById('paymentMember').value,
+                month: document.getElementById('paymentMonth').value,
+                date: document.getElementById('paymentDate').value,
+                amount: document.getElementById('paymentAmount').value,
+                status: document.getElementById('paymentStatus').value,
+                method: document.getElementById('paymentMethod').value,
+                notes: document.getElementById('paymentNotes').value
+            };
+            data.payments.push(payment);
+            saveData();
+            document.getElementById('paymentMember').value = '';
+            document.getElementById('paymentMonth').value = '';
+            document.getElementById('paymentDate').value = '';
+            document.getElementById('paymentAmount').value = '';
+            document.getElementById('paymentNotes').value = '';
+            toggleAddPayment();
+            updatePayments();
+            updateDashboard();
+        }
+
+        function deletePayment(id) {
+            if (confirm('Delete this payment?')) {
+                data.payments = data.payments.filter(p => p.id !== id);
+                saveData();
+                updatePayments();
+                updateDashboard();
+            }
+        }
+
+        // ============ WITHDRAWALS ============
+        function toggleAddWithdrawal() {
+            document.getElementById('addWithdrawalForm').classList.toggle('hidden');
+            updateMemberSelects();
+        }
+
+        function addWithdrawal(e) {
+            e.preventDefault();
+            const withdrawal = {
+                id: Date.now(),
+                member_id: document.getElementById('withdrawalMember').value,
+                month: document.getElementById('withdrawalMonth').value,
+                date: document.getElementById('withdrawalDate').value,
+                amount: document.getElementById('withdrawalAmount').value,
+                reason: document.getElementById('withdrawalReason').value,
+                notes: document.getElementById('withdrawalNotes').value
+            };
+            data.withdrawals.push(withdrawal);
+            saveData();
+            document.getElementById('withdrawalMember').value = '';
+            document.getElementById('withdrawalMonth').value = '';
+            document.getElementById('withdrawalDate').value = '';
+            document.getElementById('withdrawalAmount').value = '';
+            document.getElementById('withdrawalReason').value = '';
+            document.getElementById('withdrawalNotes').value = '';
+            toggleAddWithdrawal();
+            updateWithdrawals();
+            updateDashboard();
+        }
+
+        function deleteWithdrawal(id) {
+            if (confirm('Delete this withdrawal?')) {
+                data.withdrawals = data.withdrawals.filter(w => w.id !== id);
+                saveData();
+                updateWithdrawals();
+                updateDashboard();
+            }
+        }
+
+        // ============ UPDATE UI ============
+        function updateDashboard() {
+            const totalPaid = data.payments.filter(p => p.status === 'PAID').reduce((s, p) => s + parseFloat(p.amount), 0);
+            const totalWithdrawn = data.withdrawals.reduce((s, w) => s + parseFloat(w.amount), 0);
+
+            document.getElementById('totalMembers').textContent = data.members.length;
+            document.getElementById('totalCollected').textContent = '₹' + totalPaid.toLocaleString('en-IN');
+            document.getElementById('totalWithdrawn').textContent = '₹' + totalWithdrawn.toLocaleString('en-IN');
+            document.getElementById('currentBalance').textContent = '₹' + (totalPaid - totalWithdrawn).toLocaleString('en-IN');
+
+            const allTransactions = [
+                ...data.payments.map(p => ({...p, type: 'PAYMENT'})),
+                ...data.withdrawals.map(w => ({...w, type: 'WITHDRAWAL'}))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+
+            const tbody = document.querySelector('#recentTransactionsTable tbody');
+            tbody.innerHTML = allTransactions.map(t => {
+                const member = data.members.find(m => m.id == t.member_id);
+                return `<tr>
+                    <td>${t.date}</td>
+                    <td>${member?.name || 'Unknown'}</td>
+                    <td><span class="badge ${t.type === 'PAYMENT' ? 'badge-success' : 'badge-warning'}">${t.type}</span></td>
+                    <td style="color: #10b981; font-weight: bold;">₹${parseFloat(t.amount).toLocaleString('en-IN')}</td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="4" style="text-align:center; color: #6b7280;">No transactions yet</td></tr>';
+        }
+
+        function updateMembers() {
+            const tbody = document.querySelector('#membersTable tbody');
+            tbody.innerHTML = data.members.map(member => {
+                const stats = getMemberStats(member.id);
+                return `<tr>
+                    <td>${member.member_id}</td>
+                    <td>${member.name}</td>
+                    <td>${member.email || '-'}</td>
+                    <td>${member.phone || '-'}</td>
+                    <td style="color: #10b981; font-weight: bold;">₹${stats.totalPaid.toLocaleString('en-IN')}</td>
+                    <td style="color: #f59e0b; font-weight: bold;">₹${stats.totalWithdrawn.toLocaleString('en-IN')}</td>
+                    <td style="color: ${(stats.totalPaid - stats.totalWithdrawn) >= 0 ? '#10b981' : '#ef4444'}; font-weight: bold;">
+                        ₹${(stats.totalPaid - stats.totalWithdrawn).toLocaleString('en-IN')}
+                    </td>
+                    <td>
+                        <button class="btn-small" onclick="deleteMember(${member.id})">Delete</button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="8" class="empty-message">No members added yet</td></tr>';
+        }
+
+        function updatePayments() {
+            const tbody = document.querySelector('#paymentsTable tbody');
+            tbody.innerHTML = data.payments.sort((a, b) => new Date(b.date) - new Date(a.date)).map(payment => {
+                const member = data.members.find(m => m.id == payment.member_id);
+                return `<tr>
+                    <td>${payment.date}</td>
+                    <td>${member?.name || 'Unknown'}</td>
+                    <td>${payment.month}</td>
+                    <td style="color: #10b981; font-weight: bold;">₹${parseFloat(payment.amount).toLocaleString('en-IN')}</td>
+                    <td><span class="badge badge-success">${payment.status}</span></td>
+                    <td>${payment.method}</td>
+                    <td>
+                        <button class="btn-small" onclick="deletePayment(${payment.id})">Delete</button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="7" class="empty-message">No payments recorded yet</td></tr>';
+        }
+
+        function updateWithdrawals() {
+            const tbody = document.querySelector('#withdrawalsTable tbody');
+            tbody.innerHTML = data.withdrawals.sort((a, b) => new Date(b.date) - new Date(a.date)).map(withdrawal => {
+                const member = data.members.find(m => m.id == withdrawal.member_id);
+                return `<tr>
+                    <td>${withdrawal.date}</td>
+                    <td>${member?.name || 'Unknown'}</td>
+                    <td>${withdrawal.month}</td>
+                    <td style="color: #f59e0b; font-weight: bold;">₹${parseFloat(withdrawal.amount).toLocaleString('en-IN')}</td>
+                    <td>${withdrawal.reason || '-'}</td>
+                    <td>
+                        <button class="btn-small" onclick="deleteWithdrawal(${withdrawal.id})">Delete</button>
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="6" class="empty-message">No withdrawals recorded yet</td></tr>';
+        }
+
+        function updateTransactions() {
+            const allTransactions = [
+                ...data.payments.map(p => ({...p, type: 'PAYMENT'})),
+                ...data.withdrawals.map(w => ({...w, type: 'WITHDRAWAL'}))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const tbody = document.querySelector('#transactionsTable tbody');
+            tbody.innerHTML = allTransactions.map(t => {
+                const member = data.members.find(m => m.id == t.member_id);
+                return `<tr>
+                    <td>${t.date}</td>
+                    <td>${member?.name || 'Unknown'}</td>
+                    <td><span class="badge ${t.type === 'PAYMENT' ? 'badge-success' : 'badge-warning'}">${t.type}</span></td>
+                    <td style="font-weight: bold; color: ${t.type === 'PAYMENT' ? '#10b981' : '#f59e0b'};">₹${parseFloat(t.amount).toLocaleString('en-IN')}</td>
+                    <td>${t.notes || t.reason || '-'}</td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="5" class="empty-message">No transactions yet</td></tr>';
+        }
+
+        function updateReports() {
+            const tbody = document.querySelector('#reportsTable tbody');
+            tbody.innerHTML = data.members.map(member => {
+                const stats = getMemberStats(member.id);
+                return `<tr>
+                    <td><strong>${member.name}</strong></td>
+                    <td style="color: #10b981; font-weight: bold;">₹${stats.totalPaid.toLocaleString('en-IN')}</td>
+                    <td style="color: #f59e0b; font-weight: bold;">₹${stats.totalWithdrawn.toLocaleString('en-IN')}</td>
+                    <td style="color: ${(stats.totalPaid - stats.totalWithdrawn) >= 0 ? '#10b981' : '#ef4444'}; font-weight: bold;">
+                        ₹${(stats.totalPaid - stats.totalWithdrawn).toLocaleString('en-IN')}
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="4" class="empty-message">No members yet</td></tr>';
+        }
+
+        function updateMemberSelects() {
+            const selects = [document.getElementById('paymentMember'), document.getElementById('withdrawalMember')];
+            selects.forEach(select => {
+                const current = select.value;
+                select.innerHTML = '<option value="">Select Member</option>' + 
+                    data.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                select.value = current;
+            });
+        }
+
+        // ============ IMPORT/EXPORT ============
+        function handleImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data_imported = new Uint8Array(event.target.result);
+                    const workbook = XLSX.read(data_imported, {type: 'array'});
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+                    let importedCount = 0;
+                    jsonData.forEach(row => {
+                        if (row.NAME && row.AMOUNT) {
+                            let member = data.members.find(m => m.name === row.NAME);
+                            if (!member) {
+                                member = {id: Date.now() + Math.random(), member_id: row.NAME.substring(0, 3).toUpperCase(), name: row.NAME, email: '', phone: ''};
+                                data.members.push(member);
+                            }
+                            const payment = {
+                                id: Date.now() + Math.random(),
+                                member_id: member.id,
+                                month: row.MONTH || 'June 2026',
+                                date: new Date().toISOString().split('T')[0],
+                                amount: row.AMOUNT,
+                                status: row.SATATUS === 'PAID' ? 'PAID' : 'PENDING',
+                                method: row['PAYMENT MODE'] || 'UPI',
+                                notes: ''
+                            };
+                            data.payments.push(payment);
+                            importedCount++;
+                        }
+                    });
+                    saveData();
+                    alert('✅ Imported ' + importedCount + ' records!');
+                    loadData();
+                    e.target.value = '';
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportMembers() {
+            const sheet_data = data.members.map(m => {
+                const stats = getMemberStats(m.id);
+                return {
+                    'Member ID': m.member_id,
+                    'Name': m.name,
+                    'Email': m.email || '-',
+                    'Phone': m.phone || '-',
+                    'Total Paid': stats.totalPaid,
+                    'Total Withdrawn': stats.totalWithdrawn,
+                    'Balance': stats.totalPaid - stats.totalWithdrawn
+                };
+            });
+            exportToExcel(sheet_data, 'members.xlsx');
+        }
+
+        function exportPayments() {
+            const sheet_data = data.payments.map(p => {
+                const member = data.members.find(m => m.id == p.member_id);
+                return {
+                    'Date': p.date,
+                    'Member': member?.name || 'Unknown',
+                    'Month': p.month,
+                    'Amount': p.amount,
+                    'Status': p.status,
+                    'Method': p.method
+                };
+            });
+            exportToExcel(sheet_data, 'payments.xlsx');
+        }
+
+        function exportWithdrawals() {
+            const sheet_data = data.withdrawals.map(w => {
+                const member = data.members.find(m => m.id == w.member_id);
+                return {
+                    'Date': w.date,
+                    'Member': member?.name || 'Unknown',
+                    'Month': w.month,
+                    'Amount': w.amount,
+                    'Reason': w.reason || '-'
+                };
+            });
+            exportToExcel(sheet_data, 'withdrawals.xlsx');
+        }
+
+        function exportSummary() {
+            const totalPaid = data.payments.filter(p => p.status === 'PAID').reduce((s, p) => s + parseFloat(p.amount), 0);
+            const totalWithdrawn = data.withdrawals.reduce((s, w) => s + parseFloat(w.amount), 0);
+            const sheet_data = [
+                {'Metric': 'Total Members', 'Value': data.members.length},
+                {'Metric': 'Total Collected', 'Value': totalPaid},
+                {'Metric': 'Total Withdrawn', 'Value': totalWithdrawn},
+                {'Metric': 'Current Balance', 'Value': totalPaid - totalWithdrawn}
+            ];
+            exportToExcel(sheet_data, 'summary_report.xlsx');
+        }
+
+        function exportToExcel(data, filename) {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+            XLSX.writeFile(wb, filename);
+        }
+
+        // ============ DATA PERSISTENCE ============
+        function saveData() {
+            localStorage.setItem('members', JSON.stringify(data.members));
+            localStorage.setItem('payments', JSON.stringify(data.payments));
+            localStorage.setItem('withdrawals', JSON.stringify(data.withdrawals));
+        }
+
+        function loadData() {
+            updateDashboard();
+            updateMembers();
+            updateMemberSelects();
+        }
+    </script>
+</body>
+</html>
