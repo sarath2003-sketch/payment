@@ -464,6 +464,90 @@ router.post('/reset-password', async (req, res) => {
 });
 
 /**
+ * UPDATE MEMBER PROFILE (Name, Email, UPI ID)
+ */
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    if (req.admin?.type === 'admin') {
+      return res.status(403).json({ error: 'Members only' });
+    }
+    const memberId = req.admin.id;
+    let { name, email, upi_id } = req.body || {};
+
+    name = (name !== undefined) ? name.trim() : null;
+    email = (email !== undefined) ? email.trim().toLowerCase() : null;
+    upi_id = (upi_id !== undefined) ? upi_id.trim() : null;
+
+    const existingRes = await pool.query('SELECT * FROM members WHERE id = $1', [memberId]);
+    if (existingRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    const existing = existingRes.rows[0];
+
+    const newName = name || existing.name;
+    const newEmail = email || existing.email;
+    const newUpi = (upi_id !== null) ? upi_id : existing.upi_id;
+
+    const updateRes = await pool.query(
+      `UPDATE members 
+       SET name = $1, email = $2, upi_id = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status`,
+      [newName, newEmail, newUpi || null, memberId]
+    );
+
+    res.json({ message: 'Profile updated successfully', member: updateRes.rows[0] });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+/**
+ * CHANGE PASSWORD (Old Password -> New Password)
+ */
+router.post('/change-password', authenticateToken, async (req, res) => {
+  try {
+    if (req.admin?.type === 'admin') {
+      return res.status(403).json({ error: 'Members only' });
+    }
+    const memberId = req.admin.id;
+    const { old_password, new_password, confirm_password } = req.body || {};
+
+    if (!old_password || !new_password || !confirm_password) {
+      return res.status(400).json({ error: 'All fields are required.' });
+    }
+
+    if (new_password !== confirm_password) {
+      return res.status(400).json({ error: 'New passwords do not match.' });
+    }
+
+    if (new_password.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+
+    const memberRes = await pool.query('SELECT id, password_hash FROM members WHERE id = $1', [memberId]);
+    if (memberRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Member not found.' });
+    }
+
+    const member = memberRes.rows[0];
+    const isOldMatch = await bcrypt.compare(old_password, member.password_hash);
+    if (!isOldMatch) {
+      return res.status(400).json({ error: 'Current password is incorrect.' });
+    }
+
+    const newHash = await bcrypt.hash(new_password, 10);
+    await pool.query('UPDATE members SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [newHash, memberId]);
+
+    res.json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ error: 'Failed to change password.' });
+  }
+});
+
+/**
  * LOGOUT
  */
 router.post('/logout', authenticateToken, (req, res) => {

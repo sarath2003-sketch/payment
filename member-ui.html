@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Member Portal v2.0 - Latest Version -->
 <html lang="en" data-lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1155,7 +1156,7 @@
       </div>
       <!-- Account -->
       <div class="setting-group">
-        <div class="setting-item" onclick="showPage('dashboard')">
+        <div class="setting-item" onclick="showEditProfileModal()">
           <div class="setting-left">
             <span class="setting-icon">👤</span>
             <div><div class="setting-label" data-i18n="profile">Profile</div></div>
@@ -1224,6 +1225,30 @@
     <div class="modal-actions">
       <button class="btn-secondary" onclick="document.getElementById('changePasswordModal').classList.add('hidden')" data-i18n="cancel">Cancel</button>
       <button class="btn-primary" onclick="doChangePassword()"><span data-i18n="save">Save</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">✏️ Edit Profile Details</div>
+    <div id="epAlert"></div>
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="epName" placeholder="Your full name">
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="epEmail" placeholder="yourname@example.com">
+    </div>
+    <div class="form-group">
+      <label>UPI ID (Optional for payouts)</label>
+      <input type="text" id="epUpi" placeholder="name@upi">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('editProfileModal').classList.add('hidden')" data-i18n="cancel">Cancel</button>
+      <button class="btn-primary" onclick="doSaveProfile()"><span data-i18n="save">Save Profile</span></button>
     </div>
   </div>
 </div>
@@ -2233,6 +2258,79 @@ function initSocket() {
     loadNotifications();
     showToast(`📅 ${t('auctionScheduled')}: ${data.auction?.title}`, 'info', 5000);
   });
+
+// Profile and Password Functions
+function showChangePassword() {
+  document.getElementById('changePasswordModal').classList.remove('hidden');
+}
+
+async function doChangePassword() {
+  const current = document.getElementById('cpCurrent').value;
+  const newPwd = document.getElementById('cpNew').value;
+  const confirm = document.getElementById('cpConfirm').value;
+  const alertEl = document.getElementById('cpAlert');
+
+  if (!current || !newPwd || !confirm) {
+    alertEl.innerHTML = '<div style="color:var(--red);margin-bottom:10px">All fields are required</div>';
+    return;
+  }
+  if (newPwd !== confirm) {
+    alertEl.innerHTML = '<div style="color:var(--red);margin-bottom:10px">New passwords do not match</div>';
+    return;
+  }
+  if (newPwd.length < 6) {
+    alertEl.innerHTML = '<div style="color:var(--red);margin-bottom:10px">Password must be at least 6 characters</div>';
+    return;
+  }
+
+  try {
+    const res = await api('/api/member-auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ old_password: current, new_password: newPwd, confirm_password: confirm })
+    });
+    showToast(res.message || 'Password changed successfully!', 'success');
+    document.getElementById('changePasswordModal').classList.add('hidden');
+    document.getElementById('cpCurrent').value = '';
+    document.getElementById('cpNew').value = '';
+    document.getElementById('cpConfirm').value = '';
+    alertEl.innerHTML = '';
+  } catch(e) {
+    alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+  }
+}
+
+function showEditProfileModal() {
+  if (currentMember) {
+    document.getElementById('epName').value = currentMember.name || '';
+    document.getElementById('epEmail').value = currentMember.email || '';
+    document.getElementById('epUpi').value = currentMember.upi_id || '';
+  }
+  document.getElementById('editProfileModal').classList.remove('hidden');
+}
+
+async function doSaveProfile() {
+  const name = document.getElementById('epName').value.trim();
+  const email = document.getElementById('epEmail').value.trim();
+  const upi = document.getElementById('epUpi').value.trim();
+  const alertEl = document.getElementById('epAlert');
+
+  if (!name) {
+    alertEl.innerHTML = '<div style="color:var(--red);margin-bottom:10px">Name is required</div>';
+    return;
+  }
+
+  try {
+    const res = await api('/api/member-auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ name, email, upi_id: upi })
+    });
+    showToast('Profile updated successfully!', 'success');
+    document.getElementById('editProfileModal').classList.add('hidden');
+    loadMemberProfile();
+  } catch(e) {
+    alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+  }
+}
 }
 
 // ============================================================

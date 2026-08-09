@@ -1147,7 +1147,6 @@
         <div class="form-group"><label>UPI ID</label><input type="text" id="mUpi" placeholder="name@upi"></div>
       </div>
       <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="Email address"></div>
-    <div class="form-group"><label>🔑 Password (Default: 123456)</label><input type="text" id="mPassword" placeholder="Create password for member (e.g. Santhosh@123)"></div>
       <div class="form-row">
         <div class="form-group">
           <label>Activation Status</label>
@@ -1383,7 +1382,6 @@
       document.getElementById('mPhone').value = '';
       document.getElementById('mUpi').value = '';
       document.getElementById('mEmail').value = '';
-      document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = 'ACTIVE';
       document.getElementById('mPaymentStatus').value = 'UNPAID';
       document.getElementById('mGroup').value = 'General';
@@ -1397,7 +1395,6 @@
       document.getElementById('mPhone').value = m.phone || '';
       document.getElementById('mUpi').value = m.upi_id || '';
       document.getElementById('mEmail').value = m.email || '';
-      document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
       document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
       document.getElementById('mGroup').value = m.group_category || 'General';
@@ -1409,7 +1406,6 @@
       const phone = document.getElementById('mPhone').value.trim();
       const upi_id = document.getElementById('mUpi').value.trim();
       const email = document.getElementById('mEmail').value.trim();
-      const password = document.getElementById('mPassword').value.trim();
       const activation_status = document.getElementById('mActivation').value;
       const payment_status = document.getElementById('mPaymentStatus').value;
       const group_category = document.getElementById('mGroup').value.trim();
@@ -1420,13 +1416,13 @@
         if (currentEditingMemberId) {
           await api(`/api/admin/members/${currentEditingMemberId}`, {
             method: 'PUT',
-            body: JSON.stringify({ name, phone, upi_id, email, password, activation_status, payment_status, group_category })
+            body: JSON.stringify({ name, phone, upi_id, email, activation_status, payment_status, group_category })
           });
           showToast('Member updated successfully', 'success');
         } else {
           await api('/api/admin/members', {
             method: 'POST',
-            body: JSON.stringify({ name, phone, upi_id, email, password, activation_status, payment_status, group_category })
+            body: JSON.stringify({ name, phone, upi_id, email, activation_status, payment_status, group_category })
           });
           showToast('New member added with auto ID!', 'success');
         }
