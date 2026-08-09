@@ -1420,10 +1420,13 @@
             ? `<button class="btn-danger btn-sm" onclick="toggleActivation(${m.id}, 'INACTIVE')">Deactivate</button>`
             : `<button class="btn-success btn-sm" onclick="toggleActivation(${m.id}, 'ACTIVE')">Activate</button>`}
           <button class="btn-danger btn-sm" onclick="confirmDeleteMember(${m.id}, '${esc(m.name)}')">🗑</button>
-        </td>
       </tr>
     `).join('');
-      } catch (e) { showToast(e.message, 'error'); }
+      } catch (e) {
+        showToast(e.message || 'Failed to load members', 'error');
+        const tbody = document.getElementById('membersTableBody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--red)">Failed to load members: ${esc(e.message)}</td></tr>`;
+      }
     }
 
     function showAddMemberModal() {

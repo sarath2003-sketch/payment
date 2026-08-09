@@ -69,10 +69,11 @@ router.get('/', async (req, res) => {
     const offset = (pageNum - 1) * limitNum;
 
     const countRes = await pool.query(
-      `SELECT COUNT(*) FROM payment_proofs pp JOIN members m ON pp.member_id = m.id ${whereClause}`,
+      `SELECT COUNT(*) AS count FROM payment_proofs pp JOIN members m ON pp.member_id = m.id ${whereClause}`,
       params
     );
-    const total = parseInt(countRes.rows[0].count, 10);
+    const rawCount = countRes.rows[0]?.count ?? countRes.rows[0]?.['COUNT(*)'] ?? countRes.rows[0]?.['count(*)'] ?? 0;
+    const total = parseInt(rawCount, 10) || 0;
 
     params.push(limitNum, offset);
     const sql = `

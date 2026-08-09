@@ -134,8 +134,9 @@ router.get('/', async (req, res) => {
     const sortField = validSorts[sort_by] || 'created_at';
     const sortOrder = sort_dir.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-    const countRes = await pool.query(`SELECT COUNT(*) FROM members ${whereClause}`, params);
-    const totalCount = parseInt(countRes.rows[0].count, 10);
+    const countRes = await pool.query(`SELECT COUNT(*) AS count FROM members ${whereClause}`, params);
+    const rawCount = countRes.rows[0]?.count ?? countRes.rows[0]?.['COUNT(*)'] ?? countRes.rows[0]?.['count(*)'] ?? 0;
+    const totalCount = parseInt(rawCount, 10) || 0;
 
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
