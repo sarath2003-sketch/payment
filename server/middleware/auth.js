@@ -79,4 +79,4 @@ const memberOnly = (req, res, next) => {
   }
 };
 
-module.exports = { authenticateToken, adminOnly, memberOnly };
+module.exports = { authenticateToken, adminOnly, memberOnly, requireAdmin: adminOnly };

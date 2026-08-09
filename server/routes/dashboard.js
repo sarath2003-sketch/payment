@@ -12,8 +12,7 @@ router.get('/summary', authenticateToken, async (req, res) => {
 
     // Total collected
     const collectedResult = await pool.query(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM monthly_payments WHERE status = $1',
-      ['PAID']
+      "SELECT COALESCE(SUM(amount), 0) as total FROM payment_proofs WHERE status = 'APPROVED'"
     );
 
     // Total withdrawn
@@ -21,25 +20,24 @@ router.get('/summary', authenticateToken, async (req, res) => {
       'SELECT COALESCE(SUM(amount), 0) as total FROM withdrawals'
     );
 
-    // Current balance
+    // Current balance (sum of member balances)
     const balanceResult = await pool.query(
-      `SELECT 
-        COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE -amount END), 0) as balance
-       FROM transactions`
+      'SELECT COALESCE(SUM(balance), 0) as balance FROM members'
     );
 
-    // Recent transactions
+    // Recent approved payment proofs
     const recentResult = await pool.query(`
       SELECT 
-        t.id,
-        t.transaction_date,
+        pp.id,
+        pp.payment_date as transaction_date,
         m.name,
-        t.transaction_type,
-        t.amount,
-        t.description
-      FROM transactions t
-      JOIN members m ON t.member_id = m.id
-      ORDER BY t.transaction_date DESC
+        'PAYMENT' as transaction_type,
+        pp.amount,
+        pp.transaction_reference as description
+      FROM payment_proofs pp
+      JOIN members m ON pp.member_id = m.id
+      WHERE pp.status = 'APPROVED'
+      ORDER BY pp.created_at DESC
       LIMIT 10
     `);
 
@@ -61,15 +59,15 @@ router.get('/monthly-collection', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        month,
+        TO_CHAR(payment_date, 'YYYY-MM') as month,
         COUNT(DISTINCT member_id) as members_paid,
         SUM(amount) as total_collected
-      FROM monthly_payments
-      WHERE status = $1
-      GROUP BY month
+      FROM payment_proofs
+      WHERE status = 'APPROVED'
+      GROUP BY TO_CHAR(payment_date, 'YYYY-MM')
       ORDER BY month DESC
       LIMIT 12
-    `, ['PAID']);
+    `);
 
     res.json(result.rows);
   } catch (error) {
@@ -86,60 +84,21 @@ router.get('/member-stats', authenticateToken, async (req, res) => {
         m.id,
         m.member_id,
         m.name,
-        COALESCE(SUM(CASE WHEN mp.status = 'PAID' THEN mp.amount ELSE 0 END), 0) as total_paid,
+        COALESCE(SUM(CASE WHEN pp.status = 'APPROVED' THEN pp.amount ELSE 0 END), 0) as total_paid,
         COALESCE(SUM(w.amount), 0) as total_withdrawn,
-        COALESCE(SUM(CASE WHEN mp.status = 'PAID' THEN mp.amount ELSE 0 END), 0) - 
-        COALESCE(SUM(w.amount), 0) as balance
+        m.balance
       FROM members m
-      LEFT JOIN monthly_payments mp ON m.id = mp.member_id
+      LEFT JOIN payment_proofs pp ON m.id = pp.member_id
       LEFT JOIN withdrawals w ON m.id = w.member_id
-      WHERE m.status = $1
+      WHERE m.status = 'ACTIVE'
       GROUP BY m.id
-      ORDER BY balance DESC
-    `, ['ACTIVE']);
+      ORDER BY m.name ASC
+    `);
 
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching member stats:', error);
     res.status(500).json({ error: 'Failed to fetch member stats' });
-  }
-});
-
-// Get monthly report
-router.get('/monthly-report/:month', authenticateToken, async (req, res) => {
-  try {
-    const { month } = req.params;
-
-    const summaryResult = await pool.query(`
-      SELECT 
-        $1 as month,
-        COUNT(DISTINCT CASE WHEN transaction_type = 'PAYMENT' THEN member_id END) as total_paid_members,
-        COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END), 0) as total_collected,
-        COALESCE(SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN amount ELSE 0 END), 0) as total_withdrawn,
-        COALESCE(SUM(CASE WHEN transaction_type = 'PAYMENT' THEN amount ELSE 0 END), 0) - 
-        COALESCE(SUM(CASE WHEN transaction_type = 'WITHDRAWAL' THEN amount ELSE 0 END), 0) as balance
-      FROM transactions
-      WHERE month = $1
-    `, [month]);
-
-    const detailsResult = await pool.query(`
-      SELECT 
-        m.name,
-        COALESCE(SUM(CASE WHEN t.transaction_type = 'PAYMENT' THEN t.amount ELSE 0 END), 0) as paid,
-        COALESCE(SUM(CASE WHEN t.transaction_type = 'WITHDRAWAL' THEN t.amount ELSE 0 END), 0) as withdrawn
-      FROM members m
-      LEFT JOIN transactions t ON m.id = t.member_id AND t.month = $1
-      GROUP BY m.id
-      ORDER BY m.name
-    `, [month]);
-
-    res.json({
-      summary: summaryResult.rows[0],
-      member_details: detailsResult.rows
-    });
-  } catch (error) {
-    console.error('Error fetching monthly report:', error);
-    res.status(500).json({ error: 'Failed to fetch monthly report' });
   }
 });
 

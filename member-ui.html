@@ -15,6 +15,7 @@
             align-items: center;
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
         }
 
         .auth-card {
@@ -28,9 +29,9 @@
 
         .auth-card h1 {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             color: #1f2937;
-            font-size: 28px;
+            font-size: 26px;
         }
 
         .auth-card .subtitle {
@@ -103,11 +104,12 @@
             border-radius: 6px;
             margin-bottom: 20px;
             font-size: 14px;
+            word-break: break-word;
         }
 
         .alert-error {
             background: #fee2e2;
-            color: #7f1d1d;
+            color: #991b1b;
             border-left: 4px solid #ef4444;
         }
 
@@ -163,7 +165,7 @@
 
         .sidebar-header .member-id {
             font-size: 12px;
-            color: #d1d5db;
+            color: #9ca3af;
             margin-top: 5px;
         }
 
@@ -327,12 +329,12 @@
             color: #78350f;
         }
 
-        .badge-approved {
+        .badge-approved, .badge-paid {
             background: #d1fae5;
             color: #065f46;
         }
 
-        .badge-rejected {
+        .badge-rejected, .badge-not_paid {
             background: #fee2e2;
             color: #7f1d1d;
         }
@@ -346,21 +348,6 @@
             padding: 40px;
             color: #6b7280;
         }
-
-        .loading::after {
-            content: '';
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #e5e7eb;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -369,14 +356,14 @@
 <div id="loginPage" class="auth-container hidden">
     <div class="auth-card">
         <h1>💰 Member Login</h1>
-        <p class="subtitle">Access your account</p>
+        <p class="subtitle">Access your member portal</p>
         <div id="loginError" class="alert alert-error hidden"></div>
         <div id="loginSuccess" class="alert alert-success hidden"></div>
         
         <form id="loginForm">
             <div class="form-group">
-                <label>Member ID</label>
-                <input type="text" id="loginMemberId" placeholder="e.g., 1024" required>
+                <label>Member ID or Email</label>
+                <input type="text" id="loginMemberId" placeholder="e.g., 1024 or email@example.com" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -387,7 +374,7 @@
 
         <div class="form-footer">
             <p>Don't have an account? <a onclick="showPage('register')">Register here</a></p>
-            <p><a onclick="showPage('forgot-password')">Forgot Password?</a></p>
+            <p><a onclick="showPage('forgotPassword')">Forgot Password?</a></p>
         </div>
     </div>
 </div>
@@ -396,7 +383,7 @@
 <div id="registerPage" class="auth-container hidden">
     <div class="auth-card">
         <h1>💰 New Member Registration</h1>
-        <p class="subtitle">Create your account</p>
+        <p class="subtitle">Create your account to manage payments</p>
         <div id="registerError" class="alert alert-error hidden"></div>
         <div id="registerSuccess" class="alert alert-success hidden"></div>
         
@@ -407,11 +394,11 @@
             </div>
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" id="regEmail" placeholder="Enter your email" required>
+                <input type="email" id="regEmail" placeholder="Enter your email address" required>
             </div>
             <div class="form-group">
                 <label>Phone Number</label>
-                <input type="tel" id="regPhone" placeholder="Enter your 10-digit phone number" required>
+                <input type="tel" id="regPhone" placeholder="Enter 10-digit phone number" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -421,7 +408,7 @@
                 <label>Confirm Password</label>
                 <input type="password" id="regConfirmPassword" placeholder="Confirm your password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Register</button>
+            <button type="submit" class="btn btn-primary">Register & Continue</button>
             <button type="button" class="btn btn-secondary" onclick="showPage('login')">Back to Login</button>
         </form>
     </div>
@@ -431,14 +418,14 @@
 <div id="forgotPasswordPage" class="auth-container hidden">
     <div class="auth-card">
         <h1>💰 Reset Password</h1>
-        <p class="subtitle">Recover your account</p>
+        <p class="subtitle">Recover your member account</p>
         <div id="forgotError" class="alert alert-error hidden"></div>
         <div id="forgotSuccess" class="alert alert-success hidden"></div>
         
         <form id="forgotPasswordForm">
             <div class="form-group">
                 <label>Registered Phone Number</label>
-                <input type="tel" id="forgotPhone" placeholder="Enter your phone number" required>
+                <input type="tel" id="forgotPhone" placeholder="Enter 10-digit phone number" required>
             </div>
             <button type="submit" class="btn btn-primary">Send OTP</button>
             <button type="button" class="btn btn-secondary" onclick="showPage('login')">Back to Login</button>
@@ -448,7 +435,7 @@
             <h3 style="font-size: 16px; margin-bottom: 15px; color: #1f2937;">Verify OTP</h3>
             <form id="verifyOtpForm">
                 <div class="form-group">
-                    <label>OTP</label>
+                    <label>6-Digit OTP</label>
                     <input type="text" id="otpCode" placeholder="Enter 6-digit OTP" maxlength="6" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Verify OTP</button>
@@ -464,7 +451,7 @@
                 </div>
                 <div class="form-group">
                     <label>Confirm Password</label>
-                    <input type="password" id="confirmNewPassword" placeholder="Confirm password" required>
+                    <input type="password" id="confirmNewPassword" placeholder="Confirm new password" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Reset Password</button>
             </form>
@@ -472,8 +459,8 @@
     </div>
 </div>
 
-<!-- MEMBER DASHBOARD -->
-<div id="memberDashboard" class="dashboard-container hidden">
+<!-- MEMBER DASHBOARD (NEXT PAGE) -->
+<div id="memberDashboardPage" class="dashboard-container hidden">
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="member-name" id="sidebarName">Loading...</div>
@@ -482,7 +469,7 @@
         <ul class="sidebar-menu">
             <li><button class="active" onclick="showMemberPage('dashboard')">📊 Dashboard</button></li>
             <li><button onclick="showMemberPage('payment')">💳 Add Payment</button></li>
-            <li><button onclick="showMemberPage('history')">📜 Transaction History</button></li>
+            <li><button onclick="showMemberPage('history')">📜 Payment History</button></li>
             <li><button onclick="logout()">🚪 Logout</button></li>
         </ul>
     </div>
@@ -497,8 +484,9 @@
         </div>
 
         <div class="content">
-            <!-- Dashboard Page -->
-            <div id="dashboardPage" class="page active">
+            <!-- Dashboard Sub-Page -->
+            <div id="dashboardTab" class="page active">
+                <div id="dashboardSuccess" class="alert alert-success hidden"></div>
                 <h2 class="page-title">My Account</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -507,15 +495,15 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-card-label">Current Balance</div>
-                        <div class="stat-card-value" id="dashBalance">₹0</div>
+                        <div class="stat-card-value" id="dashBalance">₹0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-card-label">Pending Payments</div>
-                        <div class="stat-card-value" id="dashPending">0</div>
+                        <div class="stat-card-label">Total Amount Paid</div>
+                        <div class="stat-card-value" id="dashTotalPaid">₹0.00</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-card-label">Approved Payments</div>
-                        <div class="stat-card-value" id="dashApproved">0</div>
+                        <div class="stat-card-label">Month Status</div>
+                        <div class="stat-card-value" id="dashMonthStatus">-</div>
                     </div>
                 </div>
 
@@ -542,9 +530,9 @@
                 </div>
             </div>
 
-            <!-- Payment Upload Page -->
-            <div id="paymentPage" class="page">
-                <h2 class="page-title">Add Payment</h2>
+            <!-- Payment Upload Sub-Page -->
+            <div id="paymentTab" class="page">
+                <h2 class="page-title">Submit Monthly Payment</h2>
                 <div id="paymentError" class="alert alert-error hidden"></div>
                 <div id="paymentSuccess" class="alert alert-success hidden"></div>
 
@@ -553,32 +541,32 @@
                     <form id="paymentForm">
                         <div class="form-group">
                             <label>Amount (₹)</label>
-                            <input type="number" id="paymentAmount" placeholder="e.g., 500" min="1" step="0.01" required>
+                            <input type="number" id="paymentAmount" placeholder="e.g., 500" min="1" step="0.01" value="500" required>
                         </div>
                         <div class="form-group">
-                            <label>Transaction Reference ID</label>
-                            <input type="text" id="paymentTxnId" placeholder="e.g., TXN123456" required>
+                            <label>Transaction Reference / UTR Number</label>
+                            <input type="text" id="paymentTxnId" placeholder="e.g., UPI / Bank Reference ID" required>
                         </div>
                         <div class="form-group">
                             <label>Payment Date</label>
                             <input type="date" id="paymentDate" required>
                         </div>
                         <div class="form-group">
-                            <label>Payment Proof (JPG, PNG, or PDF)</label>
+                            <label>Payment Proof File (JPG, PNG, or PDF)</label>
                             <input type="file" id="paymentFile" accept=".jpg,.jpeg,.png,.pdf" required>
                             <small style="color: #6b7280; display: block; margin-top: 5px;">Max file size: 5MB</small>
                         </div>
-                        <button type="submit" class="btn btn-primary">Upload Payment</button>
+                        <button type="submit" class="btn btn-primary">Submit Payment Proof</button>
                     </form>
                 </div>
             </div>
 
-            <!-- Transaction History Page -->
-            <div id="historyPage" class="page">
+            <!-- Payment History Sub-Page -->
+            <div id="historyTab" class="page">
                 <h2 class="page-title">Payment History</h2>
                 <div class="card">
-                    <h2>Your Payments</h2>
-                    <div id="historyLoading" class="loading">Loading...</div>
+                    <h2>Your Submitted Payments</h2>
+                    <div id="historyLoading" class="loading">Loading transaction history...</div>
                     <table id="historyTable" class="hidden">
                         <thead>
                             <tr>
@@ -588,11 +576,10 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody id="historyBody">
-                        </tbody>
+                        <tbody id="historyBody"></tbody>
                     </table>
                     <div id="historyEmpty" class="hidden" style="text-align: center; color: #6b7280; padding: 40px;">
-                        No payments yet
+                        No payment records submitted yet.
                     </div>
                 </div>
             </div>
@@ -601,83 +588,204 @@
 </div>
 
 <script>
-const API_BASE_URL = '/api';
+// Smart API Base URL resolution
+const getApiBaseUrl = () => {
+    if (window.location.protocol === 'file:') return 'http://localhost:5000/api';
+    if (['3000', '5500', '8080', '63342'].includes(window.location.port)) return 'http://localhost:5000/api';
+    return '/api';
+};
+const API_BASE_URL = getApiBaseUrl();
+
 let currentMemberId = null;
 let currentToken = null;
 let currentResetToken = null;
 
+// Set default payment date to today
+document.getElementById('paymentDate').valueAsDate = new Date();
+
+// UTILITY FUNCTIONS FOR ALERTS
+function showError(elementId, message) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const textMessage = (typeof message === 'string' && message.trim()) ? message : 'An unexpected error occurred. Please check your details.';
+    el.textContent = textMessage;
+    el.classList.remove('hidden');
+}
+
+function showSuccess(elementId, message) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.textContent = message;
+    el.classList.remove('hidden');
+}
+
+function clearAlerts() {
+    document.querySelectorAll('.alert').forEach(el => {
+        el.textContent = '';
+        el.classList.add('hidden');
+    });
+}
+
 // PAGE MANAGEMENT
-function showPage(page) {
-    document.querySelectorAll('[id$="Page"]').forEach(el => el.classList.add('hidden'));
-    document.getElementById(page + 'Page').classList.remove('hidden');
-}
-
-function showMemberPage(page) {
-    document.querySelectorAll('#memberDashboard .page').forEach(el => el.classList.remove('active'));
-    document.getElementById(page + 'Page').classList.add('active');
-    document.querySelectorAll('.sidebar-menu button').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+function showPage(pageName) {
+    clearAlerts();
+    document.querySelectorAll('.auth-container, .dashboard-container').forEach(el => el.classList.add('hidden'));
     
-    // Update page title
-    const titles = {
-        'dashboard': 'Dashboard',
-        'payment': 'Add Payment',
-        'history': 'Transaction History'
-    };
-    document.getElementById('pageTitle').textContent = titles[page];
-
-    // Load data when navigating
-    if (page === 'history') loadTransactionHistory();
-    if (page === 'dashboard') loadMemberProfile();
+    if (pageName === 'login') {
+        document.getElementById('loginPage').classList.remove('hidden');
+    } else if (pageName === 'register') {
+        document.getElementById('registerPage').classList.remove('hidden');
+    } else if (pageName === 'forgotPassword') {
+        document.getElementById('forgotPasswordPage').classList.remove('hidden');
+    } else if (pageName === 'memberDashboard') {
+        document.getElementById('memberDashboardPage').classList.remove('hidden');
+    }
 }
 
-// REGISTRATION
+function showMemberPage(tabName) {
+    clearAlerts();
+    document.querySelectorAll('#memberDashboardPage .page').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.sidebar-menu button').forEach(btn => btn.classList.remove('active'));
+    
+    if (tabName === 'dashboard') {
+        document.getElementById('dashboardTab').classList.add('active');
+        document.getElementById('pageTitle').textContent = 'Dashboard';
+        loadMemberProfile();
+    } else if (tabName === 'payment') {
+        document.getElementById('paymentTab').classList.add('active');
+        document.getElementById('pageTitle').textContent = 'Add Payment';
+    } else if (tabName === 'history') {
+        document.getElementById('historyTab').classList.add('active');
+        document.getElementById('pageTitle').textContent = 'Payment History';
+        loadTransactionHistory();
+    }
+}
+
+// REGISTRATION HANDLER -> AUTO LOGINS AND IMMEDIATELY OPENS NEXT PAGE (DASHBOARD)
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('regName').value;
-    const email = document.getElementById('regEmail').value;
-    const phone = document.getElementById('regPhone').value;
+    clearAlerts();
+
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
     const password = document.getElementById('regPassword').value;
     const confirmPassword = document.getElementById('regConfirmPassword').value;
 
+    if (!name || !email || !phone || !password || !confirmPassword) {
+        showError('registerError', 'All fields are required.');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showError('registerError', 'Passwords do not match.');
+        return;
+    }
+
+    if (password.length < 6) {
+        showError('registerError', 'Password must be at least 6 characters long.');
+        return;
+    }
+
     try {
-        const response = await fetch(`${API_BASE_URL}/member-auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, phone, password, confirmPassword })
-        });
+        // Safe fetch with fallback for endpoint paths
+        let response;
+        try {
+            response = await fetch(`${API_BASE_URL}/member-auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, password, confirmPassword })
+            });
+        } catch (fetchErr) {
+            response = await fetch(`/member-auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, password, confirmPassword })
+            });
+        }
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            showError('registerError', data.error);
+        const responseText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonErr) {
+            showError('registerError', 'Server error. Endpoint returned non-JSON response.');
             return;
         }
 
-        showSuccess('registerSuccess', `Registration successful! Your Member ID is: ${data.member_id}. Please login.`);
-        setTimeout(() => showPage('login'), 2000);
+        if (!response.ok) {
+            const errMsg = data.error || data.message || `Registration failed (Status ${response.status})`;
+            showError('registerError', errMsg);
+            return;
+        }
+
+        // AUTO-LOGIN AND OPEN NEXT PAGE (DASHBOARD) IMMEDIATELY
+        if (data.token) {
+            currentToken = data.token;
+            currentMemberId = data.member_id;
+            localStorage.setItem('memberToken', data.token);
+            localStorage.setItem('memberId', data.member_id);
+
+            document.getElementById('sidebarName').textContent = data.name || name;
+            document.getElementById('sidebarMemberId').textContent = `ID: ${data.member_id}`;
+            document.getElementById('userGreeting').textContent = `Welcome, ${data.name || name}!`;
+
+            document.getElementById('registerForm').reset();
+
+            // OPEN NEXT PAGE (MEMBER DASHBOARD) IMMEDIATELY
+            showPage('memberDashboard');
+            showMemberPage('dashboard');
+            showSuccess('dashboardSuccess', `Registration successful! Welcome to your dashboard. Your Member ID is: ${data.member_id}`);
+        } else {
+            showSuccess('registerSuccess', `Registration successful! Member ID: ${data.member_id}. Opening login...`);
+            setTimeout(() => {
+                showPage('login');
+                if (data.member_id) {
+                    document.getElementById('loginMemberId').value = data.member_id;
+                }
+            }, 1000);
+        }
+
     } catch (error) {
-        showError('registerError', 'Registration failed: ' + error.message);
+        showError('registerError', 'Network error: ' + error.message);
     }
 });
 
-// LOGIN
+// LOGIN HANDLER
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const member_id = document.getElementById('loginMemberId').value;
+    clearAlerts();
+
+    const member_id = document.getElementById('loginMemberId').value.trim();
     const password = document.getElementById('loginPassword').value;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/member-auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ member_id, password })
-        });
+        let response;
+        try {
+            response = await fetch(`${API_BASE_URL}/member-auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ member_id, password })
+            });
+        } catch (err) {
+            response = await fetch(`/member-auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ member_id, password })
+            });
+        }
 
-        const data = await response.json();
+        const responseText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonErr) {
+            showError('loginError', 'Invalid server response.');
+            return;
+        }
 
         if (!response.ok) {
-            showError('loginError', data.error);
+            showError('loginError', data.error || data.message || 'Login failed.');
             return;
         }
 
@@ -690,18 +798,19 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         document.getElementById('sidebarName').textContent = data.name;
         document.getElementById('sidebarMemberId').textContent = `ID: ${data.member_id}`;
         document.getElementById('userGreeting').textContent = `Welcome, ${data.name}!`;
-        
-        loadMemberProfile();
-        document.getElementById('dashboardPage').classList.add('active');
+
+        showMemberPage('dashboard');
+
     } catch (error) {
-        showError('loginError', 'Login failed: ' + error.message);
+        showError('loginError', 'Network error: ' + error.message);
     }
 });
 
-// FORGOT PASSWORD
+// FORGOT PASSWORD HANDLER
 document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const phone = document.getElementById('forgotPhone').value;
+    clearAlerts();
+    const phone = document.getElementById('forgotPhone').value.trim();
 
     try {
         const response = await fetch(`${API_BASE_URL}/member-auth/forgot-password`, {
@@ -711,25 +820,24 @@ document.getElementById('forgotPasswordForm').addEventListener('submit', async (
         });
 
         const data = await response.json();
-
         if (!response.ok) {
-            showError('forgotError', data.error);
+            showError('forgotError', data.error || 'Failed to send OTP.');
             return;
         }
 
         showSuccess('forgotSuccess', data.message + (data.otp_debug ? ` (Debug OTP: ${data.otp_debug})` : ''));
         document.getElementById('otpSection').classList.remove('hidden');
-        document.getElementById('forgotPasswordForm').disabled = true;
     } catch (error) {
         showError('forgotError', 'Request failed: ' + error.message);
     }
 });
 
-// OTP VERIFICATION
+// OTP VERIFICATION HANDLER
 document.getElementById('verifyOtpForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const phone = document.getElementById('forgotPhone').value;
-    const otp = document.getElementById('otpCode').value;
+    clearAlerts();
+    const phone = document.getElementById('forgotPhone').value.trim();
+    const otp = document.getElementById('otpCode').value.trim();
 
     try {
         const response = await fetch(`${API_BASE_URL}/member-auth/verify-otp`, {
@@ -739,9 +847,8 @@ document.getElementById('verifyOtpForm').addEventListener('submit', async (e) =>
         });
 
         const data = await response.json();
-
         if (!response.ok) {
-            showError('forgotError', data.error);
+            showError('forgotError', data.error || 'OTP verification failed.');
             return;
         }
 
@@ -754,9 +861,10 @@ document.getElementById('verifyOtpForm').addEventListener('submit', async (e) =>
     }
 });
 
-// PASSWORD RESET
+// RESET PASSWORD HANDLER
 document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAlerts();
     const new_password = document.getElementById('newPassword').value;
     const confirm_password = document.getElementById('confirmNewPassword').value;
 
@@ -768,24 +876,25 @@ document.getElementById('resetPasswordForm').addEventListener('submit', async (e
         });
 
         const data = await response.json();
-
         if (!response.ok) {
-            showError('forgotError', data.error);
+            showError('forgotError', data.error || 'Password reset failed.');
             return;
         }
 
         showSuccess('forgotSuccess', 'Password reset successful! Redirecting to login...');
-        setTimeout(() => showPage('login'), 2000);
+        setTimeout(() => showPage('login'), 1500);
     } catch (error) {
         showError('forgotError', 'Password reset failed: ' + error.message);
     }
 });
 
-// PAYMENT UPLOAD
+// PAYMENT UPLOAD HANDLER
 document.getElementById('paymentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearAlerts();
+
     const amount = document.getElementById('paymentAmount').value;
-    const transaction_reference = document.getElementById('paymentTxnId').value;
+    const transaction_reference = document.getElementById('paymentTxnId').value.trim();
     const payment_date = document.getElementById('paymentDate').value;
     const proof = document.getElementById('paymentFile').files[0];
 
@@ -805,13 +914,15 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (!response.ok) {
-            showError('paymentError', data.error);
+            showError('paymentError', data.error || 'Payment upload failed.');
             return;
         }
 
-        showSuccess('paymentSuccess', `Payment uploaded! Reference: ${data.proof_id}. Status: ${data.status}`);
+        showSuccess('paymentSuccess', `Payment proof uploaded! ID: ${data.proof_id}. Status: ${data.status}`);
         document.getElementById('paymentForm').reset();
-        setTimeout(() => showMemberPage('history'), 2000);
+        document.getElementById('paymentDate').valueAsDate = new Date();
+        setTimeout(() => showMemberPage('history'), 1500);
+
     } catch (error) {
         showError('paymentError', 'Upload failed: ' + error.message);
     }
@@ -819,20 +930,38 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
 
 // LOAD MEMBER PROFILE
 async function loadMemberProfile() {
+    if (!currentToken) return;
     try {
         const response = await fetch(`${API_BASE_URL}/member-auth/profile`, {
             headers: { 'Authorization': `Bearer ${currentToken}` }
         });
 
+        if (response.status === 401 || response.status === 403) {
+            logout();
+            return;
+        }
+
         const member = await response.json();
 
         if (response.ok) {
             document.getElementById('dashMemberId').textContent = member.member_id;
+            document.getElementById('sidebarMemberId').textContent = `ID: ${member.member_id}`;
+            document.getElementById('sidebarName').textContent = member.name;
+            document.getElementById('userGreeting').textContent = `Welcome, ${member.name}!`;
+
             document.getElementById('dashName').textContent = member.name;
             document.getElementById('dashEmail').textContent = member.email;
             document.getElementById('dashPhone').textContent = member.phone;
-            document.getElementById('dashBalance').textContent = '₹' + member.balance;
-            document.getElementById('dashCreated').textContent = new Date(member.created_at).toLocaleDateString();
+            document.getElementById('dashBalance').textContent = '₹' + (member.balance || 0).toFixed(2);
+            document.getElementById('dashTotalPaid').textContent = '₹' + (member.total_paid || 0).toFixed(2);
+            
+            const monthStatusEl = document.getElementById('dashMonthStatus');
+            const status = member.current_month_payment_status || 'NOT_PAID';
+            monthStatusEl.innerHTML = `<span class="badge badge-${status.toLowerCase()}">${status}</span>`;
+
+            if (member.created_at) {
+                document.getElementById('dashCreated').textContent = new Date(member.created_at).toLocaleDateString();
+            }
         }
     } catch (error) {
         console.error('Failed to load profile:', error);
@@ -841,6 +970,7 @@ async function loadMemberProfile() {
 
 // LOAD TRANSACTION HISTORY
 async function loadTransactionHistory() {
+    if (!currentToken) return;
     document.getElementById('historyLoading').classList.remove('hidden');
     document.getElementById('historyTable').classList.add('hidden');
     document.getElementById('historyEmpty').classList.add('hidden');
@@ -851,68 +981,53 @@ async function loadTransactionHistory() {
         });
 
         const data = await response.json();
-        document.getElementById('dashPending').textContent = data.pending;
-        document.getElementById('dashApproved').textContent = data.approved;
 
-        if (data.proofs.length === 0) {
-            document.getElementById('historyEmpty').classList.remove('hidden');
-        } else {
+        if (data.proofs && data.proofs.length > 0) {
             const tbody = document.getElementById('historyBody');
             tbody.innerHTML = '';
             data.proofs.forEach(proof => {
+                const dateStr = new Date(proof.payment_date).toLocaleDateString();
                 const row = `<tr>
-                    <td>${new Date(proof.payment_date).toLocaleDateString()}</td>
-                    <td>₹${proof.amount}</td>
-                    <td>${proof.transaction_reference}</td>
+                    <td>${dateStr}</td>
+                    <td>₹${parseFloat(proof.amount).toFixed(2)}</td>
+                    <td>${proof.transaction_reference || '-'}</td>
                     <td><span class="badge badge-${proof.status.toLowerCase()}">${proof.status}</span></td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
             document.getElementById('historyTable').classList.remove('hidden');
+        } else {
+            document.getElementById('historyEmpty').classList.remove('hidden');
         }
     } catch (error) {
-        showError('historyLoading', 'Failed to load history: ' + error.message);
+        console.error('Failed to load history:', error);
     } finally {
         document.getElementById('historyLoading').classList.add('hidden');
     }
 }
 
-// LOGOUT
+// LOGOUT HANDLER
 function logout() {
     localStorage.removeItem('memberToken');
     localStorage.removeItem('memberId');
     currentToken = null;
     currentMemberId = null;
     showPage('login');
-    document.getElementById('loginForm').reset();
 }
 
-// UTILITY
-function showError(elementId, message) {
-    const el = document.getElementById(elementId);
-    el.textContent = message;
-    el.classList.remove('hidden');
-}
-
-function showSuccess(elementId, message) {
-    const el = document.getElementById(elementId);
-    el.textContent = message;
-    el.classList.remove('hidden');
-}
-
-// CHECK IF LOGGED IN
+// INITIALIZATION
 window.addEventListener('load', () => {
     const token = localStorage.getItem('memberToken');
+    const memberId = localStorage.getItem('memberId');
     if (token) {
         currentToken = token;
-        currentMemberId = localStorage.getItem('memberId');
+        currentMemberId = memberId;
         showPage('memberDashboard');
-        loadMemberProfile();
+        showMemberPage('dashboard');
     } else {
         showPage('login');
     }
 });
 </script>
-
 </body>
 </html>

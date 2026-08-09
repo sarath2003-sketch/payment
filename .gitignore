@@ -16,3 +16,6 @@ build/
 .vscode/
 *.rar
 payment.rar
+*.sqlite
+*.bak
+
