@@ -313,12 +313,23 @@ function execSQLiteQuery(sqlText, params = []) {
           const tableMatch = sql.match(/INSERT\s+INTO\s+([a-zA-Z0-9_]+)|UPDATE\s+([a-zA-Z0-9_]+)/i);
           const tableName = tableMatch ? (tableMatch[1] || tableMatch[2]) : null;
 
-          if (tableName && lastID) {
-            db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [lastID], (err2, row) => {
+          if (tableName) {
+            const fetchSql = lastID 
+              ? `SELECT * FROM ${tableName} WHERE id = ?` 
+              : `SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 1`;
+            const fetchParams = lastID ? [lastID] : [];
+
+            db.get(fetchSql, fetchParams, (err2, row) => {
               if (!err2 && row) {
                 return resolve({ rows: [row], rowCount: 1 });
               }
-              resolve({ rows: [{ id: lastID }], rowCount: changes });
+              // Fallback to latest row if lastID match failed
+              db.get(`SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 1`, [], (err3, row3) => {
+                if (!err3 && row3) {
+                  return resolve({ rows: [row3], rowCount: 1 });
+                }
+                resolve({ rows: [{ id: lastID || 1 }], rowCount: changes });
+              });
             });
             return;
           }

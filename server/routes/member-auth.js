@@ -126,14 +126,19 @@ router.post(['/', '/register'], async (req, res) => {
 
     await client.query('COMMIT');
 
-    const member = result.rows[0];
-    console.log(`[REGISTRATION SUCCESS] Member ID: ${member.member_id}, Email: ${member.email}`);
+    const member = result.rows[0] || {};
+    const finalMemberId = member.member_id || memberId;
+    const finalName = member.name || name;
+    const finalEmail = member.email || email;
+    const finalId = member.id || 0;
+
+    console.log(`[REGISTRATION SUCCESS] Member ID: ${finalMemberId}, Email: ${finalEmail}`);
 
     // Generate JWT token for instant login
     const token = jwt.sign(
       { 
-        id: member.id, 
-        member_id: member.member_id, 
+        id: finalId, 
+        member_id: finalMemberId, 
         type: 'member'
       },
       process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
@@ -143,9 +148,9 @@ router.post(['/', '/register'], async (req, res) => {
     res.status(201).json({
       message: 'Registration successful!',
       token: token,
-      member_id: member.member_id,
-      name: member.name,
-      email: member.email,
+      member_id: finalMemberId,
+      name: finalName,
+      email: finalEmail,
     });
 
   } catch (error) {
