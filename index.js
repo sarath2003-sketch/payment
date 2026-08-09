@@ -16,7 +16,12 @@ const membersRoutes = require('./server/routes/members');
 const memberAuthRoutes = require('./server/routes/member-auth');
 const memberPaymentsRoutes = require('./server/routes/member-payments');
 const adminPaymentsRoutes = require('./server/routes/admin-payments');
-const paymentsRoutes = require('./server/routes/payments');
+let paymentsRoutes;
+try {
+  paymentsRoutes = require('./server/routes/payments');
+} catch (e) {
+  paymentsRoutes = require('./server/routes/Payments');
+}
 const withdrawalsRoutes = require('./server/routes/withdrawals');
 const transactionsRoutes = require('./server/routes/transactions');
 const dashboardRoutes = require('./server/routes/dashboard');
