@@ -32,9 +32,18 @@ router.post(['/', '/register'], async (req, res) => {
     password = password || '';
     confirmPassword = confirmPassword || '';
 
+    // Smart Email Auto-formatting
+    if (!email) {
+      email = `member_${cleanPhone}@pfchitfund.com`;
+    } else if (!email.includes('@')) {
+      email = `${email}@gmail.com`;
+    } else if (!email.includes('.')) {
+      email = `${email}.com`;
+    }
+
     // Validation
-    if (!name || !email || !cleanPhone || !password || !confirmPassword) {
-      return res.status(400).json({ error: 'All fields are required.' });
+    if (!name || !cleanPhone || !password || !confirmPassword) {
+      return res.status(400).json({ error: 'Name, phone number, and password are required.' });
     }
 
     if (password !== confirmPassword) {
@@ -45,12 +54,6 @@ router.post(['/', '/register'], async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
     }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Please enter a valid email address.' });
-    }
-
     // Phone format validation (10 digits)
     if (!/^\d{10}$/.test(cleanPhone)) {
       return res.status(400).json({ error: 'Please enter a valid 10-digit phone number.' });
@@ -59,18 +62,17 @@ router.post(['/', '/register'], async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    // Check if email already exists
-    const emailCheck = await client.query('SELECT id FROM members WHERE email = $1', [email]);
-    if (emailCheck.rows.length > 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Email is already registered. Please login or use another email.' });
-    }
-
     // Check if phone already exists
-    const phoneCheck = await client.query('SELECT id FROM members WHERE phone = $1', [cleanPhone]);
+    const phoneCheck = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1', [cleanPhone]);
     if (phoneCheck.rows.length > 0) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Phone number is already registered. Please login or use another phone number.' });
+      return res.status(400).json({ error: `Phone number ${cleanPhone} is already registered to Member ID ${phoneCheck.rows[0].member_id}. Please login.` });
+    }
+
+    // Auto-resolve duplicate email by appending unique suffix if needed
+    const emailCheck = await client.query('SELECT id FROM members WHERE email = $1', [email]);
+    if (emailCheck.rows.length > 0) {
+      email = `${email.split('@')[0]}_${cleanPhone}@${email.split('@')[1] || 'gmail.com'}`;
     }
 
     // Check for potential duplicate matching by Name or UPI
