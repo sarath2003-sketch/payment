@@ -3012,6 +3012,7 @@ async function doSaveProfile() {
     showToast('Profile updated successfully!', 'success');
     document.getElementById('editProfileModal').classList.add('hidden');
     if (res.member) currentUser = { ...currentUser, ...res.member };
+    updateHeaderUI();
   } catch(e) {
     if (alertEl) alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
   }
