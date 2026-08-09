@@ -16,7 +16,7 @@ router.use(authenticateToken, (req, res, next) => {
 
 /**
  * GET /api/chat-groups
- * List all active chat groups with member counts and current user's membership status
+ * List all active chat groups with speaker counts and total audience counts
  */
 router.get('/', async (req, res) => {
   try {
@@ -33,7 +33,8 @@ router.get('/', async (req, res) => {
         g.created_at,
         m.name AS owner_name,
         m.member_id AS owner_member_id,
-        (SELECT COUNT(*) FROM chat_group_members cgm WHERE cgm.group_id = g.id) AS member_count,
+        (SELECT COUNT(*) FROM chat_group_members cgm WHERE cgm.group_id = g.id) AS total_member_count,
+        (SELECT COUNT(*) FROM chat_group_members cgm WHERE cgm.group_id = g.id AND (cgm.is_speaker = TRUE OR cgm.is_speaker = 1)) AS speaker_count,
         (SELECT role FROM chat_group_members cgm WHERE cgm.group_id = g.id AND cgm.member_id = $1 LIMIT 1) AS user_role
       FROM chat_groups g
       LEFT JOIN members m ON g.group_admin_id = m.id
@@ -41,7 +42,7 @@ router.get('/', async (req, res) => {
       ORDER BY g.created_at DESC
     `, [memberId]);
 
-    // Also get user's pending group requests
+    // User's pending requests
     const userRequests = await pool.query(`
       SELECT id, group_name, status, created_at
       FROM chat_group_requests
@@ -52,8 +53,9 @@ router.get('/', async (req, res) => {
     res.json({
       groups: result.rows.map(r => ({
         ...r,
-        member_count: parseInt(r.member_count || 0),
-        max_members: parseInt(r.max_members || 12),
+        total_member_count: parseInt(r.total_member_count || 0),
+        speaker_count: parseInt(r.speaker_count || 0),
+        max_members: 12, // 12 Speaker Slots max
         is_member: !!r.user_role,
         is_owner: parseInt(r.group_admin_id) === memberId
       })),
@@ -72,7 +74,7 @@ router.get('/', async (req, res) => {
 router.post('/request', async (req, res) => {
   try {
     const memberId = req.admin.id;
-    const { group_name, max_members } = req.body || {};
+    const { group_name } = req.body || {};
 
     if (!group_name || !group_name.trim()) {
       return res.status(400).json({ error: 'Group name is required' });
@@ -83,9 +85,6 @@ router.post('/request', async (req, res) => {
       return res.status(400).json({ error: 'Group name must be 50 characters or less' });
     }
 
-    const capMax = Math.min(Math.max(parseInt(max_members || 12), 2), 12);
-
-    // Create pending request
     const reqResult = await pool.query(`
       INSERT INTO chat_group_requests (group_name, requested_by, status)
       VALUES ($1, $2, 'PENDING')
@@ -104,7 +103,7 @@ router.post('/request', async (req, res) => {
 
 /**
  * GET /api/chat-groups/:id
- * Get detailed chat group info, members list, and 12 speaker slots
+ * Get detailed chat group info, 12 speaker slots, and audience member list
  */
 router.get('/:id', async (req, res) => {
   try {
@@ -129,7 +128,7 @@ router.get('/:id', async (req, res) => {
     // Fetch members in group
     const membersRes = await pool.query(`
       SELECT 
-        cgm.id AS membership_id, cgm.role, cgm.is_muted, cgm.is_online, cgm.joined_at,
+        cgm.id AS membership_id, cgm.role, cgm.is_muted, cgm.is_speaker, cgm.is_online, cgm.joined_at,
         m.id AS member_id_pk, m.member_id, m.name, m.email, m.phone
       FROM chat_group_members cgm
       JOIN members m ON cgm.member_id = m.id
@@ -138,18 +137,24 @@ router.get('/:id', async (req, res) => {
     `, [groupId]);
 
     const activeMembers = membersRes.rows;
-    const isMember = activeMembers.some(m => m.member_id_pk === memberId);
+    const currentMemberObj = activeMembers.find(m => m.member_id_pk === memberId);
+    const isMember = !!currentMemberObj;
     const isOwner = group.group_admin_id === memberId;
-    const userRole = activeMembers.find(m => m.member_id_pk === memberId)?.role || null;
-    const userMuted = activeMembers.find(m => m.member_id_pk === memberId)?.is_muted || false;
+    const isSpeaker = currentMemberObj ? (currentMemberObj.is_speaker === true || currentMemberObj.is_speaker === 1) : false;
+    const userRole = currentMemberObj?.role || null;
+    const userMuted = currentMemberObj?.is_muted || false;
+
+    // Filter speakers vs audience
+    const speakers = activeMembers.filter(m => m.is_speaker === true || m.is_speaker === 1);
+    const audience = activeMembers.filter(m => !(m.is_speaker === true || m.is_speaker === 1));
 
     // Build 12 Speaker Slots
     const maxSlots = 12;
     const speakerSlots = [];
 
     for (let i = 0; i < maxSlots; i++) {
-      if (i < activeMembers.length) {
-        const mem = activeMembers[i];
+      if (i < speakers.length) {
+        const mem = speakers[i];
         speakerSlots.push({
           slot_number: i + 1,
           is_empty: false,
@@ -173,13 +178,16 @@ router.get('/:id', async (req, res) => {
       group: {
         ...group,
         max_members: 12,
-        member_count: activeMembers.length,
+        total_member_count: activeMembers.length,
+        speaker_count: speakers.length,
         is_member: isMember,
         is_owner: isOwner,
+        is_speaker: isSpeaker,
         user_role: userRole,
         user_muted: userMuted
       },
       speaker_slots: speakerSlots,
+      audience: audience,
       members: activeMembers
     });
   } catch (err) {
@@ -190,7 +198,7 @@ router.get('/:id', async (req, res) => {
 
 /**
  * POST /api/chat-groups/:id/join
- * Join chat room (Enforces max 12 member limit)
+ * Join chat room (Audience capacity unlimited; auto-assigns speaker slot if < 12 active speakers)
  */
 router.post('/:id/join', async (req, res) => {
   const io = req.app.get('io');
@@ -198,8 +206,7 @@ router.post('/:id/join', async (req, res) => {
     const groupId = parseInt(req.params.id);
     const memberId = req.admin.id;
 
-    // Check group status & member count
-    const groupRes = await pool.query('SELECT id, group_name, status, max_members FROM chat_groups WHERE id = $1', [groupId]);
+    const groupRes = await pool.query('SELECT id, group_name, status FROM chat_groups WHERE id = $1', [groupId]);
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Chat group not found' });
     const group = groupRes.rows[0];
 
@@ -208,49 +215,42 @@ router.post('/:id/join', async (req, res) => {
     }
 
     // Check existing membership
-    const existCheck = await pool.query('SELECT id FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
+    const existCheck = await pool.query('SELECT id, is_speaker FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
     if (existCheck.rows.length > 0) {
-      return res.json({ message: 'Already a member of this chat room' });
+      return res.json({ message: 'Already in this chat room' });
     }
 
-    // Count active members
-    const countRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1', [groupId]);
-    const currentCount = parseInt(countRes.rows[0].count || 0);
+    // Check current speaker count
+    const spkCountRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1 AND (is_speaker = TRUE OR is_speaker = 1)', [groupId]);
+    const currentSpeakers = parseInt(spkCountRes.rows[0].count || 0);
 
-    if (currentCount >= 12) {
-      // Update status to FULL if not already
-      await pool.query("UPDATE chat_groups SET status = 'FULL' WHERE id = $1", [groupId]);
-      return res.status(400).json({ error: 'Room is full (Maximum 12 members reached)' });
-    }
+    // Auto-assign speaker slot if < 12 active speakers
+    const assignSpeaker = currentSpeakers < 12;
 
-    // Add member
     await pool.query(`
-      INSERT INTO chat_group_members (group_id, member_id, role, is_muted, is_online)
-      VALUES ($1, $2, 'MEMBER', FALSE, TRUE)
-    `, [groupId, memberId]);
+      INSERT INTO chat_group_members (group_id, member_id, role, is_muted, is_speaker, is_online)
+      VALUES ($1, $2, 'MEMBER', FALSE, $3, TRUE)
+    `, [groupId, memberId, assignSpeaker]);
 
-    // Update member count & room status
-    const newCount = currentCount + 1;
-    if (newCount >= 12) {
-      await pool.query("UPDATE chat_groups SET status = 'FULL' WHERE id = $1", [groupId]);
-    }
+    // Get updated total member count
+    const totalCountRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1', [groupId]);
+    const totalCount = parseInt(totalCountRes.rows[0].count || 0);
 
-    // Fetch joining member details
     const mRes = await pool.query('SELECT name, member_id FROM members WHERE id = $1', [memberId]);
     const memberObj = mRes.rows[0];
 
-    // Emit Socket event
     if (io) {
       io.to(`group_${groupId}`).emit('group:member-joined', {
         group_id: groupId,
         member_id_pk: memberId,
         member_id: memberObj?.member_id,
         name: memberObj?.name,
-        member_count: newCount
+        is_speaker: assignSpeaker,
+        total_member_count: totalCount
       });
     }
 
-    res.json({ message: 'Joined chat room successfully!', member_count: newCount });
+    res.json({ message: 'Joined chat room successfully!', is_speaker: assignSpeaker, total_member_count: totalCount });
   } catch (err) {
     console.error('Error joining group:', err);
     res.status(500).json({ error: 'Failed to join chat room' });
@@ -258,8 +258,66 @@ router.post('/:id/join', async (req, res) => {
 });
 
 /**
+ * POST /api/chat-groups/:id/take-speaker-slot
+ * Occupy a speaker slot if active speakers < 12
+ */
+router.post('/:id/take-speaker-slot', async (req, res) => {
+  const io = req.app.get('io');
+  try {
+    const groupId = parseInt(req.params.id);
+    const memberId = req.admin.id;
+
+    // Verify membership
+    const memCheck = await pool.query('SELECT id FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
+    if (memCheck.rows.length === 0) return res.status(403).json({ error: 'You are not in this chat room' });
+
+    // Check active speakers count
+    const spkCountRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1 AND (is_speaker = TRUE OR is_speaker = 1)', [groupId]);
+    const currentSpeakers = parseInt(spkCountRes.rows[0].count || 0);
+
+    if (currentSpeakers >= 12) {
+      return res.status(400).json({ error: 'All 12 Speaker Slots are currently occupied.' });
+    }
+
+    await pool.query('UPDATE chat_group_members SET is_speaker = TRUE WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
+
+    if (io) {
+      io.to(`group_${groupId}`).emit('group:member-muted', { group_id: groupId, member_id_pk: memberId });
+    }
+
+    res.json({ message: 'Occupied speaker slot successfully!' });
+  } catch (err) {
+    console.error('Error taking speaker slot:', err);
+    res.status(500).json({ error: 'Failed to take speaker slot' });
+  }
+});
+
+/**
+ * POST /api/chat-groups/:id/leave-speaker-slot
+ * Step down from speaker slot to audience
+ */
+router.post('/:id/leave-speaker-slot', async (req, res) => {
+  const io = req.app.get('io');
+  try {
+    const groupId = parseInt(req.params.id);
+    const memberId = req.admin.id;
+
+    await pool.query('UPDATE chat_group_members SET is_speaker = FALSE WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
+
+    if (io) {
+      io.to(`group_${groupId}`).emit('group:member-muted', { group_id: groupId, member_id_pk: memberId });
+    }
+
+    res.json({ message: 'Stepped down to audience' });
+  } catch (err) {
+    console.error('Error stepping down:', err);
+    res.status(500).json({ error: 'Failed to step down' });
+  }
+});
+
+/**
  * POST /api/chat-groups/:id/leave
- * Leave chat room (Owner must transfer ownership before leaving)
+ * Leave chat room completely
  */
 router.post('/:id/leave', async (req, res) => {
   const io = req.app.get('io');
@@ -271,26 +329,18 @@ router.post('/:id/leave', async (req, res) => {
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Chat group not found' });
     const group = groupRes.rows[0];
 
-    // Check count of other members
     const countRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1 AND member_id != $2', [groupId, memberId]);
     const otherCount = parseInt(countRes.rows[0].count || 0);
 
-    // If Group Admin tries to leave and other members exist, require transferring ownership
     if (group.group_admin_id === memberId && otherCount > 0) {
       return res.status(400).json({ error: 'As Group Owner, please transfer ownership to another member before leaving.' });
     }
 
-    // Delete membership
     await pool.query('DELETE FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
 
-    // Update group status back to ACTIVE if it was FULL
     const newCountRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1', [groupId]);
     const newCount = parseInt(newCountRes.rows[0].count || 0);
-    if (newCount < 12) {
-      await pool.query("UPDATE chat_groups SET status = 'ACTIVE' WHERE id = $1", [groupId]);
-    }
 
-    // If 0 members remaining, deactivate group
     if (newCount === 0) {
       await pool.query("UPDATE chat_groups SET status = 'INACTIVE' WHERE id = $1", [groupId]);
     }
@@ -304,7 +354,7 @@ router.post('/:id/leave', async (req, res) => {
         member_id_pk: memberId,
         member_id: memberObj?.member_id,
         name: memberObj?.name,
-        member_count: newCount
+        total_member_count: newCount
       });
     }
 
@@ -348,7 +398,6 @@ router.post('/:id/messages', async (req, res) => {
     const groupId = parseInt(req.params.id);
     const memberId = req.admin.id;
 
-    // Check membership & mute status
     const memCheck = await pool.query('SELECT is_muted FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
     if (memCheck.rows.length === 0) {
       return res.status(403).json({ error: 'You are not a member of this chat room' });
@@ -361,7 +410,6 @@ router.post('/:id/messages', async (req, res) => {
     let messageText = (req.body.message || '').trim();
     let mediaUrl = null;
 
-    // Handle photo attachment upload
     if (req.files && req.files.image) {
       const file = req.files.image;
       const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
@@ -492,15 +540,11 @@ router.post('/:id/remove-member', async (req, res) => {
 
     await pool.query('DELETE FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
 
-    // Update status to ACTIVE if it was FULL
     const countRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1', [groupId]);
     const newCount = parseInt(countRes.rows[0].count || 0);
-    if (newCount < 12) {
-      await pool.query("UPDATE chat_groups SET status = 'ACTIVE' WHERE id = $1", [groupId]);
-    }
 
     if (io) {
-      io.to(`group_${groupId}`).emit('group:member-removed', { group_id: groupId, member_id_pk: targetMemberId, member_count: newCount });
+      io.to(`group_${groupId}`).emit('group:member-removed', { group_id: groupId, member_id_pk: targetMemberId, total_member_count: newCount });
     }
 
     res.json({ message: 'Member removed from group' });
@@ -527,13 +571,11 @@ router.post('/:id/transfer-admin', async (req, res) => {
       return res.status(403).json({ error: 'Only current Group Owner can transfer admin role' });
     }
 
-    // Verify new admin is in group
     const memCheck = await pool.query('SELECT id FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, newAdminId]);
     if (memCheck.rows.length === 0) {
       return res.status(400).json({ error: 'New owner must be a member of this chat room' });
     }
 
-    // Update roles
     await pool.query("UPDATE chat_group_members SET role = 'MEMBER' WHERE group_id = $1 AND member_id = $2", [groupId, actorId]);
     await pool.query("UPDATE chat_group_members SET role = 'ADMIN' WHERE group_id = $1 AND member_id = $2", [groupId, newAdminId]);
     await pool.query('UPDATE chat_groups SET group_admin_id = $1 WHERE id = $2', [newAdminId, groupId]);

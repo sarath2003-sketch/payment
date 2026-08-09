@@ -2553,23 +2553,20 @@ async function loadChatGroups() {
     container.innerHTML = `
       <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:14px">
         ${data.groups.map(g => {
-          const isFull = g.member_count >= 12;
-          const statusBadge = isFull ? `<span class="badge badge-rejected">Room Full (12/12)</span>` : `<span class="badge badge-active">● Active</span>`;
           return `
             <div class="card" style="padding:16px;display:flex;flex-direction:column;justify-content:space-between">
               <div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
                   <h3 style="font-size:16px;font-weight:800;color:var(--text)">${esc(g.group_name)}</h3>
-                  ${statusBadge}
+                  <span class="badge badge-active">● Active Room</span>
                 </div>
                 <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Group Admin: <strong>${esc(g.owner_name || 'Admin')}</strong> (${g.owner_member_id || ''})</div>
-                <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px">👥 ${g.member_count} / ${g.max_members} Members</div>
+                <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">👥 ${g.total_member_count} Members in Room</div>
+                <div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:12px">🎙️ ${g.speaker_count} / 12 Speakers Active</div>
               </div>
               <div>
                 ${g.is_member ? `
                   <button class="btn-primary" style="width:100%;padding:10px" onclick="openChatRoom(${g.id})">💬 Enter Chat Room</button>
-                ` : isFull ? `
-                  <button class="btn-secondary" style="width:100%;padding:10px" disabled>Room Full (12/12)</button>
                 ` : `
                   <button class="btn-primary" style="width:100%;padding:10px" onclick="joinChatGroup(${g.id})">👉 Join Chat Room</button>
                 `}
@@ -2638,7 +2635,7 @@ async function refreshChatRoom(groupId) {
     currentSpeakerSlots = data.speaker_slots;
 
     document.getElementById('crTitle').textContent = data.group.group_name;
-    document.getElementById('crOnlineCount').textContent = `🟢 ${data.group.member_count} / 12 Members Online`;
+    document.getElementById('crOnlineCount').textContent = `🟢 ${data.group.total_member_count} Members Online (${data.group.speaker_count}/12 Speakers Active)`;
 
     // Show or hide Transfer Admin button if user is Group Owner
     const isOwner = data.group.group_admin_id === currentUser.id;
