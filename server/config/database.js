@@ -98,13 +98,16 @@ function initSQLiteFallback() {
       `);
 
       // Safe column migration for SQLite if table already existed
-      const memberCols = ['upi_id TEXT', 'activation_status TEXT DEFAULT "PENDING"', 'payment_status TEXT DEFAULT "UNPAID"', 'group_category TEXT DEFAULT "General"', 'is_duplicate INTEGER DEFAULT 0', 'duplicate_reason TEXT', 'duplicate_of_id INTEGER', 'duplicate_reviewed INTEGER DEFAULT 0', 'deleted_at DATETIME'];
+      const memberCols = ['upi_id TEXT', 'profile_photo TEXT', 'activation_status TEXT DEFAULT "PENDING"', 'payment_status TEXT DEFAULT "UNPAID"', 'group_category TEXT DEFAULT "General"', 'is_duplicate INTEGER DEFAULT 0', 'duplicate_reason TEXT', 'duplicate_of_id INTEGER', 'duplicate_reviewed INTEGER DEFAULT 0', 'deleted_at DATETIME'];
       memberCols.forEach(colDef => {
         const colName = colDef.split(' ')[0];
         sqliteDb.run(`ALTER TABLE members ADD COLUMN ${colDef}`, (err) => {
           // Ignore error if column already exists
         });
       });
+
+      // Auto-backfill any missing member_id values starting at 101
+      sqliteDb.run(`UPDATE members SET member_id = CAST(100 + id AS TEXT) WHERE member_id IS NULL OR member_id = ''`);
 
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS admin_users (

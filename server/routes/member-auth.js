@@ -242,7 +242,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     const memberId = req.admin.id;
 
     const memberResult = await pool.query(
-      'SELECT id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status, is_duplicate, group_category, created_at, updated_at FROM members WHERE id = $1',
+      'SELECT id, member_id, name, email, phone, upi_id, profile_photo, balance, status, activation_status, payment_status, is_duplicate, group_category, created_at, updated_at FROM members WHERE id = $1',
       [memberId]
     );
 
@@ -261,11 +261,11 @@ router.get('/profile', authenticateToken, async (req, res) => {
       [memberId]
     );
 
-    const stats = statsResult.rows[0];
-    member.balance = parseFloat(member.balance);
-    member.total_paid = parseFloat(stats.total_paid);
-    member.pending_count = parseInt(stats.pending_count);
-    member.approved_count = parseInt(stats.approved_count);
+    const stats = statsResult.rows[0] || { total_paid: 0, pending_count: 0, approved_count: 0 };
+    member.balance = parseFloat(member.balance || 0);
+    member.total_paid = parseFloat(stats.total_paid || 0);
+    member.pending_count = parseInt(stats.pending_count || 0);
+    member.approved_count = parseInt(stats.approved_count || 0);
 
     const now = new Date();
     const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -290,6 +290,84 @@ router.get('/profile', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error fetching profile:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+/**
+ * PUT /api/member-auth/profile
+ * Member updates their own name, email, upi_id, profile_photo
+ */
+router.put('/profile', authenticateToken, async (req, res) => {
+  try {
+    const memberId = req.admin.id;
+    let { name, email, upi_id, profile_photo } = req.body || {};
+
+    const existingRes = await pool.query('SELECT * FROM members WHERE id = $1', [memberId]);
+    if (existingRes.rows.length === 0) return res.status(404).json({ error: 'Member not found' });
+    const existing = existingRes.rows[0];
+
+    name = (name !== undefined && name !== null) ? String(name).trim() : existing.name;
+    email = (email !== undefined && email !== null) ? String(email).trim().toLowerCase() : existing.email;
+    upi_id = (upi_id !== undefined && upi_id !== null) ? String(upi_id).trim() : existing.upi_id;
+    profile_photo = (profile_photo !== undefined && profile_photo !== null) ? String(profile_photo).trim() : existing.profile_photo;
+
+    const result = await pool.query(
+      `UPDATE members 
+       SET name = $1, email = $2, upi_id = $3, profile_photo = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING id, member_id, name, email, phone, upi_id, profile_photo, balance, status, activation_status, payment_status`,
+      [name, email, upi_id || null, profile_photo || null, memberId]
+    );
+
+    res.json({ message: 'Profile updated successfully!', member: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating member profile:', error);
+    res.status(500).json({ error: error.message || 'Failed to update profile' });
+  }
+});
+
+/**
+ * POST /api/member-auth/profile-photo
+ * Upload profile photo for logged-in member (Base64 data or Multipart)
+ */
+router.post('/profile-photo', authenticateToken, async (req, res) => {
+  try {
+    const memberId = req.admin.id;
+    const fs = require('fs');
+    const path = require('path');
+
+    let photoUrl = '';
+
+    if (req.body && req.body.image_data) {
+      // Base64 Data URL upload
+      const base64Data = req.body.image_data.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `profile_${memberId}_${Date.now()}.png`;
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+      
+      const filePath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      photoUrl = `/uploads/${filename}`;
+    } else if (req.files && (req.files.photo || req.files.profile_photo || req.files.image)) {
+      const file = req.files.photo || req.files.profile_photo || req.files.image;
+      const ext = path.extname(file.name) || '.png';
+      const filename = `profile_${memberId}_${Date.now()}${ext}`;
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const filePath = path.join(uploadsDir, filename);
+      await file.mv(filePath);
+      photoUrl = `/uploads/${filename}`;
+    } else {
+      return res.status(400).json({ error: 'No image file or image_data provided.' });
+    }
+
+    await pool.query('UPDATE members SET profile_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [photoUrl, memberId]);
+    res.json({ message: 'Profile photo uploaded successfully!', profile_photo: photoUrl });
+  } catch (error) {
+    console.error('Error uploading profile photo:', error);
+    res.status(500).json({ error: error.message || 'Failed to upload profile photo' });
   }
 });
 

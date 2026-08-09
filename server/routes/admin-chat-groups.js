@@ -35,6 +35,63 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch chat groups' });
   }
 });
+/**
+ * POST /api/admin/chat-groups/create
+ * Main Admin directly creates an active chat room
+ */
+router.post('/create', async (req, res) => {
+  const io = req.app.get('io');
+  let client;
+  try {
+    const { group_name, max_members, owner_member_id } = req.body || {};
+    if (!group_name || !group_name.trim()) {
+      return res.status(400).json({ error: 'Group name is required' });
+    }
+
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    // Find owner member if specified, otherwise pick first active member or admin
+    let ownerId = null;
+    if (owner_member_id) {
+      const ownerRes = await client.query('SELECT id FROM members WHERE member_id = $1 OR phone = $1 OR id = $2', [owner_member_id, parseInt(owner_member_id) || 0]);
+      if (ownerRes.rows.length > 0) ownerId = ownerRes.rows[0].id;
+    }
+
+    if (!ownerId) {
+      const firstMember = await client.query('SELECT id FROM members WHERE deleted_at IS NULL ORDER BY id ASC LIMIT 1');
+      if (firstMember.rows.length > 0) ownerId = firstMember.rows[0].id;
+    }
+
+    const groupRes = await client.query(`
+      INSERT INTO chat_groups (group_name, created_by, group_admin_id, max_members, status)
+      VALUES ($1, $2, $3, $4, 'ACTIVE')
+      RETURNING id, group_name, created_by, group_admin_id, max_members, status, created_at
+    `, [group_name.trim(), ownerId || 1, ownerId || 1, max_members || 12]);
+
+    const newGroup = groupRes.rows[0];
+
+    if (ownerId) {
+      await client.query(`
+        INSERT INTO chat_group_members (group_id, member_id, is_speaker, is_owner, is_muted)
+        VALUES ($1, $2, TRUE, TRUE, FALSE)
+        ON CONFLICT (group_id, member_id) DO NOTHING
+      `, [newGroup.id, ownerId]);
+    }
+
+    await client.query('COMMIT');
+
+    if (io) io.emit('group:created', { group: newGroup });
+
+    res.status(201).json({ message: 'Chat room created successfully!', group: newGroup });
+  } catch (err) {
+    if (client) await client.query('ROLLBACK');
+    console.error('Error creating admin chat group:', err);
+    res.status(500).json({ error: err.message || 'Failed to create chat group' });
+  } finally {
+    if (client) client.release();
+  }
+});
 
 /**
  * GET /api/admin/chat-groups/requests

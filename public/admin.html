@@ -1111,7 +1111,10 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">💬 All Active & Live Chat Groups</div>
-              <button class="btn-secondary btn-sm" onclick="loadAdminGroups()">🔄 Refresh</button>
+              <div>
+                <button class="btn-primary btn-sm" onclick="showAdminCreateGroupModal()">+ Create New Room</button>
+                <button class="btn-secondary btn-sm" onclick="loadAdminGroups()">🔄 Refresh</button>
+              </div>
             </div>
             <div class="table-wrapper">
               <table>
@@ -1159,10 +1162,21 @@
             <div id="settingsMsg"></div>
             <div class="form-group"><label>Organisation Name (English)</label><input type="text" id="sOrgName"></div>
             <div class="form-group"><label>Organisation Name (Tamil)</label><input type="text" id="sOrgNameTa"></div>
+            <div class="form-group"><label>💳 Admin UPI ID (Displayed on Payment Page)</label><input type="text" id="sAdminUpiId" placeholder="e.g. 9025893352@idfcfirst"></div>
+            <div class="form-group"><label>🏦 Admin UPI Name / Bank Account Name</label><input type="text" id="sAdminUpiName" placeholder="e.g. IDFC First Bank · Sarathkumar Pandiyaraja"></div>
             <div class="form-group"><label>WhatsApp Group Link</label><input type="url" id="sWhatsApp"></div>
-            <div class="form-group"><label>Default Monthly Payment (₹)</label><input type="number" id="sPayAmount">
-            </div>
+            <div class="form-group"><label>Default Monthly Payment (₹)</label><input type="number" id="sPayAmount"></div>
             <button class="btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
+
+            <div class="card-title" style="font-size:16px">📷 Upload Custom Payment QR Code Image</div>
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Upload the UPI QR scanner image from your phone/gallery to display on the Member Payment Page.</p>
+            <div class="form-group">
+              <input type="file" id="adminQrFileInput" accept="image/*" style="margin-bottom:10px">
+              <button class="btn-secondary" onclick="uploadAdminQrCode()">📤 Upload QR Code Scanner Image</button>
+            </div>
+            <div id="adminQrPreview" style="margin-top:10px"></div>
           </div>
         </div>
 
@@ -1799,6 +1813,77 @@
           loadAdminGroups();
         } catch(e) { showToast(e.message, 'error'); }
       });
+    }
+
+    async function showAdminCreateGroupModal() {
+      const name = prompt('Enter Room Name for new Chat Group:');
+      if (!name || !name.trim()) return;
+
+      try {
+        const res = await api('/api/admin/chat-groups/create', {
+          method: 'POST',
+          body: JSON.stringify({ group_name: name.trim(), max_members: 12 })
+        });
+        showToast(res.message || 'Chat room created successfully!', 'success');
+        loadAdminGroups();
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    async function loadSettings() {
+      try {
+        const s = await api('/api/settings');
+        if (document.getElementById('sOrgName')) document.getElementById('sOrgName').value = s.org_name || '';
+        if (document.getElementById('sOrgNameTa')) document.getElementById('sOrgNameTa').value = s.org_name_tamil || '';
+        if (document.getElementById('sAdminUpiId')) document.getElementById('sAdminUpiId').value = s.admin_upi_id || '9025893352@idfcfirst';
+        if (document.getElementById('sAdminUpiName')) document.getElementById('sAdminUpiName').value = s.admin_upi_name || 'IDFC First Bank · Sarathkumar Pandiyaraja';
+        if (document.getElementById('sWhatsApp')) document.getElementById('sWhatsApp').value = s.whatsapp_link || '';
+        if (document.getElementById('sPayAmount')) document.getElementById('sPayAmount').value = s.default_payment_amount || 500;
+
+        const qrPrev = document.getElementById('adminQrPreview');
+        if (qrPrev) {
+          if (s.qr_path) {
+            qrPrev.innerHTML = `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Active Payment QR Scanner Code:</div><img src="${s.qr_path}" style="max-width:180px;border-radius:10px;border:1px solid var(--border);padding:4px;background:#fff" alt="Current QR">`;
+          } else {
+            qrPrev.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">No QR image uploaded yet.</div>';
+          }
+        }
+      } catch(e) { console.warn('Could not load settings:', e); }
+    }
+
+    async function saveSettings() {
+      try {
+        const updates = {
+          org_name: document.getElementById('sOrgName').value.trim(),
+          org_name_tamil: document.getElementById('sOrgNameTa').value.trim(),
+          admin_upi_id: document.getElementById('sAdminUpiId').value.trim(),
+          admin_upi_name: document.getElementById('sAdminUpiName').value.trim(),
+          whatsapp_link: document.getElementById('sWhatsApp').value.trim(),
+          default_payment_amount: document.getElementById('sPayAmount').value.trim()
+        };
+        await api('/api/settings', { method: 'PUT', body: JSON.stringify(updates) });
+        showToast('Settings saved successfully!', 'success');
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    async function uploadAdminQrCode() {
+      const fileInput = document.getElementById('adminQrFileInput');
+      const file = fileInput.files[0];
+      if (!file) { showToast('Please select a QR code image file to upload', 'error'); return; }
+
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const res = await api('/api/settings/upload-qr', {
+              method: 'POST',
+              body: JSON.stringify({ image_data: e.target.result })
+            });
+            showToast(res.message || 'QR Code uploaded successfully!', 'success');
+            loadSettings();
+          } catch(err) { showToast(err.message, 'error'); }
+        };
+        reader.readAsDataURL(file);
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     window.addEventListener('DOMContentLoaded', () => {

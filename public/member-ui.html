@@ -1109,9 +1109,9 @@
         <div style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:20px" id="paymentInstructions">Scan the QR code to pay via UPI</div>
         <!-- QR Code -->
         <div class="qr-container" id="qrContainer">
-          <img id="qrCodeImg" src="/assets/qr.png" onerror="this.parentElement.innerHTML='<p style=color:#333;font-size:13px>QR Code not available.<br>Contact admin.</p>'" alt="Payment QR">
-          <div class="qr-upi">UPI: 9025893352@idfcfirst</div>
-          <div style="font-size:11px;color:#666;margin-top:4px">IDFC First Bank · Sarathkumar Pandiyaraja</div>
+          <img id="qrCodeImg" src="/assets/qr.png" onerror="this.style.display='none'; if(!document.getElementById('qrFallbackMsg')){ const p=document.createElement('p'); p.id='qrFallbackMsg'; p.style='color:#333;font-size:13px;padding:10px'; p.innerHTML='QR Code Not Available.<br>Contact Admin to pay via UPI.'; this.parentElement.appendChild(p); }" alt="Payment QR">
+          <div class="qr-upi" id="paymentUpiDisplay">UPI ID: 9025893352@idfcfirst</div>
+          <div style="font-size:11px;color:#666;margin-top:4px" id="paymentUpiNameDisplay">IDFC First Bank · Sarathkumar Pandiyaraja</div>
         </div>
         <!-- Payment form -->
         <div id="paymentFormSection">
@@ -1368,8 +1368,13 @@
 <!-- Edit Profile Modal -->
 <div id="editProfileModal" class="modal-overlay hidden" onclick="this.classList.add('hidden')">
   <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-title">✏️ Edit Profile Details</div>
+    <div class="modal-title">✏️ Edit Profile Details & Photo</div>
     <div id="epAlert"></div>
+    <div class="form-group">
+      <label>📷 Upload Custom Profile Photo</label>
+      <input type="file" id="epPhotoFile" accept="image/*" style="margin-bottom:6px" onchange="uploadMemberPhoto(event)">
+      <div id="epPhotoPreview"></div>
+    </div>
     <div class="form-group">
       <label>Full Name *</label>
       <input type="text" id="epName" placeholder="Your full name">
@@ -1761,14 +1766,32 @@ async function initApp() {
 }
 function updateHeaderUI() {
   if (!currentUser) return;
-  document.getElementById('headerMemberId').textContent = `Member ID: ${currentUser.member_id || ''}`;
+  const mId = currentUser.member_id || (currentUser.id ? String(100 + currentUser.id) : '');
+  document.getElementById('headerMemberId').textContent = `Member ID: ${mId}`;
   const name = currentUser.name || '';
-  document.getElementById('dashAvatar').textContent = name.charAt(0).toUpperCase();
+  const initial = name.charAt(0).toUpperCase() || 'M';
+
+  const avatarHTML = currentUser.profile_photo 
+    ? `<img src="${currentUser.profile_photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Profile Photo">`
+    : initial;
+
+  const dashAvatarEl = document.getElementById('dashAvatar');
+  if (dashAvatarEl) dashAvatarEl.innerHTML = avatarHTML;
+
+  const settingsAvatarEl = document.getElementById('settingsAvatar');
+  if (settingsAvatarEl) settingsAvatarEl.innerHTML = avatarHTML;
+
   document.getElementById('dashName').textContent = name;
-  document.getElementById('dashMemberId').textContent = `ID: ${currentUser.member_id || ''}`;
-  document.getElementById('settingsAvatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('dashMemberId').textContent = `Member ID: ${mId}`;
   document.getElementById('settingsName').textContent = name;
-  document.getElementById('settingsMemberId').textContent = currentUser.member_id || '';
+  document.getElementById('settingsMemberId').textContent = `Member ID: ${mId}`;
+
+  // Populate settings form fields
+  if (document.getElementById('setProfileName')) document.getElementById('setProfileName').value = name;
+  if (document.getElementById('setProfileEmail')) document.getElementById('setProfileEmail').value = currentUser.email || '';
+  if (document.getElementById('setProfilePhone')) document.getElementById('setProfilePhone').value = currentUser.phone || '';
+  if (document.getElementById('setProfileUpi')) document.getElementById('setProfileUpi').value = currentUser.upi_id || '';
+  if (document.getElementById('setProfileMemberId')) document.getElementById('setProfileMemberId').value = mId;
 }
 function updateDashboard(profile) {
   const balance = parseFloat(profile.balance || 0);
@@ -1854,6 +1877,31 @@ async function loadPaymentHistory() {
 // ============================================================
 // Payment Submission
 // ============================================================
+async function loadSettings() {
+  try {
+    const data = await api('/api/settings/public');
+    appSettings = data || {};
+
+    if (appSettings.default_payment_amount) {
+      const el = document.getElementById('paymentAmount');
+      if (el) el.textContent = `₹${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
+    }
+
+    const upiEl = document.getElementById('paymentUpiDisplay');
+    if (upiEl) upiEl.textContent = `UPI ID: ${appSettings.admin_upi_id || '9025893352@idfcfirst'}`;
+
+    const nameEl = document.getElementById('paymentUpiNameDisplay');
+    if (nameEl) nameEl.textContent = appSettings.admin_upi_name || 'IDFC First Bank · Sarathkumar Pandiyaraja';
+
+    const qrImg = document.getElementById('qrCodeImg');
+    if (qrImg && appSettings.qr_path) {
+      qrImg.src = appSettings.qr_path;
+      qrImg.style.display = 'block';
+    }
+  } catch(e) {
+    console.warn('Could not load public settings:', e);
+  }
+}
 function populateMonthOptions() {
   const sel = document.getElementById('paymentMonth');
   sel.innerHTML = '<option value="">Select month...</option>';
@@ -2590,22 +2638,28 @@ function showCreateGroupModal() {
 async function submitCreateGroupRequest() {
   const name = document.getElementById('cgName').value.trim();
   const alertEl = document.getElementById('cgAlert');
+  const btn = document.querySelector('#createGroupModal .btn-primary');
 
   if (!name) {
     alertEl.innerHTML = '<div style="color:var(--red);margin-bottom:10px">Group name is required</div>';
     return;
   }
 
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Sending...'; }
+  alertEl.innerHTML = '';
+
   try {
     const res = await api('/api/chat-groups/request', {
       method: 'POST',
       body: JSON.stringify({ group_name: name, max_members: 12 })
     });
-    showToast(res.message || 'Group request sent!', 'success');
+    showToast(res.message || 'Group request sent! Waiting for Admin approval.', 'success');
     document.getElementById('createGroupModal').classList.add('hidden');
-    loadChatGroups();
+    await loadChatGroups();
   } catch(e) {
-    alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+    alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message || 'Failed to send request'}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Send Request to Admin'; }
   }
 }
 
@@ -2897,11 +2951,44 @@ async function doChangePassword() {
   }
 }
 
+async function uploadMemberPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const alertEl = document.getElementById('epAlert');
+
+  try {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const res = await api('/api/member-auth/profile-photo', {
+          method: 'POST',
+          body: JSON.stringify({ image_data: e.target.result })
+        });
+        showToast(res.message || 'Profile photo uploaded successfully!', 'success');
+        if (currentUser) currentUser.profile_photo = res.profile_photo;
+        updateHeaderUI();
+        const prev = document.getElementById('epPhotoPreview');
+        if (prev) prev.innerHTML = `<img src="${res.profile_photo}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid var(--gold)">`;
+      } catch(err) {
+        if (alertEl) alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${err.message}</div>`;
+      }
+    };
+    reader.readAsDataURL(file);
+  } catch(e) {
+    if (alertEl) alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+  }
+}
+
 function showEditProfileModal() {
-  if (currentMember) {
-    document.getElementById('epName').value = currentMember.name || '';
-    document.getElementById('epEmail').value = currentMember.email || '';
-    document.getElementById('epUpi').value = currentMember.upi_id || '';
+  const target = currentUser || {};
+  document.getElementById('epName').value = target.name || '';
+  document.getElementById('epEmail').value = target.email || '';
+  document.getElementById('epUpi').value = target.upi_id || '';
+  const prev = document.getElementById('epPhotoPreview');
+  if (prev && target.profile_photo) {
+    prev.innerHTML = `<img src="${target.profile_photo}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid var(--gold)">`;
+  } else if (prev) {
+    prev.innerHTML = '';
   }
   document.getElementById('editProfileModal').classList.remove('hidden');
 }
@@ -2924,11 +3011,10 @@ async function doSaveProfile() {
     });
     showToast('Profile updated successfully!', 'success');
     document.getElementById('editProfileModal').classList.add('hidden');
-    loadMemberProfile();
+    if (res.member) currentUser = { ...currentUser, ...res.member };
   } catch(e) {
-    alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+    if (alertEl) alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
   }
-}
 }
 
 // ============================================================

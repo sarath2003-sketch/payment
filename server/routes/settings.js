@@ -13,7 +13,7 @@ router.get('/public', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT key, value FROM app_settings
-      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','whatsapp_link','default_payment_amount','payment_instructions_en','payment_instructions_ta')
+      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','admin_upi_id','admin_upi_name','whatsapp_link','default_payment_amount','payment_instructions_en','payment_instructions_ta')
     `);
     const settings = {};
     result.rows.forEach(row => { settings[row.key] = row.value; });
@@ -46,6 +46,7 @@ router.put('/', authenticateToken, requireAdmin, async (req, res) => {
   const allowed = [
     'org_name', 'org_name_tamil', 'whatsapp_link', 'default_payment_amount',
     'payment_instructions_en', 'payment_instructions_ta',
+    'admin_upi_id', 'admin_upi_name', 'qr_path',
     'auction_default_duration', 'auction_default_starting_amount', 'auction_default_bid_increment',
     'notifications_enabled', 'sound_enabled'
   ];
@@ -64,6 +65,48 @@ router.put('/', authenticateToken, requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Error updating settings:', err);
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// ============================================================
+// POST /api/settings/upload-qr — Admin: Upload QR Code Image
+// ============================================================
+router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    let qrUrl = '';
+    if (req.body && req.body.image_data) {
+      const base64Data = req.body.image_data.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `qr_${Date.now()}.png`;
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const filePath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      qrUrl = `/uploads/${filename}`;
+    } else if (req.files && (req.files.qr || req.files.qr_code || req.files.image)) {
+      const file = req.files.qr || req.files.qr_code || req.files.image;
+      const ext = path.extname(file.name) || '.png';
+      const filename = `qr_${Date.now()}${ext}`;
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const filePath = path.join(uploadsDir, filename);
+      await file.mv(filePath);
+      qrUrl = `/uploads/${filename}`;
+    } else {
+      return res.status(400).json({ error: 'No image provided for QR code.' });
+    }
+
+    await pool.query(`
+      INSERT INTO app_settings (key, value, updated_at) VALUES ('qr_path', $1, CURRENT_TIMESTAMP)
+      ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP
+    `, [qrUrl]);
+
+    res.json({ message: 'QR Code uploaded successfully!', qr_path: qrUrl });
+  } catch (err) {
+    console.error('Error uploading QR code:', err);
+    res.status(500).json({ error: err.message || 'Failed to upload QR code' });
   }
 });
 
