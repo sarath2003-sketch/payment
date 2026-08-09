@@ -66,7 +66,8 @@ router.post(['/', '/register'], async (req, res) => {
     const phoneCheck = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1', [cleanPhone]);
     if (phoneCheck.rows.length > 0) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: `Phone number ${cleanPhone} is already registered to Member ID ${phoneCheck.rows[0].member_id}. Please login.` });
+      const existingId = phoneCheck.rows[0]?.member_id || phoneCheck.rows[0]?.id || '';
+      return res.status(400).json({ error: `Phone number ${cleanPhone} is already registered to Member ID ${existingId}. Please login with your password.` });
     }
 
     // Auto-resolve duplicate email by appending unique suffix if needed
@@ -89,8 +90,10 @@ router.post(['/', '/register'], async (req, res) => {
 
     if (dupCheck.rows.length > 0) {
       isDuplicate = true;
-      duplicateOfId = dupCheck.rows[0].id;
-      duplicateReason = `Similar name/UPI matching existing member ${dupCheck.rows[0].member_id} (${dupCheck.rows[0].name})`;
+      duplicateOfId = dupCheck.rows[0]?.id || null;
+      const dupMemberId = dupCheck.rows[0]?.member_id || dupCheck.rows[0]?.id || '';
+      const dupName = dupCheck.rows[0]?.name || '';
+      duplicateReason = `Similar name/UPI matching existing member ${dupMemberId} (${dupName})`;
     }
 
     // Generate next sequential Member ID starting at 101
