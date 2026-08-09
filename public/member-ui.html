@@ -681,6 +681,63 @@
       text-decoration: none;
     }
     .whatsapp-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,211,102,0.3); }
+
+    /* Speaker slots grid (12 slots) */
+    .speaker-slots-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 600px) {
+      .speaker-slots-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    }
+    .speaker-slot {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 8px;
+      text-align: center;
+      position: relative;
+    }
+    .speaker-slot.empty {
+      border: 1px dashed rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.02);
+      opacity: 0.6;
+    }
+    .speaker-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      color: white;
+      font-weight: 800;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 6px;
+      position: relative;
+    }
+    .speaker-slot.empty .speaker-avatar {
+      background: rgba(255,255,255,0.05);
+      color: var(--text3);
+    }
+    .mic-badge {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      font-size: 11px;
+      background: rgba(0,0,0,0.8);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .speaker-name { font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .speaker-id { font-size: 10px; color: var(--text3); }
+    .slot-actions { display: flex; gap: 4px; justify-content: center; margin-top: 4px; }
     /* Loading spinner */
     .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -1109,6 +1166,81 @@
       </div>
     </div>
 
+    <!-- CHAT ROOMS LIST PAGE -->
+    <div id="chatRoomsPage" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h2 style="font-size:20px;font-weight:800;color:var(--gold);display:flex;align-items:center;gap:8px">💬 Chat Rooms</h2>
+        <button class="btn-primary" style="padding:8px 16px;font-size:13px" onclick="showCreateGroupModal()">+ Create Group</button>
+      </div>
+
+      <!-- Pending user requests -->
+      <div id="userGroupRequestsContainer"></div>
+
+      <!-- Live Chat Groups Grid -->
+      <div id="chatGroupsGrid">
+        <div class="loading-state" style="padding:20px"><div class="big-spinner"></div><span>Loading chat rooms...</span></div>
+      </div>
+    </div>
+
+    <!-- LIVE CHAT ROOM DETAIL PAGE -->
+    <div id="chatRoomDetailPage" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="icon-btn" onclick="leaveCurrentChatRoomView()">←</button>
+          <div>
+            <h3 style="font-size:18px;font-weight:800;color:var(--gold)" id="crTitle">Group Name</h3>
+            <div style="font-size:12px;color:var(--green);font-weight:600" id="crOnlineCount">🟢 0 / 12 Members Online</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" style="padding:6px 12px;font-size:12px" id="crTransferAdminBtn" onclick="showTransferAdminModal()">👑 Transfer Admin</button>
+          <button class="btn-danger" style="padding:6px 12px;font-size:12px" onclick="doLeaveGroup()">🚪 Leave Group</button>
+        </div>
+      </div>
+
+      <!-- 12 SPEAKER SLOTS GRID -->
+      <div class="card" style="padding:14px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text2)">🎙️ SPEAKER SLOTS (MAX 12)</div>
+          <button class="btn-secondary" style="padding:4px 10px;font-size:11px" id="selfMicBtn" onclick="toggleSelfMic()">🎤 Mute Myself</button>
+        </div>
+        <div class="speaker-slots-grid" id="speakerSlotsGrid">
+          <!-- 12 slots rendered here -->
+        </div>
+      </div>
+
+      <!-- CHAT MESSAGES & INPUT -->
+      <div class="card" style="padding:14px;display:flex;flex-direction:column;height:420px">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:8px">💬 REAL-TIME CHAT MESSAGES</div>
+        <div class="chat-messages" id="groupChatMessages" style="flex:1;overflow-y:auto;padding:8px;background:rgba(0,0,0,0.2);border-radius:10px;margin-bottom:10px">
+          <!-- messages -->
+        </div>
+
+        <!-- EMOJI PICKER POPOVER -->
+        <div id="emojiPicker" class="hidden" style="padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('😊')">😊</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('👍')">👍</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('🔥')">🔥</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('❤️')">❤️</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('🎉')">🎉</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('👏')">👏</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('🚀')">🚀</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('😂')">😂</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('💰')">💰</span>
+          <span style="font-size:20px;cursor:pointer" onclick="insertEmoji('🏆')">🏆</span>
+        </div>
+
+        <!-- INPUT BAR -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="icon-btn" onclick="toggleEmojiPicker()" title="Emoji">😊</button>
+          <button class="icon-btn" onclick="document.getElementById('groupChatImageFile').click()" title="Send Photo">📷</button>
+          <input type="file" id="groupChatImageFile" accept="image/*" style="display:none" onchange="sendGroupImage(this)">
+          <input type="text" class="chat-input" id="groupChatInput" placeholder="Type a message..." maxlength="500" onkeypress="if(event.key==='Enter')sendGroupTextMessage()">
+          <button class="chat-send-btn" onclick="sendGroupTextMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+
     <!-- SETTINGS PAGE -->
     <div id="settingsPage" class="page">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
@@ -1198,6 +1330,10 @@
       <span class="nav-icon">⚡</span>
       <span class="nav-label" data-i18n="auction">Auction</span>
     </button>
+    <button class="nav-item" id="navGroupChat" onclick="showPage('chat-rooms')">
+      <span class="nav-icon">💬</span>
+      <span class="nav-label">Chat Rooms</span>
+    </button>
     <button class="nav-item" id="navSettings" onclick="showPage('settings')">
       <span class="nav-icon">⚙️</span>
       <span class="nav-label" data-i18n="settings">Settings</span>
@@ -1249,6 +1385,45 @@
     <div class="modal-actions">
       <button class="btn-secondary" onclick="document.getElementById('editProfileModal').classList.add('hidden')" data-i18n="cancel">Cancel</button>
       <button class="btn-primary" onclick="doSaveProfile()"><span data-i18n="save">Save Profile</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Chat Group Modal -->
+<div id="createGroupModal" class="modal-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">➕ Create Chat Group</div>
+    <div id="cgAlert"></div>
+    <div class="form-group">
+      <label>Group Name *</label>
+      <input type="text" id="cgName" placeholder="e.g. SEAT FOUND, CHIT CLUB B">
+    </div>
+    <div class="form-group">
+      <label>Maximum Members</label>
+      <input type="number" id="cgMax" value="12" min="2" max="12" disabled style="background:rgba(255,255,255,0.05)">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Fixed at maximum 12 active members per room</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('createGroupModal').classList.add('hidden')" data-i18n="cancel">Cancel</button>
+      <button class="btn-primary" onclick="submitCreateGroupRequest()"><span>Send Request to Admin</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer Group Admin Modal -->
+<div id="transferAdminModal" class="modal-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">👑 Transfer Group Admin</div>
+    <div id="taAlert"></div>
+    <div class="form-group">
+      <label>Select New Group Owner *</label>
+      <select id="taMemberSelect">
+        <option value="">Select a group member...</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('transferAdminModal').classList.add('hidden')" data-i18n="cancel">Cancel</button>
+      <button class="btn-primary" onclick="confirmTransferAdmin()"><span>Confirm Transfer</span></button>
     </div>
   </div>
 </div>
@@ -1610,8 +1785,8 @@ function updateDashboard(profile) {
 // ============================================================
 // Page Navigation
 // ============================================================
-const pageMap = { dashboard: 'dashPage', payment: 'paymentPage', history: 'historyPage', auction: 'auctionPage', settings: 'settingsPage' };
-const navMap = { dashboard: 'navDash', payment: 'navPayment', history: 'navHistory', auction: 'navAuction', settings: 'navSettings' };
+const pageMap = { dashboard: 'dashPage', payment: 'paymentPage', history: 'historyPage', auction: 'auctionPage', 'chat-rooms': 'chatRoomsPage', 'chat-room-detail': 'chatRoomDetailPage', settings: 'settingsPage' };
+const navMap = { dashboard: 'navDash', payment: 'navPayment', history: 'navHistory', auction: 'navAuction', 'chat-rooms': 'navGroupChat', settings: 'navSettings' };
 function showPage(name) {
   Object.values(pageMap).forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   Object.values(navMap).forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
@@ -1620,6 +1795,7 @@ function showPage(name) {
   // Page-specific loads
   if (name === 'history') loadPaymentHistory();
   if (name === 'auction') loadAuction();
+  if (name === 'chat-rooms') loadChatGroups();
   if (name === 'payment') loadSettings();
   window.scrollTo(0, 0);
 }
@@ -2258,6 +2434,431 @@ function initSocket() {
     loadNotifications();
     showToast(`📅 ${t('auctionScheduled')}: ${data.auction?.title}`, 'info', 5000);
   });
+
+  // Group Chat Listeners
+  setupGroupSocketListeners();
+
+// ============================================================
+// LIVE CHAT ROOMS & GROUP CHAT FEATURE
+// ============================================================
+let currentChatGroupId = null;
+let currentGroupData = null;
+let currentSpeakerSlots = [];
+let isSelfMuted = false;
+
+// Socket listeners for Group Chat
+function setupGroupSocketListeners() {
+  if (!socket) return;
+
+  socket.on('group:member-joined', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      showToast(`🟢 ${data.name || 'Member'} (${data.member_id}) joined the chat room`, 'info');
+      refreshChatRoom(currentChatGroupId);
+    }
+  });
+
+  socket.on('group:member-left', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      showToast(`🚪 ${data.name || 'Member'} left the chat room`, 'info');
+      refreshChatRoom(currentChatGroupId);
+    }
+  });
+
+  socket.on('group:member-muted', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      refreshChatRoom(currentChatGroupId);
+    }
+  });
+
+  socket.on('group:member-unmuted', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      refreshChatRoom(currentChatGroupId);
+    }
+  });
+
+  socket.on('group:new-message', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      appendGroupChatMessage(data, true);
+    }
+  });
+
+  socket.on('group:member-removed', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      if (data.member_id_pk === currentUser.id) {
+        showToast('❌ You have been removed from this chat room by the Group Admin', 'warning');
+        leaveCurrentChatRoomView();
+      } else {
+        refreshChatRoom(currentChatGroupId);
+      }
+    }
+  });
+
+  socket.on('group:admin-transferred', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      showToast(`👑 ${data.new_admin_name} is now the Group Admin!`, 'info');
+      refreshChatRoom(currentChatGroupId);
+    }
+  });
+
+  socket.on('group:deactivated', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      showToast('⚠️ This group has been deactivated by Main Admin.', 'warning');
+      leaveCurrentChatRoomView();
+    }
+  });
+
+  socket.on('group:deleted', (data) => {
+    if (data.group_id === currentChatGroupId) {
+      showToast('⚠️ This group has been deleted by Main Admin.', 'warning');
+      leaveCurrentChatRoomView();
+    }
+  });
+}
+
+// Fetch all chat groups
+async function loadChatGroups() {
+  const container = document.getElementById('chatGroupsGrid');
+  const reqContainer = document.getElementById('userGroupRequestsContainer');
+  try {
+    const data = await api('/api/chat-groups');
+
+    // Render user pending requests
+    if (data.pending_requests && data.pending_requests.length > 0) {
+      reqContainer.innerHTML = `
+        <div style="margin-bottom:16px;padding:12px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:12px">
+          <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px">⏳ Your Pending Group Requests</div>
+          ${data.pending_requests.map(r => `
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:4px">
+              <span><strong>${esc(r.group_name)}</strong></span>
+              <span class="badge badge-${r.status.toLowerCase()}">${r.status === 'PENDING' ? 'Pending Admin Approval' : r.status}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      reqContainer.innerHTML = '';
+    }
+
+    if (!data.groups || data.groups.length === 0) {
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:30px">
+          <div style="font-size:36px;margin-bottom:10px">💬</div>
+          <h3 style="color:var(--gold);margin-bottom:6px">No Active Chat Rooms</h3>
+          <p style="color:var(--text3);font-size:13px">Click "+ Create Group" above to request a new chat room!</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:14px">
+        ${data.groups.map(g => {
+          const isFull = g.member_count >= 12;
+          const statusBadge = isFull ? `<span class="badge badge-rejected">Room Full (12/12)</span>` : `<span class="badge badge-active">● Active</span>`;
+          return `
+            <div class="card" style="padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+              <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <h3 style="font-size:16px;font-weight:800;color:var(--text)">${esc(g.group_name)}</h3>
+                  ${statusBadge}
+                </div>
+                <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Group Admin: <strong>${esc(g.owner_name || 'Admin')}</strong> (${g.owner_member_id || ''})</div>
+                <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px">👥 ${g.member_count} / ${g.max_members} Members</div>
+              </div>
+              <div>
+                ${g.is_member ? `
+                  <button class="btn-primary" style="width:100%;padding:10px" onclick="openChatRoom(${g.id})">💬 Enter Chat Room</button>
+                ` : isFull ? `
+                  <button class="btn-secondary" style="width:100%;padding:10px" disabled>Room Full (12/12)</button>
+                ` : `
+                  <button class="btn-primary" style="width:100%;padding:10px" onclick="joinChatGroup(${g.id})">👉 Join Chat Room</button>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">${e.message}</div>`;
+  }
+}
+
+function showCreateGroupModal() {
+  document.getElementById('cgName').value = '';
+  document.getElementById('cgAlert').innerHTML = '';
+  document.getElementById('createGroupModal').classList.remove('hidden');
+}
+
+async function submitCreateGroupRequest() {
+  const name = document.getElementById('cgName').value.trim();
+  const alertEl = document.getElementById('cgAlert');
+
+  if (!name) {
+    alertEl.innerHTML = '<div style="color:var(--red);margin-bottom:10px">Group name is required</div>';
+    return;
+  }
+
+  try {
+    const res = await api('/api/chat-groups/request', {
+      method: 'POST',
+      body: JSON.stringify({ group_name: name, max_members: 12 })
+    });
+    showToast(res.message || 'Group request sent!', 'success');
+    document.getElementById('createGroupModal').classList.add('hidden');
+    loadChatGroups();
+  } catch(e) {
+    alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+  }
+}
+
+async function joinChatGroup(groupId) {
+  try {
+    const res = await api(`/api/chat-groups/${groupId}/join`, { method: 'POST' });
+    showToast(res.message || 'Joined chat room!', 'success');
+    openChatRoom(groupId);
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function openChatRoom(groupId) {
+  currentChatGroupId = groupId;
+  showPage('chat-room-detail');
+  if (socket) socket.emit('group:join-room', { group_id: groupId });
+  await refreshChatRoom(groupId);
+  await loadGroupMessages(groupId);
+}
+
+async function refreshChatRoom(groupId) {
+  if (!groupId || groupId !== currentChatGroupId) return;
+  try {
+    const data = await api(`/api/chat-groups/${groupId}`);
+    currentGroupData = data.group;
+    currentSpeakerSlots = data.speaker_slots;
+
+    document.getElementById('crTitle').textContent = data.group.group_name;
+    document.getElementById('crOnlineCount').textContent = `🟢 ${data.group.member_count} / 12 Members Online`;
+
+    // Show or hide Transfer Admin button if user is Group Owner
+    const isOwner = data.group.group_admin_id === currentUser.id;
+    document.getElementById('crTransferAdminBtn').style.display = isOwner ? 'block' : 'none';
+
+    renderSpeakerSlots(data.speaker_slots, isOwner);
+  } catch(e) {
+    console.error('Error refreshing chat room:', e);
+  }
+}
+
+function renderSpeakerSlots(slots, isOwner) {
+  const container = document.getElementById('speakerSlotsGrid');
+  container.innerHTML = slots.map(s => {
+    if (s.is_empty) {
+      return `
+        <div class="speaker-slot empty">
+          <div class="speaker-avatar">+</div>
+          <div class="speaker-name">Empty Slot</div>
+          <div class="speaker-id">Available</div>
+        </div>
+      `;
+    }
+
+    const micIcon = s.is_muted ? '🔇' : '🎤';
+    const isSelf = s.member_id_pk === currentUser.id;
+
+    return `
+      <div class="speaker-slot" style="${s.is_owner ? 'border-color:var(--gold)' : ''}">
+        <div class="speaker-avatar">
+          ${s.name.charAt(0).toUpperCase()}
+          <span class="mic-badge">${micIcon}</span>
+        </div>
+        <div class="speaker-name">${s.is_owner ? '👑 ' : ''}${esc(s.name)}</div>
+        <div class="speaker-id">${esc(s.member_id)}</div>
+        ${(isOwner && !isSelf) ? `
+          <div class="slot-actions">
+            <button class="btn-secondary" style="padding:2px 6px;font-size:10px" onclick="toggleMemberMute(${s.member_id_pk}, ${s.is_muted})">${s.is_muted ? '🔊' : '🔇'}</button>
+            <button class="btn-danger" style="padding:2px 6px;font-size:10px" onclick="removeMemberFromRoom(${s.member_id_pk}, '${esc(s.name)}')">❌</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadGroupMessages(groupId) {
+  const container = document.getElementById('groupChatMessages');
+  try {
+    const data = await api(`/api/chat-groups/${groupId}/messages`);
+    container.innerHTML = '';
+    data.messages.forEach(m => appendGroupChatMessage(m, false));
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`;
+  }
+}
+
+function appendGroupChatMessage(m, autoScroll = true) {
+  const container = document.getElementById('groupChatMessages');
+  if (!container) return;
+  const isMe = m.member_id === currentUser.id;
+
+  const msgDiv = document.createElement('div');
+  msgDiv.style.cssText = `margin-bottom:10px;display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'}`;
+
+  const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  let contentHtml = '';
+  if (m.message_type === 'image' && m.media_url) {
+    contentHtml = `<img src="${BASE + m.media_url}" style="max-width:200px;border-radius:10px;margin-top:4px" onclick="window.open(this.src)">`;
+  } else {
+    contentHtml = `<div style="font-size:13px;word-break:break-word">${esc(m.message)}</div>`;
+  }
+
+  msgDiv.innerHTML = `
+    <div style="font-size:11px;color:var(--text3);margin-bottom:2px">
+      ${isMe ? 'You' : esc(m.sender_name)} <span style="font-size:10px">(${m.sender_member_id})</span> · ${timeStr}
+    </div>
+    <div style="background:${isMe ? 'linear-gradient(135deg, var(--gold-dark), var(--gold))' : 'var(--bg2)'};color:${isMe ? 'white' : 'var(--text)'};padding:8px 12px;border-radius:12px;max-width:80%;box-shadow:var(--shadow)">
+      ${contentHtml}
+    </div>
+  `;
+
+  container.appendChild(msgDiv);
+  if (autoScroll) container.scrollTop = container.scrollHeight;
+}
+
+async function sendGroupTextMessage() {
+  const input = document.getElementById('groupChatInput');
+  const text = input.value.trim();
+  if (!text || !currentChatGroupId) return;
+
+  input.value = '';
+  try {
+    await api(`/api/chat-groups/${currentChatGroupId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message: text })
+    });
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+async function sendGroupImage(input) {
+  if (!input.files || !input.files[0] || !currentChatGroupId) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    showToast('Uploading photo...', 'info');
+    const response = await fetch(`${BASE}/api/chat-groups/${currentChatGroupId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authToken}` },
+      body: formData
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    showToast('Photo sent!', 'success');
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    input.value = '';
+  }
+}
+
+async function toggleSelfMic() {
+  if (!currentChatGroupId) return;
+  isSelfMuted = !isSelfMuted;
+  const endpoint = isSelfMuted ? `/api/chat-groups/${currentChatGroupId}/mute` : `/api/chat-groups/${currentChatGroupId}/unmute`;
+  try {
+    await api(endpoint, { method: 'POST' });
+    document.getElementById('selfMicBtn').textContent = isSelfMuted ? '🔊 Unmute Myself' : '🎤 Mute Myself';
+    showToast(isSelfMuted ? 'Muted' : 'Unmuted', 'info');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function toggleMemberMute(targetId, isMuted) {
+  if (!currentChatGroupId) return;
+  const endpoint = isMuted ? `/api/chat-groups/${currentChatGroupId}/unmute` : `/api/chat-groups/${currentChatGroupId}/mute`;
+  try {
+    await api(endpoint, { method: 'POST', body: JSON.stringify({ target_member_id: targetId }) });
+    showToast(isMuted ? 'Member unmuted' : 'Member muted', 'success');
+    refreshChatRoom(currentChatGroupId);
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function removeMemberFromRoom(targetId, name) {
+  if (!currentChatGroupId) return;
+  if (!confirm(`Remove member "${name}" from this chat room?`)) return;
+  try {
+    await api(`/api/chat-groups/${currentChatGroupId}/remove-member`, { method: 'POST', body: JSON.stringify({ target_member_id: targetId }) });
+    showToast('Member removed', 'info');
+    refreshChatRoom(currentChatGroupId);
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function showTransferAdminModal() {
+  if (!currentSpeakerSlots || !currentSpeakerSlots.length) return;
+  const candidates = currentSpeakerSlots.filter(s => !s.is_empty && s.member_id_pk !== currentUser.id);
+  const select = document.getElementById('taMemberSelect');
+  if (candidates.length === 0) {
+    showToast('No other members present in room to transfer ownership to', 'warning');
+    return;
+  }
+  select.innerHTML = '<option value="">Select a group member...</option>' + candidates.map(c => `
+    <option value="${c.member_id_pk}">${esc(c.name)} (${c.member_id})</option>
+  `).join('');
+  document.getElementById('taAlert').innerHTML = '';
+  document.getElementById('transferAdminModal').classList.remove('hidden');
+}
+
+async function confirmTransferAdmin() {
+  const select = document.getElementById('taMemberSelect');
+  const targetId = parseInt(select.value);
+  if (!targetId || !currentChatGroupId) {
+    document.getElementById('taAlert').innerHTML = '<div style="color:var(--red);margin-bottom:10px">Select a member</div>';
+    return;
+  }
+  try {
+    await api(`/api/chat-groups/${currentChatGroupId}/transfer-admin`, { method: 'POST', body: JSON.stringify({ new_admin_id: targetId }) });
+    showToast('Group admin transferred successfully!', 'success');
+    document.getElementById('transferAdminModal').classList.add('hidden');
+    refreshChatRoom(currentChatGroupId);
+  } catch(e) {
+    document.getElementById('taAlert').innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+  }
+}
+
+async function doLeaveGroup() {
+  if (!currentChatGroupId) return;
+  try {
+    await api(`/api/chat-groups/${currentChatGroupId}/leave`, { method: 'POST' });
+    showToast('Left chat room', 'info');
+    leaveCurrentChatRoomView();
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function leaveCurrentChatRoomView() {
+  if (socket && currentChatGroupId) {
+    socket.emit('group:leave-room', { group_id: currentChatGroupId });
+  }
+  currentChatGroupId = null;
+  currentGroupData = null;
+  showPage('chat-rooms');
+}
+
+function toggleEmojiPicker() {
+  document.getElementById('emojiPicker').classList.toggle('hidden');
+}
+
+function insertEmoji(emoji) {
+  const input = document.getElementById('groupChatInput');
+  input.value += emoji;
+  document.getElementById('emojiPicker').classList.add('hidden');
+  input.focus();
+}
 
 // Profile and Password Functions
 function showChangePassword() {

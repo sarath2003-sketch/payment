@@ -35,6 +35,8 @@ const settingsRoutes = require('./server/routes/settings');
 const adminMembersRoutes = require('./server/routes/admin-members');
 const adminPaymentsNewRoutes = require('./server/routes/admin-payments');
 const auditLogsRoutes = require('./server/routes/audit-logs');
+const chatGroupsRoutes = require('./server/routes/chat-groups');
+const adminChatGroupsRoutes = require('./server/routes/admin-chat-groups');
 const { endAuction } = require('./server/routes/auction');
 
 const app = express();
@@ -145,6 +147,21 @@ io.on('connection', (socket) => {
   // Leave auction room
   socket.on('leave-auction', ({ auction_id }) => {
     socket.leave(`auction_${auction_id}`);
+  });
+
+  // Join Chat Group room
+  socket.on('group:join-room', ({ group_id }) => {
+    if (group_id) {
+      socket.join(`group_${group_id}`);
+      console.log(`[Socket.IO] ${socket.id} joined group_${group_id}`);
+    }
+  });
+
+  // Leave Chat Group room
+  socket.on('group:leave-room', ({ group_id }) => {
+    if (group_id) {
+      socket.leave(`group_${group_id}`);
+    }
   });
 
   // Send chat message via socket
@@ -387,6 +404,12 @@ app.use('/admin/payments', adminPaymentsNewRoutes);
 
 app.use('/api/admin/audit-logs', auditLogsRoutes);
 app.use('/admin/audit-logs', auditLogsRoutes);
+
+app.use('/api/chat-groups', chatGroupsRoutes);
+app.use('/chat-groups', chatGroupsRoutes);
+
+app.use('/api/admin/chat-groups', adminChatGroupsRoutes);
+app.use('/admin/chat-groups', adminChatGroupsRoutes);
 
 app.use('/api/payment-verification', paymentVerificationRoutes);
 app.use('/payment-verification', paymentVerificationRoutes);

@@ -846,6 +846,8 @@
           Activation Status</button>
         <button class="nav-item" onclick="showPage('auction-control')" id="nav-auction-control"><span
             class="nav-icon">🏛️</span> Live Auction</button>
+        <button class="nav-item" onclick="showPage('admin-chat-groups')" id="nav-admin-chat-groups"><span
+            class="nav-icon">💬</span> Chat Groups</button>
 
         <div class="nav-group-label">System</div>
         <button class="nav-item" onclick="showPage('audit-log')" id="nav-audit-log"><span class="nav-icon">📜</span>
@@ -1089,6 +1091,39 @@
           </div>
         </div>
 
+        <!-- ================= CHAT GROUPS MANAGEMENT ================= -->
+        <div id="admin-chat-groups" class="page">
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header">
+              <div class="card-title">⏳ Pending Group Creation Requests</div>
+              <button class="btn-secondary btn-sm" onclick="loadAdminGroupRequests()">🔄 Refresh</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>Group Name</th><th>Requested By</th><th>Phone</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="adminGroupRequestsTableBody"><tr><td colspan="6" style="text-align:center;padding:20px">Loading requests...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💬 All Active & Live Chat Groups</div>
+              <button class="btn-secondary btn-sm" onclick="loadAdminGroups()">🔄 Refresh</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>ID</th><th>Group Name</th><th>Group Owner (Admin)</th><th>Members</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="adminGroupsTableBody"><tr><td colspan="7" style="text-align:center;padding:20px">Loading chat groups...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- ================= AUDIT LOGS ================= -->
         <div id="audit-log" class="page">
           <div class="card">
@@ -1288,6 +1323,7 @@
       if (name === 'duplicates') loadDuplicates();
       if (name === 'payments') loadAdminPayments();
       if (name === 'activation') loadActivationList();
+      if (name === 'admin-chat-groups') { loadAdminGroupRequests(); loadAdminGroups(); }
       if (name === 'audit-log') loadAuditLogs();
       if (name === 'settings') loadSettings();
     }
@@ -1673,6 +1709,93 @@
       if (confirmCb) confirmCb();
     };
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    // Chat Groups Admin
+    async function loadAdminGroupRequests() {
+      try {
+        const d = await api('/api/admin/chat-groups/requests');
+        const tbody = document.getElementById('adminGroupRequestsTableBody');
+        if (!d.requests || !d.requests.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">✅ No pending group creation requests.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = d.requests.map(r => `
+          <tr>
+            <td><strong style="color:var(--primary);font-size:15px">${esc(r.group_name)}</strong></td>
+            <td>${esc(r.requester_name)} <span style="color:var(--text-muted);font-size:12px">(${r.requester_member_id})</span></td>
+            <td>${esc(r.requester_phone)}</td>
+            <td>${new Date(r.created_at).toLocaleDateString()}</td>
+            <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
+            <td style="display:flex;gap:6px">
+              ${r.status === 'PENDING' ? `
+                <button class="btn-success btn-sm" onclick="approveGroupRequest(${r.id})">✅ Approve</button>
+                <button class="btn-danger btn-sm" onclick="rejectGroupRequest(${r.id})">❌ Reject</button>
+              ` : `<span>—</span>`}
+            </td>
+          </tr>
+        `).join('');
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    async function loadAdminGroups() {
+      try {
+        const d = await api('/api/admin/chat-groups');
+        const tbody = document.getElementById('adminGroupsTableBody');
+        if (!d.groups || !d.groups.length) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">No active chat groups found.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = d.groups.map(g => `
+          <tr>
+            <td>#${g.id}</td>
+            <td><strong style="color:var(--primary);font-size:15px">${esc(g.group_name)}</strong></td>
+            <td>${esc(g.owner_name || 'Admin')} <span style="color:var(--text-muted);font-size:12px">(${g.owner_member_id || ''})</span></td>
+            <td><strong>${g.member_count} / ${g.max_members}</strong> Members</td>
+            <td><span class="badge badge-${g.status.toLowerCase()}">${g.status}</span></td>
+            <td>${new Date(g.created_at).toLocaleDateString()}</td>
+            <td style="display:flex;gap:6px">
+              ${g.status === 'ACTIVE' || g.status === 'FULL' ? `<button class="btn-warning btn-sm" onclick="deactivateGroup(${g.id})">Deactivate</button>` : ''}
+              <button class="btn-danger btn-sm" onclick="deleteGroup(${g.id}, '${esc(g.group_name)}')">🗑 Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    async function approveGroupRequest(id) {
+      try {
+        await api(`/api/admin/chat-groups/requests/${id}/approve`, { method: 'POST' });
+        showToast('Group request approved! Group is now live.', 'success');
+        loadAdminGroupRequests();
+        loadAdminGroups();
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    async function rejectGroupRequest(id) {
+      try {
+        await api(`/api/admin/chat-groups/requests/${id}/reject`, { method: 'POST' });
+        showToast('Group request rejected', 'info');
+        loadAdminGroupRequests();
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    async function deactivateGroup(id) {
+      try {
+        await api(`/api/admin/chat-groups/groups/${id}/deactivate`, { method: 'POST' });
+        showToast('Group deactivated', 'info');
+        loadAdminGroups();
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+
+    function deleteGroup(id, name) {
+      openConfirm('Delete Chat Group', `Are you sure you want to permanently delete chat group "${name}"? This action cannot be undone.`, async () => {
+        try {
+          await api(`/api/admin/chat-groups/groups/${id}`, { method: 'DELETE' });
+          showToast('Group permanently deleted', 'info');
+          loadAdminGroups();
+        } catch(e) { showToast(e.message, 'error'); }
+      });
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       if (adminToken) initAdminApp();

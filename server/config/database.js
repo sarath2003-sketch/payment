@@ -207,6 +207,58 @@ function initSQLiteFallback() {
         );
       `);
 
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS chat_groups (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_name TEXT NOT NULL,
+          created_by INTEGER,
+          group_admin_id INTEGER,
+          max_members INTEGER DEFAULT 12,
+          status TEXT DEFAULT 'PENDING',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS chat_group_members (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_id INTEGER NOT NULL,
+          member_id INTEGER NOT NULL,
+          role TEXT DEFAULT 'MEMBER',
+          is_muted INTEGER DEFAULT 0,
+          is_online INTEGER DEFAULT 1,
+          joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(group_id, member_id)
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS chat_group_messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_id INTEGER NOT NULL,
+          member_id INTEGER,
+          sender_name TEXT,
+          sender_member_id TEXT,
+          message_type TEXT DEFAULT 'text',
+          message TEXT,
+          media_url TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS chat_group_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_name TEXT NOT NULL,
+          requested_by INTEGER NOT NULL,
+          status TEXT DEFAULT 'PENDING',
+          reviewed_by INTEGER,
+          reviewed_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // Seed initial admin user if missing
       sqliteDb.run(`
         INSERT OR IGNORE INTO admin_users (username, password_hash, email, status)

@@ -234,6 +234,58 @@ CREATE TABLE IF NOT EXISTS muted_members (
 );
 
 -- ============================================================
+-- LIVE CHAT GROUPS / ROOMS TABLES
+-- ============================================================
+
+-- Chat Groups Table
+CREATE TABLE IF NOT EXISTS chat_groups (
+    id SERIAL PRIMARY KEY,
+    group_name VARCHAR(100) NOT NULL,
+    created_by INTEGER REFERENCES members(id) ON DELETE SET NULL,
+    group_admin_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+    max_members INTEGER DEFAULT 12,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat Group Members Table
+CREATE TABLE IF NOT EXISTS chat_group_members (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE,
+    member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
+    role VARCHAR(20) DEFAULT 'MEMBER',
+    is_muted BOOLEAN DEFAULT FALSE,
+    is_online BOOLEAN DEFAULT TRUE,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(group_id, member_id)
+);
+
+-- Chat Group Messages Table
+CREATE TABLE IF NOT EXISTS chat_group_messages (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE,
+    member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+    sender_name VARCHAR(255),
+    sender_member_id VARCHAR(50),
+    message_type VARCHAR(20) DEFAULT 'text',
+    message TEXT,
+    media_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat Group Requests Table
+CREATE TABLE IF NOT EXISTS chat_group_requests (
+    id SERIAL PRIMARY KEY,
+    group_name VARCHAR(100) NOT NULL,
+    requested_by INTEGER REFERENCES members(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    reviewed_by INTEGER REFERENCES admin_users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
 -- INDEXES
 -- ============================================================
 
