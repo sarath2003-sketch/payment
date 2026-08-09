@@ -9,9 +9,18 @@ CREATE TABLE IF NOT EXISTS members (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     phone VARCHAR(20) UNIQUE NOT NULL,
+    upi_id VARCHAR(100),
     password_hash VARCHAR(255) NOT NULL,
     balance DECIMAL(12, 2) DEFAULT 0.00,
     status VARCHAR(20) DEFAULT 'ACTIVE',
+    activation_status VARCHAR(20) DEFAULT 'PENDING',
+    payment_status VARCHAR(20) DEFAULT 'UNPAID',
+    group_category VARCHAR(100) DEFAULT 'General',
+    is_duplicate BOOLEAN DEFAULT FALSE,
+    duplicate_reason TEXT,
+    duplicate_of_id INTEGER,
+    duplicate_reviewed BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

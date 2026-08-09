@@ -60,13 +60,31 @@ function initSQLiteFallback() {
           name TEXT NOT NULL,
           email TEXT UNIQUE NOT NULL,
           phone TEXT UNIQUE NOT NULL,
+          upi_id TEXT,
           password_hash TEXT NOT NULL,
           balance REAL DEFAULT 0.00,
           status TEXT DEFAULT 'ACTIVE',
+          activation_status TEXT DEFAULT 'PENDING',
+          payment_status TEXT DEFAULT 'UNPAID',
+          group_category TEXT DEFAULT 'General',
+          is_duplicate INTEGER DEFAULT 0,
+          duplicate_reason TEXT,
+          duplicate_of_id INTEGER,
+          duplicate_reviewed INTEGER DEFAULT 0,
+          deleted_at DATETIME,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Safe column migration for SQLite if table already existed
+      const memberCols = ['upi_id TEXT', 'activation_status TEXT DEFAULT "PENDING"', 'payment_status TEXT DEFAULT "UNPAID"', 'group_category TEXT DEFAULT "General"', 'is_duplicate INTEGER DEFAULT 0', 'duplicate_reason TEXT', 'duplicate_of_id INTEGER', 'duplicate_reviewed INTEGER DEFAULT 0', 'deleted_at DATETIME'];
+      memberCols.forEach(colDef => {
+        const colName = colDef.split(' ')[0];
+        sqliteDb.run(`ALTER TABLE members ADD COLUMN ${colDef}`, (err) => {
+          // Ignore error if column already exists
+        });
+      });
 
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS admin_users (
@@ -142,6 +160,29 @@ function initSQLiteFallback() {
           expires_at DATETIME NOT NULL,
           attempts INTEGER DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS audit_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          actor_type TEXT NOT NULL,
+          actor_id INTEGER NOT NULL,
+          actor_name TEXT,
+          action TEXT NOT NULL,
+          entity_type TEXT,
+          entity_id INTEGER,
+          details TEXT,
+          ip_address TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS app_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);

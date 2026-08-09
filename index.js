@@ -27,6 +27,9 @@ const auctionRoutes = require('./server/routes/auction');
 const chatRoutes = require('./server/routes/chat');
 const notificationsRoutes = require('./server/routes/notifications');
 const settingsRoutes = require('./server/routes/settings');
+const adminMembersRoutes = require('./server/routes/admin-members');
+const adminPaymentsNewRoutes = require('./server/routes/admin-payments');
+const auditLogsRoutes = require('./server/routes/audit-logs');
 const { endAuction } = require('./server/routes/auction');
 
 const app = express();
@@ -370,6 +373,15 @@ app.use('/dashboard', dashboardRoutes);
 
 app.use('/api/import-export', importExportRoutes);
 app.use('/import-export', importExportRoutes);
+
+app.use('/api/admin/members', adminMembersRoutes);
+app.use('/admin/members', adminMembersRoutes);
+
+app.use('/api/admin/payments', adminPaymentsNewRoutes);
+app.use('/admin/payments', adminPaymentsNewRoutes);
+
+app.use('/api/admin/audit-logs', auditLogsRoutes);
+app.use('/admin/audit-logs', auditLogsRoutes);
 
 app.use('/api/payment-verification', paymentVerificationRoutes);
 app.use('/payment-verification', paymentVerificationRoutes);

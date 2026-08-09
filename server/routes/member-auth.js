@@ -73,33 +73,50 @@ router.post(['/', '/register'], async (req, res) => {
       return res.status(400).json({ error: 'Phone number is already registered. Please login or use another phone number.' });
     }
 
-    // Generate unique 4-digit Member ID
-    let memberId;
-    let isUnique = false;
-    let attempts = 0;
+    // Check for potential duplicate matching by Name or UPI
+    let upiId = (req.body.upi_id || '').trim();
+    let isDuplicate = false;
+    let duplicateReason = null;
+    let duplicateOfId = null;
 
-    while (!isUnique && attempts < 100) {
-      memberId = String(1000 + Math.floor(Math.random() * 9000));
-      const idCheck = await client.query('SELECT id FROM members WHERE member_id = $1', [memberId]);
-      isUnique = idCheck.rows.length === 0;
-      attempts++;
+    const dupCheck = await client.query(
+      `SELECT id, member_id, name FROM members 
+       WHERE LOWER(name) = LOWER($1) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))`,
+      [name, upiId]
+    );
+
+    if (dupCheck.rows.length > 0) {
+      isDuplicate = true;
+      duplicateOfId = dupCheck.rows[0].id;
+      duplicateReason = `Similar name/UPI matching existing member ${dupCheck.rows[0].member_id} (${dupCheck.rows[0].name})`;
     }
 
-    if (!isUnique) {
-      const maxIdResult = await client.query('SELECT MAX(id) FROM members');
-      const nextNum = (maxIdResult.rows[0].max || 0) + 1001;
-      memberId = String(nextNum);
+    // Generate next sequential Member ID starting at 101
+    const idRes = await client.query(`
+      SELECT member_id FROM members 
+      WHERE deleted_at IS NULL
+      ORDER BY id DESC
+    `);
+    
+    let maxNum = 100;
+    for (const row of idRes.rows || []) {
+      const num = parseInt(row.member_id, 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
     }
+    const memberId = String(maxNum + 1);
 
     // Hash password securely
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert new member
     const result = await client.query(
-      `INSERT INTO members (member_id, name, email, phone, password_hash, balance, status) 
-       VALUES ($1, $2, $3, $4, $5, 0.00, 'ACTIVE') 
-       RETURNING id, member_id, name, email, phone, balance, status, created_at`,
-      [memberId, name, email, cleanPhone, hashedPassword]
+      `INSERT INTO members 
+        (member_id, name, email, phone, upi_id, password_hash, balance, status, activation_status, payment_status, is_duplicate, duplicate_reason, duplicate_of_id) 
+       VALUES ($1, $2, $3, $4, $5, $6, 0.00, 'ACTIVE', 'PENDING', 'UNPAID', $7, $8, $9) 
+       RETURNING id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status, created_at`,
+      [memberId, name, email, cleanPhone, upiId || null, hashedPassword, isDuplicate, duplicateReason, duplicateOfId]
     );
 
     await client.query('COMMIT');
@@ -215,7 +232,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     const memberId = req.admin.id;
 
     const memberResult = await pool.query(
-      'SELECT id, member_id, name, email, phone, balance, status, created_at, updated_at FROM members WHERE id = $1',
+      'SELECT id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status, is_duplicate, group_category, created_at, updated_at FROM members WHERE id = $1',
       [memberId]
     );
 
