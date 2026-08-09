@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="PF Chit Fund Club — Admin Management Portal">
   <title>PF Chit Fund Club — Admin Management Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
     /* ============================================================
@@ -64,576 +67,1295 @@
       --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.25s, color 0.25s; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .hidden { display: none !important; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
 
     /* AUTH SCREEN */
-    #adminLoginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(circle at top left, #1e1b4b, var(--bg)); }
-    .auth-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 420px; box-shadow: var(--shadow); }
-    .auth-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; gap: 10px; }
-    .auth-logo img { width: 72px; height: 72px; object-fit: contain; border-radius: 50%; border: 2px solid var(--primary); }
-    .auth-logo .org-name { font-size: 20px; font-weight: 800; color: var(--text); text-align: center; }
-    .admin-badge { background: var(--primary-light); border: 1px solid var(--border-accent); color: var(--primary); font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; }
+    #adminLoginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at top left, #1e1b4b, var(--bg));
+    }
+
+    .auth-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow);
+    }
+
+    .auth-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 28px;
+      gap: 10px;
+    }
+
+    .auth-logo img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      border-radius: 50%;
+      border: 2px solid var(--primary);
+    }
+
+    .auth-logo .org-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+      text-align: center;
+    }
+
+    .admin-badge {
+      background: var(--primary-light);
+      border: 1px solid var(--border-accent);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 20px;
+    }
 
     /* FORMS */
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%; padding: 11px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; font-family: inherit; transition: all 0.2s;
+    .form-group {
+      margin-bottom: 16px;
     }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
 
     /* BUTTONS */
-    .btn-primary { padding: 11px 20px; background: var(--primary); border: none; border-radius: 10px; color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
-    .btn-secondary { padding: 9px 16px; background: transparent; border: 1px solid var(--border); border-radius: 10px; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-secondary:hover { background: var(--bg-surface-hover); color: var(--text); }
-    .btn-danger { padding: 9px 16px; background: var(--red-light); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; color: var(--red); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-danger:hover { background: var(--red); color: white; }
-    .btn-success { padding: 9px 16px; background: var(--green-light); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; color: var(--green); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-success:hover { background: var(--green); color: white; }
-    .btn-warning { padding: 9px 16px; background: var(--orange-light); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 10px; color: var(--orange); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-warning:hover { background: var(--orange); color: white; }
-    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+    .btn-primary {
+      padding: 11px 20px;
+      background: var(--primary);
+      border: none;
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      padding: 9px 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text);
+    }
+
+    .btn-danger {
+      padding: 9px 16px;
+      background: var(--red-light);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-danger:hover {
+      background: var(--red);
+      color: white;
+    }
+
+    .btn-success {
+      padding: 9px 16px;
+      background: var(--green-light);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 10px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-success:hover {
+      background: var(--green);
+      color: white;
+    }
+
+    .btn-warning {
+      padding: 9px 16px;
+      background: var(--orange-light);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      border-radius: 10px;
+      color: var(--orange);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-warning:hover {
+      background: var(--orange);
+      color: white;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
 
     /* LAYOUT */
-    #adminApp { display: flex; min-height: 100vh; }
-    .sidebar { width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; }
-    .sidebar-header { padding: 20px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-    .sidebar-logo { width: 40px; height: 40px; object-fit: contain; border-radius: 50%; border: 2px solid var(--primary); }
-    .sidebar-title { font-size: 14px; font-weight: 800; color: #ffffff; line-height: 1.2; }
-    .sidebar-sub { font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    .sidebar-nav { flex: 1; overflow-y: auto; padding: 14px 0; }
-    .nav-group-label { font-size: 10px; font-weight: 800; color: var(--text-dim); padding: 12px 22px 6px; text-transform: uppercase; letter-spacing: 1px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 22px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; border: none; background: transparent; width: 100%; font-size: 13.5px; font-family: inherit; text-align: left; }
-    .nav-item:hover { background: var(--bg-surface-hover); color: var(--text); }
-    .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 700; border-right: 3px solid var(--primary); }
-    .nav-badge { background: var(--red); color: white; font-size: 10px; font-weight: 800; border-radius: 10px; padding: 1px 7px; margin-left: auto; }
-    .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); background: var(--bg-sidebar); }
+    #adminApp {
+      display: flex;
+      min-height: 100vh;
+    }
 
-    .main-content { flex: 1; margin-left: 260px; display: flex; flex-direction: column; min-height: 100vh; }
-    .topbar { background: var(--bg-surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
-    .topbar-title { font-size: 20px; font-weight: 800; color: var(--text); }
-    .topbar-right { display: flex; align-items: center; gap: 14px; }
-    .theme-select { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; }
+    .sidebar {
+      width: 260px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 50;
+    }
 
-    .page-content { flex: 1; padding: 28px; }
-    .page { display: none; }
-    .page.active { display: block; }
+    .sidebar-header {
+      padding: 20px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar-logo {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      border-radius: 50%;
+      border: 2px solid var(--primary);
+    }
+
+    .sidebar-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .sidebar-sub {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 0;
+    }
+
+    .nav-group-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-dim);
+      padding: 12px 22px 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 22px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+      width: 100%;
+      font-size: 13.5px;
+      font-family: inherit;
+      text-align: left;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      border-right: 3px solid var(--primary);
+    }
+
+    .nav-badge {
+      background: var(--red);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      border-radius: 10px;
+      padding: 1px 7px;
+      margin-left: auto;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-sidebar);
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .topbar-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .theme-select {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .page-content {
+      flex: 1;
+      padding: 28px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
 
     /* DASHBOARD CARDS */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: all 0.2s; box-shadow: var(--shadow); }
-    .stat-card:hover { border-color: var(--border-accent); transform: translateY(-2px); }
-    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-    .stat-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
-    .stat-value.primary { color: var(--primary); }
-    .stat-value.green { color: var(--green); }
-    .stat-value.red { color: var(--red); }
-    .stat-value.orange { color: var(--orange); }
-    .stat-value.gold { color: var(--gold); }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
 
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow); }
-    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
-    .card-title { font-size: 16px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.2s;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-value.primary {
+      color: var(--primary);
+    }
+
+    .stat-value.green {
+      color: var(--green);
+    }
+
+    .stat-value.red {
+      color: var(--red);
+    }
+
+    .stat-value.orange {
+      color: var(--orange);
+    }
+
+    .stat-value.gold {
+      color: var(--gold);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
     /* TABLES */
-    .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { background: var(--bg-surface-hover); padding: 12px 16px; font-weight: 700; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
-    td { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--text); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--primary-light); }
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-surface-hover);
+      padding: 12px 16px;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13.5px;
+      color: var(--text);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: var(--primary-light);
+    }
 
     /* BADGES */
-    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-    .badge-active { background: var(--green-light); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-pending { background: var(--orange-light); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
-    .badge-inactive { background: var(--red-light); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge-rejected { background: var(--red-light); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge-paid { background: var(--green-light); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-unpaid { background: var(--orange-light); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
-    .badge-duplicate { background: var(--red-light); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.5); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-active {
+      background: var(--green-light);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-pending {
+      background: var(--orange-light);
+      color: var(--orange);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .badge-inactive {
+      background: var(--red-light);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .badge-rejected {
+      background: var(--red-light);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .badge-paid {
+      background: var(--green-light);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-unpaid {
+      background: var(--orange-light);
+      color: var(--orange);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .badge-duplicate {
+      background: var(--red-light);
+      color: var(--red);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+    }
 
     /* SEARCH & FILTER BAR */
-    .filter-bar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-    .filter-input { padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13.5px; flex: 1; min-width: 200px; }
-    .filter-input:focus { outline: none; border-color: var(--primary); }
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .filter-input {
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 13.5px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
 
     /* TOAST */
-    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-    .toast { padding: 12px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 600; color: #ffffff; box-shadow: var(--shadow); animation: slideIn 0.3s ease; }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
-    .toast-success { background: var(--green); } .toast-error { background: var(--red); } .toast-info { background: var(--blue); }
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #ffffff;
+      box-shadow: var(--shadow);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .toast-success {
+      background: var(--green);
+    }
+
+    .toast-error {
+      background: var(--red);
+    }
+
+    .toast-info {
+      background: var(--blue);
+    }
 
     /* MODAL */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); }
-    .modal-title { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 18px; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 18px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+      justify-content: flex-end;
+    }
 
     /* DUPLICATES CARDS */
-    .dup-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
-    .dup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .dup-reason { background: var(--red-light); color: var(--red); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-block; margin-bottom: 12px; }
+    .dup-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .dup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .dup-reason {
+      background: var(--red-light);
+      color: var(--red);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
 
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); transition: transform 0.25s; }
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; }
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.25s;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
     }
   </style>
 </head>
+
 <body>
-<div id="toast-container"></div>
+  <div id="toast-container"></div>
 
-<!-- ADMIN LOGIN SCREEN -->
-<div id="adminLoginScreen">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <img id="adminLogoImg" src="/assets/logo.png" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%236366f1%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22 fill=%22%23ffffff%22>PF</text></svg>'" alt="Logo">
-      <div class="org-name" id="loginOrgName">PF Chit Fund Club</div>
-      <div class="admin-badge">🔐 Admin Management Portal</div>
-    </div>
-    <div id="adminLoginAlert"></div>
-    <div class="form-group">
-      <label>Admin Username</label>
-      <input type="text" id="adminUsername" placeholder="Enter username" autocomplete="username">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="adminPassword" placeholder="Enter password" autocomplete="current-password" onkeypress="if(event.key==='Enter')doAdminLogin()">
-    </div>
-    <button class="btn-primary" style="width:100%" id="adminLoginBtn" onclick="doAdminLogin()">🔐 Login to Admin Panel</button>
-    <div style="margin-top:16px;text-align:center">
-      <a href="/" style="color:var(--text-muted);font-size:13px;text-decoration:none">← Member Portal</a>
-    </div>
-  </div>
-</div>
-
-<!-- ADMIN MAIN APP -->
-<div id="adminApp" class="hidden">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <img class="sidebar-logo" id="sidebarLogo" src="/assets/logo.png" onerror="this.style.display='none'" alt="Logo">
-      <div>
-        <div class="sidebar-title" id="sidebarOrgName">PF Chit Fund Club</div>
-        <div class="sidebar-sub">Admin Portal</div>
+  <!-- ADMIN LOGIN SCREEN -->
+  <div id="adminLoginScreen">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img id="adminLogoImg" src="/assets/logo.png"
+          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%236366f1%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22 fill=%22%23ffffff%22>PF</text></svg>'"
+          alt="Logo">
+        <div class="org-name" id="loginOrgName">PF Chit Fund Club</div>
+        <div class="admin-badge">🔐 Admin Management Portal</div>
       </div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-group-label">Main</div>
-      <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">📊</span> Dashboard</button>
-
-      <div class="nav-group-label">Member Management</div>
-      <button class="nav-item" onclick="showPage('members')" id="nav-members"><span class="nav-icon">👥</span> All Members</button>
-      <button class="nav-item" onclick="showAddMemberModal()"><span class="nav-icon">➕</span> Add Member</button>
-      <button class="nav-item" onclick="showPage('duplicates')" id="nav-duplicates">
-        <span class="nav-icon">⚠️</span> Possible Duplicates
-        <span class="nav-badge hidden" id="dupBadgeCount">0</span>
-      </button>
-
-      <div class="nav-group-label">Payments & Activation</div>
-      <button class="nav-item" onclick="showPage('payments')" id="nav-payments"><span class="nav-icon">💳</span> Payments</button>
-      <button class="nav-item" onclick="showPage('activation')" id="nav-activation"><span class="nav-icon">⚡</span> Activation Status</button>
-      <button class="nav-item" onclick="showPage('auction-control')" id="nav-auction-control"><span class="nav-icon">🏛️</span> Live Auction</button>
-
-      <div class="nav-group-label">System</div>
-      <button class="nav-item" onclick="showPage('audit-log')" id="nav-audit-log"><span class="nav-icon">📜</span> Audit Logs</button>
-      <button class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙️</span> Settings</button>
-    </nav>
-    <div class="sidebar-footer">
-      <button class="btn-danger" style="width:100%" onclick="doAdminLogout()">🚪 Logout</button>
-    </div>
-  </aside>
-
-  <div class="main-content">
-    <div class="topbar">
-      <div style="display:flex;align-items:center;gap:12px">
-        <button onclick="document.getElementById('sidebar').classList.toggle('open')" style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;display:none" id="menuToggle">☰</button>
-        <div class="topbar-title" id="topbarTitle">Dashboard</div>
-      </div>
-      <div class="topbar-right">
-        <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
-          <option value="dark">🌙 Dark Mode</option>
-          <option value="light">☀️ Light Mode</option>
-          <option value="system">💻 System Default</option>
-        </select>
-        <div style="font-size:13px;font-weight:700;color:var(--text-muted)" id="adminUserLabel">Admin</div>
-      </div>
-    </div>
-
-    <div class="page-content">
-
-      <!-- ================= DASHBOARD ================= -->
-      <div id="dashboard" class="page active">
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-label">Total Members</div><div class="stat-value primary" id="dTotalMembers">—</div></div>
-          <div class="stat-card"><div class="stat-label">Active Members</div><div class="stat-value green" id="dActiveMembers">—</div></div>
-          <div class="stat-card"><div class="stat-label">Inactive Members</div><div class="stat-value red" id="dInactiveMembers">—</div></div>
-          <div class="stat-card"><div class="stat-label">Pending Activations</div><div class="stat-value orange" id="dPendingActivations">—</div></div>
-          <div class="stat-card"><div class="stat-card-dup" onclick="showPage('duplicates')" style="cursor:pointer"><div class="stat-label">Possible Duplicates</div><div class="stat-value red" id="dPossibleDuplicates">—</div></div></div>
-          <div class="stat-card"><div class="stat-label">Total Collected</div><div class="stat-value green" id="dTotalCollected">—</div></div>
-          <div class="stat-card"><div class="stat-label">Paid Members</div><div class="stat-value green" id="dPaidMembers">—</div></div>
-          <div class="stat-card"><div class="stat-label">Pending Payments</div><div class="stat-value orange" id="dPendingPayments">—</div></div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-          <div class="card">
-            <div class="card-header"><div class="card-title">👥 Recent Members</div><button class="btn-secondary btn-sm" onclick="showPage('members')">View All</button></div>
-            <div id="dashRecentMembers"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">💳 Recent Payment Proofs</div><button class="btn-secondary btn-sm" onclick="showPage('payments')">View All</button></div>
-            <div id="dashRecentPayments"><div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= MEMBERS MANAGEMENT ================= -->
-      <div id="members" class="page">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">👥 All Members</div>
-            <button class="btn-primary" onclick="showAddMemberModal()">+ Add New Member</button>
-          </div>
-          <div class="filter-bar">
-            <input type="text" class="filter-input" id="memberSearch" placeholder="Search by Member ID (101+), Name, Phone, UPI ID..." oninput="loadMembers()">
-            <select class="filter-input" style="flex:0;min-width:140px" id="filterActivationStatus" onchange="loadMembers()">
-              <option value="">All Activations</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="PENDING">PENDING</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="REJECTED">REJECTED</option>
-            </select>
-            <select class="filter-input" style="flex:0;min-width:140px" id="filterPaymentStatus" onchange="loadMembers()">
-              <option value="">All Payments</option>
-              <option value="PAID">PAID</option>
-              <option value="UNPAID">UNPAID</option>
-            </select>
-            <select class="filter-input" style="flex:0;min-width:150px" id="sortMemberBy" onchange="loadMembers()">
-              <option value="created_at">Date Joined</option>
-              <option value="member_id">Member ID</option>
-              <option value="name">Name</option>
-            </select>
-          </div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Member ID</th><th>Name</th><th>Phone</th><th>UPI ID</th><th>Group</th><th>Payment</th><th>Activation</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="membersTableBody"><tr><td colspan="8" style="text-align:center;padding:30px">Loading members...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= DUPLICATE MEMBERS ================= -->
-      <div id="duplicates" class="page">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">⚠️ Possible Duplicate Member Registrations</div>
-            <button class="btn-secondary btn-sm" onclick="loadDuplicates()">🔄 Refresh</button>
-          </div>
-          <p style="color:var(--text-muted);font-size:13.5px;margin-bottom:20px">The system highlights members sharing similar names, phone numbers, or UPI IDs. Admin can review and choose which record to keep.</p>
-          <div id="duplicatesContainer"><div style="text-align:center;padding:30px;color:var(--text-muted)">Loading duplicate records...</div></div>
-        </div>
-      </div>
-
-      <!-- ================= PAYMENTS MANAGEMENT ================= -->
-      <div id="payments" class="page">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">💳 Payment Management</div>
-            <button class="btn-primary" onclick="showAddPaymentModal()">+ Add Manual Payment</button>
-          </div>
-          <div class="filter-bar">
-            <input type="text" class="filter-input" id="paymentSearch" placeholder="Search Member ID, Ref, Name..." oninput="loadAdminPayments()">
-            <select class="filter-input" style="flex:0;min-width:140px" id="filterPayStatus" onchange="loadAdminPayments()">
-              <option value="">All Statuses</option>
-              <option value="APPROVED">APPROVED / PAID</option>
-              <option value="PENDING">PENDING</option>
-              <option value="REJECTED">REJECTED</option>
-            </select>
-          </div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th><th>Member</th><th>Member ID</th><th>Amount</th><th>Ref ID</th><th>Date</th><th>Status</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="paymentsTableBody"><tr><td colspan="8" style="text-align:center;padding:30px">Loading payments...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= ACTIVATION MANAGEMENT ================= -->
-      <div id="activation" class="page">
-        <div class="card">
-          <div class="card-header"><div class="card-title">⚡ Member Activation Status Management</div></div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr><th>Member ID</th><th>Name</th><th>Phone</th><th>Date</th><th>Payment Status</th><th>Activation Status</th><th>Action</th></tr>
-              </thead>
-              <tbody id="activationTableBody"><tr><td colspan="7" style="text-align:center;padding:30px">Loading activation list...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= LIVE AUCTION CONTROL ================= -->
-      <div id="auction-control" class="page">
-        <div class="card">
-          <div class="card-title">🏛️ Live Auction Control</div>
-          <div id="auctionControlContainer"><div style="text-align:center;padding:30px;color:var(--text-muted)">Loading auction status...</div></div>
-        </div>
-      </div>
-
-      <!-- ================= AUDIT LOGS ================= -->
-      <div id="audit-log" class="page">
-        <div class="card">
-          <div class="card-header"><div class="card-title">📜 Admin Activity & Audit Logs</div></div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr><th>Time</th><th>Actor</th><th>Action</th><th>Target Entity</th><th>Details</th><th>IP</th></tr>
-              </thead>
-              <tbody id="auditTableBody"><tr><td colspan="6" style="text-align:center;padding:30px">Loading activity logs...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= SETTINGS ================= -->
-      <div id="settings" class="page">
-        <div class="card">
-          <div class="card-title">⚙️ Application & Admin Settings</div>
-          <div id="settingsMsg"></div>
-          <div class="form-group"><label>Organisation Name (English)</label><input type="text" id="sOrgName"></div>
-          <div class="form-group"><label>Organisation Name (Tamil)</label><input type="text" id="sOrgNameTa"></div>
-          <div class="form-group"><label>WhatsApp Group Link</label><input type="url" id="sWhatsApp"></div>
-          <div class="form-group"><label>Default Monthly Payment (₹)</label><input type="number" id="sPayAmount"></div>
-          <button class="btn-primary" onclick="saveSettings()">💾 Save Settings</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- ADD/EDIT MEMBER MODAL -->
-<div id="memberModal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-title" id="memberModalTitle">Add Member</div>
-    <div id="memberModalAlert"></div>
-    <div class="form-group"><label>Full Name *</label><input type="text" id="mName" placeholder="Full name"></div>
-    <div class="form-row">
-      <div class="form-group"><label>Phone (10-digit) *</label><input type="tel" id="mPhone" placeholder="Phone number"></div>
-      <div class="form-group"><label>UPI ID</label><input type="text" id="mUpi" placeholder="name@upi"></div>
-    </div>
-    <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="Email address"></div>
-    <div class="form-row">
+      <div id="adminLoginAlert"></div>
       <div class="form-group">
-        <label>Activation Status</label>
-        <select id="mActivation"><option value="ACTIVE">ACTIVE</option><option value="PENDING">PENDING</option><option value="INACTIVE">INACTIVE</option><option value="REJECTED">REJECTED</option></select>
+        <label>Admin Username</label>
+        <input type="text" id="adminUsername" placeholder="Enter username" autocomplete="username">
       </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="adminPassword" placeholder="Enter password" autocomplete="current-password"
+          onkeypress="if(event.key==='Enter')doAdminLogin()">
+      </div>
+      <button class="btn-primary" style="width:100%" id="adminLoginBtn" onclick="doAdminLogin()">🔐 Login to Admin
+        Panel</button>
+      <div style="margin-top:16px;text-align:center">
+        <a href="/" style="color:var(--text-muted);font-size:13px;text-decoration:none">← Member Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN MAIN APP -->
+  <div id="adminApp" class="hidden">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img class="sidebar-logo" id="sidebarLogo" src="/assets/logo.png" onerror="this.style.display='none'"
+          alt="Logo">
+        <div>
+          <div class="sidebar-title" id="sidebarOrgName">PF Chit Fund Club</div>
+          <div class="sidebar-sub">Admin Portal</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-group-label">Main</div>
+        <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span
+            class="nav-icon">📊</span> Dashboard</button>
+
+        <div class="nav-group-label">Member Management</div>
+        <button class="nav-item" onclick="showPage('members')" id="nav-members"><span class="nav-icon">👥</span> All
+          Members</button>
+        <button class="nav-item" onclick="showAddMemberModal()"><span class="nav-icon">➕</span> Add Member</button>
+        <button class="nav-item" onclick="showPage('duplicates')" id="nav-duplicates">
+          <span class="nav-icon">⚠️</span> Possible Duplicates
+          <span class="nav-badge hidden" id="dupBadgeCount">0</span>
+        </button>
+
+        <div class="nav-group-label">Payments & Activation</div>
+        <button class="nav-item" onclick="showPage('payments')" id="nav-payments"><span class="nav-icon">💳</span>
+          Payments</button>
+        <button class="nav-item" onclick="showPage('activation')" id="nav-activation"><span class="nav-icon">⚡</span>
+          Activation Status</button>
+        <button class="nav-item" onclick="showPage('auction-control')" id="nav-auction-control"><span
+            class="nav-icon">🏛️</span> Live Auction</button>
+
+        <div class="nav-group-label">System</div>
+        <button class="nav-item" onclick="showPage('audit-log')" id="nav-audit-log"><span class="nav-icon">📜</span>
+          Audit Logs</button>
+        <button class="nav-item" onclick="showPage('settings')" id="nav-settings"><span class="nav-icon">⚙️</span>
+          Settings</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-danger" style="width:100%" onclick="doAdminLogout()">🚪 Logout</button>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button onclick="document.getElementById('sidebar').classList.toggle('open')"
+            style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;display:none"
+            id="menuToggle">☰</button>
+          <div class="topbar-title" id="topbarTitle">Dashboard</div>
+        </div>
+        <div class="topbar-right">
+          <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
+            <option value="dark">🌙 Dark Mode</option>
+            <option value="light">☀️ Light Mode</option>
+            <option value="system">💻 System Default</option>
+          </select>
+          <div style="font-size:13px;font-weight:700;color:var(--text-muted)" id="adminUserLabel">Admin</div>
+        </div>
+      </div>
+
+      <div class="page-content">
+
+        <!-- ================= DASHBOARD ================= -->
+        <div id="dashboard" class="page active">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Members</div>
+              <div class="stat-value primary" id="dTotalMembers">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Active Members</div>
+              <div class="stat-value green" id="dActiveMembers">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Inactive Members</div>
+              <div class="stat-value red" id="dInactiveMembers">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Pending Activations</div>
+              <div class="stat-value orange" id="dPendingActivations">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-dup" onclick="showPage('duplicates')" style="cursor:pointer">
+                <div class="stat-label">Possible Duplicates</div>
+                <div class="stat-value red" id="dPossibleDuplicates">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Collected</div>
+              <div class="stat-value green" id="dTotalCollected">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Paid Members</div>
+              <div class="stat-value green" id="dPaidMembers">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Pending Payments</div>
+              <div class="stat-value orange" id="dPendingPayments">—</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">👥 Recent Members</div><button class="btn-secondary btn-sm"
+                  onclick="showPage('members')">View All</button>
+              </div>
+              <div id="dashRecentMembers">
+                <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">💳 Recent Payment Proofs</div><button class="btn-secondary btn-sm"
+                  onclick="showPage('payments')">View All</button>
+              </div>
+              <div id="dashRecentPayments">
+                <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= MEMBERS MANAGEMENT ================= -->
+        <div id="members" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">👥 All Members</div>
+              <button class="btn-primary" onclick="showAddMemberModal()">+ Add New Member</button>
+            </div>
+            <div class="filter-bar">
+              <input type="text" class="filter-input" id="memberSearch"
+                placeholder="Search by Member ID (101+), Name, Phone, UPI ID..." oninput="loadMembers()">
+              <select class="filter-input" style="flex:0;min-width:140px" id="filterActivationStatus"
+                onchange="loadMembers()">
+                <option value="">All Activations</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="PENDING">PENDING</option>
+                <option value="INACTIVE">INACTIVE</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+              <select class="filter-input" style="flex:0;min-width:140px" id="filterPaymentStatus"
+                onchange="loadMembers()">
+                <option value="">All Payments</option>
+                <option value="PAID">PAID</option>
+                <option value="UNPAID">UNPAID</option>
+              </select>
+              <select class="filter-input" style="flex:0;min-width:150px" id="sortMemberBy" onchange="loadMembers()">
+                <option value="created_at">Date Joined</option>
+                <option value="member_id">Member ID</option>
+                <option value="name">Name</option>
+              </select>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Member ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>UPI ID</th>
+                    <th>Group</th>
+                    <th>Payment</th>
+                    <th>Activation</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="membersTableBody">
+                  <tr>
+                    <td colspan="8" style="text-align:center;padding:30px">Loading members...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= DUPLICATE MEMBERS ================= -->
+        <div id="duplicates" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⚠️ Possible Duplicate Member Registrations</div>
+              <button class="btn-secondary btn-sm" onclick="loadDuplicates()">🔄 Refresh</button>
+            </div>
+            <p style="color:var(--text-muted);font-size:13.5px;margin-bottom:20px">The system highlights members sharing
+              similar names, phone numbers, or UPI IDs. Admin can review and choose which record to keep.</p>
+            <div id="duplicatesContainer">
+              <div style="text-align:center;padding:30px;color:var(--text-muted)">Loading duplicate records...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAYMENTS MANAGEMENT ================= -->
+        <div id="payments" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💳 Payment Management</div>
+              <button class="btn-primary" onclick="showAddPaymentModal()">+ Add Manual Payment</button>
+            </div>
+            <div class="filter-bar">
+              <input type="text" class="filter-input" id="paymentSearch" placeholder="Search Member ID, Ref, Name..."
+                oninput="loadAdminPayments()">
+              <select class="filter-input" style="flex:0;min-width:140px" id="filterPayStatus"
+                onchange="loadAdminPayments()">
+                <option value="">All Statuses</option>
+                <option value="APPROVED">APPROVED / PAID</option>
+                <option value="PENDING">PENDING</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Member</th>
+                    <th>Member ID</th>
+                    <th>Amount</th>
+                    <th>Ref ID</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                  <tr>
+                    <td colspan="8" style="text-align:center;padding:30px">Loading payments...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= ACTIVATION MANAGEMENT ================= -->
+        <div id="activation" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⚡ Member Activation Status Management</div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Member ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Date</th>
+                    <th>Payment Status</th>
+                    <th>Activation Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="activationTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align:center;padding:30px">Loading activation list...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= LIVE AUCTION CONTROL ================= -->
+        <div id="auction-control" class="page">
+          <div class="card">
+            <div class="card-title">🏛️ Live Auction Control</div>
+            <div id="auctionControlContainer">
+              <div style="text-align:center;padding:30px;color:var(--text-muted)">Loading auction status...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= AUDIT LOGS ================= -->
+        <div id="audit-log" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📜 Admin Activity & Audit Logs</div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                    <th>Target Entity</th>
+                    <th>Details</th>
+                    <th>IP</th>
+                  </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                  <tr>
+                    <td colspan="6" style="text-align:center;padding:30px">Loading activity logs...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SETTINGS ================= -->
+        <div id="settings" class="page">
+          <div class="card">
+            <div class="card-title">⚙️ Application & Admin Settings</div>
+            <div id="settingsMsg"></div>
+            <div class="form-group"><label>Organisation Name (English)</label><input type="text" id="sOrgName"></div>
+            <div class="form-group"><label>Organisation Name (Tamil)</label><input type="text" id="sOrgNameTa"></div>
+            <div class="form-group"><label>WhatsApp Group Link</label><input type="url" id="sWhatsApp"></div>
+            <div class="form-group"><label>Default Monthly Payment (₹)</label><input type="number" id="sPayAmount">
+            </div>
+            <button class="btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT MEMBER MODAL -->
+  <div id="memberModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title" id="memberModalTitle">Add Member</div>
+      <div id="memberModalAlert"></div>
+      <div class="form-group"><label>Full Name *</label><input type="text" id="mName" placeholder="Full name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Phone (10-digit) *</label><input type="tel" id="mPhone"
+            placeholder="Phone number"></div>
+        <div class="form-group"><label>UPI ID</label><input type="text" id="mUpi" placeholder="name@upi"></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" id="mEmail" placeholder="Email address"></div>
+    <div class="form-group"><label>🔑 Password (Default: 123456)</label><input type="text" id="mPassword" placeholder="Create password for member (e.g. Santhosh@123)"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Activation Status</label>
+          <select id="mActivation">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="PENDING">PENDING</option>
+            <option value="INACTIVE">INACTIVE</option>
+            <option value="REJECTED">REJECTED</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select id="mPaymentStatus">
+            <option value="UNPAID">UNPAID</option>
+            <option value="PAID">PAID</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Group / Category</label><input type="text" id="mGroup" value="General"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('memberModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveMemberForm()">Save Member</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT PAYMENT MODAL -->
+  <div id="paymentModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title" id="paymentModalTitle">Add Manual Payment</div>
+      <div id="paymentModalAlert"></div>
+      <div class="form-group"><label>Member ID (101+) or Name *</label><input type="text" id="pMemberId"
+          placeholder="e.g. 101"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Amount (₹) *</label><input type="number" id="pAmount" value="500"></div>
+        <div class="form-group"><label>Payment Date *</label><input type="date" id="pDate"></div>
+      </div>
+      <div class="form-group"><label>Transaction Reference ID</label><input type="text" id="pRef"
+          placeholder="UPI Ref ID"></div>
       <div class="form-group">
         <label>Payment Status</label>
-        <select id="mPaymentStatus"><option value="UNPAID">UNPAID</option><option value="PAID">PAID</option></select>
+        <select id="pStatus">
+          <option value="APPROVED">APPROVED / PAID</option>
+          <option value="PENDING">PENDING</option>
+          <option value="REJECTED">REJECTED</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('paymentModal')">Cancel</button>
+        <button class="btn-primary" onclick="savePaymentForm()">Save Payment</button>
       </div>
     </div>
-    <div class="form-group"><label>Group / Category</label><input type="text" id="mGroup" value="General"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeModal('memberModal')">Cancel</button>
-      <button class="btn-primary" onclick="saveMemberForm()">Save Member</button>
+  </div>
+
+  <!-- CONFIRMATION MODAL -->
+  <div id="confirmModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-title" id="confirmTitle">Confirm Action</div>
+      <div id="confirmBody" style="color:var(--text-muted);font-size:14px;margin-bottom:16px"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+        <button class="btn-danger" id="confirmOkBtn">Confirm</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ADD/EDIT PAYMENT MODAL -->
-<div id="paymentModal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-title" id="paymentModalTitle">Add Manual Payment</div>
-    <div id="paymentModalAlert"></div>
-    <div class="form-group"><label>Member ID (101+) or Name *</label><input type="text" id="pMemberId" placeholder="e.g. 101"></div>
-    <div class="form-row">
-      <div class="form-group"><label>Amount (₹) *</label><input type="number" id="pAmount" value="500"></div>
-      <div class="form-group"><label>Payment Date *</label><input type="date" id="pDate"></div>
-    </div>
-    <div class="form-group"><label>Transaction Reference ID</label><input type="text" id="pRef" placeholder="UPI Ref ID"></div>
-    <div class="form-group">
-      <label>Payment Status</label>
-      <select id="pStatus"><option value="APPROVED">APPROVED / PAID</option><option value="PENDING">PENDING</option><option value="REJECTED">REJECTED</option></select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeModal('paymentModal')">Cancel</button>
-      <button class="btn-primary" onclick="savePaymentForm()">Save Payment</button>
-    </div>
-  </div>
-</div>
+  <script>
+    let adminToken = localStorage.getItem('adminToken');
+    let adminUser = null;
+    let currentEditingMemberId = null;
+    let currentEditingPaymentId = null;
+    let confirmCb = null;
 
-<!-- CONFIRMATION MODAL -->
-<div id="confirmModal" class="modal-overlay hidden">
-  <div class="modal" style="max-width:400px">
-    <div class="modal-title" id="confirmTitle">Confirm Action</div>
-    <div id="confirmBody" style="color:var(--text-muted);font-size:14px;margin-bottom:16px"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
-      <button class="btn-danger" id="confirmOkBtn">Confirm</button>
-    </div>
-  </div>
-</div>
+    const API_BASE = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:5000' : '';
 
-<script>
-let adminToken = localStorage.getItem('adminToken');
-let adminUser = null;
-let currentEditingMemberId = null;
-let currentEditingPaymentId = null;
-let confirmCb = null;
+    async function api(url, opts = {}) {
+      const targetUrl = url.startsWith('http') ? url : (API_BASE + url);
+      const h = { 'Content-Type': 'application/json', ...opts.headers };
+      if (adminToken) h['Authorization'] = `Bearer ${adminToken}`;
+      const r = await fetch(targetUrl, { ...opts, headers: h });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      return d;
+    }
 
-const API_BASE = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:5000' : '';
+    function showToast(msg, type = 'info') {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3500);
+    }
 
-async function api(url, opts = {}) {
-  const targetUrl = url.startsWith('http') ? url : (API_BASE + url);
-  const h = { 'Content-Type': 'application/json', ...opts.headers };
-  if (adminToken) h['Authorization'] = `Bearer ${adminToken}`;
-  const r = await fetch(targetUrl, { ...opts, headers: h });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-  return d;
-}
+    // Theme System
+    function changeTheme(theme) {
+      if (theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+      localStorage.setItem('adminTheme', theme);
+    }
 
-function showToast(msg, type = 'info') {
-  const c = document.getElementById('toast-container');
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3500);
-}
+    // Admin Auth
+    async function doAdminLogin() {
+      const u = document.getElementById('adminUsername').value.trim();
+      const p = document.getElementById('adminPassword').value;
+      const btn = document.getElementById('adminLoginBtn');
+      if (!u || !p) { document.getElementById('adminLoginAlert').innerHTML = '<div style="color:var(--red);margin-bottom:10px">Username and password required</div>'; return; }
+      btn.disabled = true; btn.textContent = 'Logging in...';
+      try {
+        const d = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) });
+        adminToken = d.token; adminUser = d;
+        localStorage.setItem('adminToken', adminToken);
+        initAdminApp();
+      } catch (e) {
+        document.getElementById('adminLoginAlert').innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+      } finally { btn.disabled = false; btn.textContent = '🔐 Login to Admin Panel'; }
+    }
 
-// Theme System
-function changeTheme(theme) {
-  if (theme === 'system') {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-  } else {
-    document.documentElement.setAttribute('data-theme', theme);
-  }
-  localStorage.setItem('adminTheme', theme);
-}
+    function doAdminLogout() {
+      adminToken = null; localStorage.removeItem('adminToken');
+      document.getElementById('adminApp').classList.add('hidden');
+      document.getElementById('adminLoginScreen').style.display = '';
+    }
 
-// Admin Auth
-async function doAdminLogin() {
-  const u = document.getElementById('adminUsername').value.trim();
-  const p = document.getElementById('adminPassword').value;
-  const btn = document.getElementById('adminLoginBtn');
-  if (!u || !p) { document.getElementById('adminLoginAlert').innerHTML = '<div style="color:var(--red);margin-bottom:10px">Username and password required</div>'; return; }
-  btn.disabled = true; btn.textContent = 'Logging in...';
-  try {
-    const d = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ username: u, password: p }) });
-    adminToken = d.token; adminUser = d;
-    localStorage.setItem('adminToken', adminToken);
-    initAdminApp();
-  } catch (e) {
-    document.getElementById('adminLoginAlert').innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
-  } finally { btn.disabled = false; btn.textContent = '🔐 Login to Admin Panel'; }
-}
+    // App Navigation
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const p = document.getElementById(name); if (p) p.classList.add('active');
+      const n = document.getElementById(`nav-${name}`); if (n) n.classList.add('active');
+      document.getElementById('topbarTitle').textContent = name.replace(/-/g, ' ').toUpperCase();
 
-function doAdminLogout() {
-  adminToken = null; localStorage.removeItem('adminToken');
-  document.getElementById('adminApp').classList.add('hidden');
-  document.getElementById('adminLoginScreen').style.display = '';
-}
+      if (name === 'dashboard') loadDashboard();
+      if (name === 'members') loadMembers();
+      if (name === 'duplicates') loadDuplicates();
+      if (name === 'payments') loadAdminPayments();
+      if (name === 'activation') loadActivationList();
+      if (name === 'audit-log') loadAuditLogs();
+      if (name === 'settings') loadSettings();
+    }
 
-// App Navigation
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const p = document.getElementById(name); if (p) p.classList.add('active');
-  const n = document.getElementById(`nav-${name}`); if (n) n.classList.add('active');
-  document.getElementById('topbarTitle').textContent = name.replace(/-/g, ' ').toUpperCase();
+    async function initAdminApp() {
+      document.getElementById('adminLoginScreen').style.display = 'none';
+      document.getElementById('adminApp').classList.remove('hidden');
+      const savedTheme = localStorage.getItem('adminTheme') || 'dark';
+      document.getElementById('themeSelect').value = savedTheme;
+      changeTheme(savedTheme);
+      loadDashboard();
+    }
 
-  if (name === 'dashboard') loadDashboard();
-  if (name === 'members') loadMembers();
-  if (name === 'duplicates') loadDuplicates();
-  if (name === 'payments') loadAdminPayments();
-  if (name === 'activation') loadActivationList();
-  if (name === 'audit-log') loadAuditLogs();
-  if (name === 'settings') loadSettings();
-}
+    // Dashboard Stats
+    async function loadDashboard() {
+      try {
+        const d = await api('/api/admin/members/dashboard-stats');
+        document.getElementById('dTotalMembers').textContent = d.total_members || 0;
+        document.getElementById('dActiveMembers').textContent = d.active_members || 0;
+        document.getElementById('dInactiveMembers').textContent = d.inactive_members || 0;
+        document.getElementById('dPendingActivations').textContent = d.pending_activations || 0;
+        document.getElementById('dPossibleDuplicates').textContent = d.possible_duplicates || 0;
+        document.getElementById('dTotalCollected').textContent = `₹${parseFloat(d.total_collected || 0).toLocaleString('en-IN')}`;
+        document.getElementById('dPaidMembers').textContent = d.paid_members || 0;
+        document.getElementById('dPendingPayments').textContent = d.pending_payments || 0;
 
-async function initAdminApp() {
-  document.getElementById('adminLoginScreen').style.display = 'none';
-  document.getElementById('adminApp').classList.remove('hidden');
-  const savedTheme = localStorage.getItem('adminTheme') || 'dark';
-  document.getElementById('themeSelect').value = savedTheme;
-  changeTheme(savedTheme);
-  loadDashboard();
-}
+        const dupBadge = document.getElementById('dupBadgeCount');
+        dupBadge.textContent = d.possible_duplicates || 0;
+        dupBadge.classList.toggle('hidden', !d.possible_duplicates);
 
-// Dashboard Stats
-async function loadDashboard() {
-  try {
-    const d = await api('/api/admin/members/dashboard-stats');
-    document.getElementById('dTotalMembers').textContent = d.total_members || 0;
-    document.getElementById('dActiveMembers').textContent = d.active_members || 0;
-    document.getElementById('dInactiveMembers').textContent = d.inactive_members || 0;
-    document.getElementById('dPendingActivations').textContent = d.pending_activations || 0;
-    document.getElementById('dPossibleDuplicates').textContent = d.possible_duplicates || 0;
-    document.getElementById('dTotalCollected').textContent = `₹${parseFloat(d.total_collected || 0).toLocaleString('en-IN')}`;
-    document.getElementById('dPaidMembers').textContent = d.paid_members || 0;
-    document.getElementById('dPendingPayments').textContent = d.pending_payments || 0;
-
-    const dupBadge = document.getElementById('dupBadgeCount');
-    dupBadge.textContent = d.possible_duplicates || 0;
-    dupBadge.classList.toggle('hidden', !d.possible_duplicates);
-
-    // Recent members
-    const mData = await api('/api/admin/members?limit=5');
-    document.getElementById('dashRecentMembers').innerHTML = (mData.members || []).map(m => `
+        // Recent members
+        const mData = await api('/api/admin/members?limit=5');
+        document.getElementById('dashRecentMembers').innerHTML = (mData.members || []).map(m => `
       <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
         <div><strong>${esc(m.name)}</strong> <span style="color:var(--primary);font-weight:700">(${m.member_id})</span></div>
         <span class="badge badge-${m.activation_status.toLowerCase()}">${m.activation_status}</span>
       </div>
     `).join('') || '<div>No recent members</div>';
 
-    // Recent payments
-    const pData = await api('/api/admin/payments?limit=5');
-    document.getElementById('dashRecentPayments').innerHTML = (pData.proofs || []).map(p => `
+        // Recent payments
+        const pData = await api('/api/admin/payments?limit=5');
+        document.getElementById('dashRecentPayments').innerHTML = (pData.proofs || []).map(p => `
       <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
         <div><strong>${esc(p.member_name)}</strong> (₹${p.amount})</div>
         <span class="badge badge-${p.status === 'APPROVED' ? 'paid' : 'pending'}">${p.status}</span>
       </div>
     `).join('') || '<div>No recent payments</div>';
 
-  } catch (e) { console.error(e); }
-}
-
-// Members Management
-async function loadMembers() {
-  const search = document.getElementById('memberSearch').value;
-  const act = document.getElementById('filterActivationStatus').value;
-  const pay = document.getElementById('filterPaymentStatus').value;
-  const sort = document.getElementById('sortMemberBy').value;
-
-  try {
-    const d = await api(`/api/admin/members?search=${encodeURIComponent(search)}&activation_status=${act}&payment_status=${pay}&sort_by=${sort}`);
-    const tbody = document.getElementById('membersTableBody');
-    if (!d.members || !d.members.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px">No members found.</td></tr>';
-      return;
+      } catch (e) { console.error(e); }
     }
 
-    tbody.innerHTML = d.members.map(m => `
+    // Members Management
+    async function loadMembers() {
+      const search = document.getElementById('memberSearch').value;
+      const act = document.getElementById('filterActivationStatus').value;
+      const pay = document.getElementById('filterPaymentStatus').value;
+      const sort = document.getElementById('sortMemberBy').value;
+
+      try {
+        const d = await api(`/api/admin/members?search=${encodeURIComponent(search)}&activation_status=${act}&payment_status=${pay}&sort_by=${sort}`);
+        const tbody = document.getElementById('membersTableBody');
+        if (!d.members || !d.members.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px">No members found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = d.members.map(m => `
       <tr>
         <td><strong style="color:var(--primary)">${m.member_id}</strong></td>
         <td>${esc(m.name)} ${m.is_duplicate ? '<span class="badge badge-duplicate">DUPLICATE</span>' : ''}</td>
@@ -644,104 +1366,107 @@ async function loadMembers() {
         <td><span class="badge badge-${m.activation_status.toLowerCase()}">${m.activation_status}</span></td>
         <td style="display:flex;gap:4px">
           <button class="btn-secondary btn-sm" onclick="showEditMemberModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">✏️ Edit</button>
-          ${m.activation_status === 'ACTIVE' 
-            ? `<button class="btn-danger btn-sm" onclick="toggleActivation(${m.id}, 'INACTIVE')">Deactivate</button>` 
+          ${m.activation_status === 'ACTIVE'
+            ? `<button class="btn-danger btn-sm" onclick="toggleActivation(${m.id}, 'INACTIVE')">Deactivate</button>`
             : `<button class="btn-success btn-sm" onclick="toggleActivation(${m.id}, 'ACTIVE')">Activate</button>`}
           <button class="btn-danger btn-sm" onclick="confirmDeleteMember(${m.id}, '${esc(m.name)}')">🗑</button>
         </td>
       </tr>
     `).join('');
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-function showAddMemberModal() {
-  currentEditingMemberId = null;
-  document.getElementById('memberModalTitle').textContent = 'Add New Member (Auto ID 101+)';
-  document.getElementById('mName').value = '';
-  document.getElementById('mPhone').value = '';
-  document.getElementById('mUpi').value = '';
-  document.getElementById('mEmail').value = '';
-  document.getElementById('mActivation').value = 'ACTIVE';
-  document.getElementById('mPaymentStatus').value = 'UNPAID';
-  document.getElementById('mGroup').value = 'General';
-  document.getElementById('memberModal').classList.remove('hidden');
-}
-
-function showEditMemberModal(m) {
-  currentEditingMemberId = m.id;
-  document.getElementById('memberModalTitle').textContent = `Edit Member — ${m.member_id}`;
-  document.getElementById('mName').value = m.name || '';
-  document.getElementById('mPhone').value = m.phone || '';
-  document.getElementById('mUpi').value = m.upi_id || '';
-  document.getElementById('mEmail').value = m.email || '';
-  document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
-  document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
-  document.getElementById('mGroup').value = m.group_category || 'General';
-  document.getElementById('memberModal').classList.remove('hidden');
-}
-
-async function saveMemberForm() {
-  const name = document.getElementById('mName').value.trim();
-  const phone = document.getElementById('mPhone').value.trim();
-  const upi_id = document.getElementById('mUpi').value.trim();
-  const email = document.getElementById('mEmail').value.trim();
-  const activation_status = document.getElementById('mActivation').value;
-  const payment_status = document.getElementById('mPaymentStatus').value;
-  const group_category = document.getElementById('mGroup').value.trim();
-
-  if (!name || !phone) { showToast('Name and Phone are required', 'error'); return; }
-
-  try {
-    if (currentEditingMemberId) {
-      await api(`/api/admin/members/${currentEditingMemberId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ name, phone, upi_id, email, activation_status, payment_status, group_category })
-      });
-      showToast('Member updated successfully', 'success');
-    } else {
-      await api('/api/admin/members', {
-        method: 'POST',
-        body: JSON.stringify({ name, phone, upi_id, email, activation_status, payment_status, group_category })
-      });
-      showToast('New member added with auto ID!', 'success');
-    }
-    closeModal('memberModal');
-    loadMembers();
-    loadDashboard();
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-async function toggleActivation(id, newStatus) {
-  try {
-    await api(`/api/admin/members/${id}/activation`, { method: 'PATCH', body: JSON.stringify({ activation_status: newStatus }) });
-    showToast(`Member status updated to ${newStatus}`, 'success');
-    loadMembers();
-    loadDashboard();
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-function confirmDeleteMember(id, name) {
-  openConfirm('Delete Member', `Are you sure you want to permanently delete member "${name}"? This action cannot be undone.`, async () => {
-    try {
-      await api(`/api/admin/members/${id}`, { method: 'DELETE' });
-      showToast('Member permanently deleted', 'info');
-      loadMembers();
-      loadDashboard();
-    } catch (e) { showToast(e.message, 'error'); }
-  });
-}
-
-// Duplicates Resolution
-async function loadDuplicates() {
-  try {
-    const d = await api('/api/admin/members/duplicates');
-    const container = document.getElementById('duplicatesContainer');
-    if (!d.duplicates || !d.duplicates.length) {
-      container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">✅ No duplicate member records detected.</div>';
-      return;
+      } catch (e) { showToast(e.message, 'error'); }
     }
 
-    container.innerHTML = d.duplicates.map(m => `
+    function showAddMemberModal() {
+      currentEditingMemberId = null;
+      document.getElementById('memberModalTitle').textContent = 'Add New Member (Auto ID 101+)';
+      document.getElementById('mName').value = '';
+      document.getElementById('mPhone').value = '';
+      document.getElementById('mUpi').value = '';
+      document.getElementById('mEmail').value = '';
+      document.getElementById('mPassword').value = '';
+      document.getElementById('mActivation').value = 'ACTIVE';
+      document.getElementById('mPaymentStatus').value = 'UNPAID';
+      document.getElementById('mGroup').value = 'General';
+      document.getElementById('memberModal').classList.remove('hidden');
+    }
+
+    function showEditMemberModal(m) {
+      currentEditingMemberId = m.id;
+      document.getElementById('memberModalTitle').textContent = `Edit Member — ${m.member_id}`;
+      document.getElementById('mName').value = m.name || '';
+      document.getElementById('mPhone').value = m.phone || '';
+      document.getElementById('mUpi').value = m.upi_id || '';
+      document.getElementById('mEmail').value = m.email || '';
+      document.getElementById('mPassword').value = '';
+      document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
+      document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
+      document.getElementById('mGroup').value = m.group_category || 'General';
+      document.getElementById('memberModal').classList.remove('hidden');
+    }
+
+    async function saveMemberForm() {
+      const name = document.getElementById('mName').value.trim();
+      const phone = document.getElementById('mPhone').value.trim();
+      const upi_id = document.getElementById('mUpi').value.trim();
+      const email = document.getElementById('mEmail').value.trim();
+      const password = document.getElementById('mPassword').value.trim();
+      const activation_status = document.getElementById('mActivation').value;
+      const payment_status = document.getElementById('mPaymentStatus').value;
+      const group_category = document.getElementById('mGroup').value.trim();
+
+      if (!name || !phone) { showToast('Name and Phone are required', 'error'); return; }
+
+      try {
+        if (currentEditingMemberId) {
+          await api(`/api/admin/members/${currentEditingMemberId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name, phone, upi_id, email, password, activation_status, payment_status, group_category })
+          });
+          showToast('Member updated successfully', 'success');
+        } else {
+          await api('/api/admin/members', {
+            method: 'POST',
+            body: JSON.stringify({ name, phone, upi_id, email, password, activation_status, payment_status, group_category })
+          });
+          showToast('New member added with auto ID!', 'success');
+        }
+        closeModal('memberModal');
+        loadMembers();
+        loadDashboard();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function toggleActivation(id, newStatus) {
+      try {
+        await api(`/api/admin/members/${id}/activation`, { method: 'PATCH', body: JSON.stringify({ activation_status: newStatus }) });
+        showToast(`Member status updated to ${newStatus}`, 'success');
+        loadMembers();
+        loadDashboard();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    function confirmDeleteMember(id, name) {
+      openConfirm('Delete Member', `Are you sure you want to permanently delete member "${name}"? This action cannot be undone.`, async () => {
+        try {
+          await api(`/api/admin/members/${id}`, { method: 'DELETE' });
+          showToast('Member permanently deleted', 'info');
+          loadMembers();
+          loadDashboard();
+        } catch (e) { showToast(e.message, 'error'); }
+      });
+    }
+
+    // Duplicates Resolution
+    async function loadDuplicates() {
+      try {
+        const d = await api('/api/admin/members/duplicates');
+        const container = document.getElementById('duplicatesContainer');
+        if (!d.duplicates || !d.duplicates.length) {
+          container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">✅ No duplicate member records detected.</div>';
+          return;
+        }
+
+        container.innerHTML = d.duplicates.map(m => `
       <div class="dup-card">
         <div class="dup-header">
           <div><strong style="color:var(--primary);font-size:16px">${m.member_id} — ${esc(m.name)}</strong></div>
@@ -761,35 +1486,35 @@ async function loadDuplicates() {
         </div>
       </div>
     `).join('');
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-async function resolveDup(id, action) {
-  try {
-    await api('/api/admin/members/resolve-duplicate', {
-      method: 'POST',
-      body: JSON.stringify({ keep_id: id, duplicate_ids: [id], action })
-    });
-    showToast('Duplicate resolved', 'success');
-    loadDuplicates();
-    loadDashboard();
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-// Payments Management
-async function loadAdminPayments() {
-  const search = document.getElementById('paymentSearch').value;
-  const status = document.getElementById('filterPayStatus').value;
-
-  try {
-    const d = await api(`/api/admin/payments?search=${encodeURIComponent(search)}&status=${status}`);
-    const tbody = document.getElementById('paymentsTableBody');
-    if (!d.proofs || !d.proofs.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px">No payment records found.</td></tr>';
-      return;
+      } catch (e) { showToast(e.message, 'error'); }
     }
 
-    tbody.innerHTML = d.proofs.map(p => `
+    async function resolveDup(id, action) {
+      try {
+        await api('/api/admin/members/resolve-duplicate', {
+          method: 'POST',
+          body: JSON.stringify({ keep_id: id, duplicate_ids: [id], action })
+        });
+        showToast('Duplicate resolved', 'success');
+        loadDuplicates();
+        loadDashboard();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // Payments Management
+    async function loadAdminPayments() {
+      const search = document.getElementById('paymentSearch').value;
+      const status = document.getElementById('filterPayStatus').value;
+
+      try {
+        const d = await api(`/api/admin/payments?search=${encodeURIComponent(search)}&status=${status}`);
+        const tbody = document.getElementById('paymentsTableBody');
+        if (!d.proofs || !d.proofs.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px">No payment records found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = d.proofs.map(p => `
       <tr>
         <td>#${p.id}</td>
         <td><strong>${esc(p.member_name)}</strong></td>
@@ -804,77 +1529,77 @@ async function loadAdminPayments() {
         </td>
       </tr>
     `).join('');
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-function showAddPaymentModal() {
-  currentEditingPaymentId = null;
-  document.getElementById('paymentModalTitle').textContent = 'Add Manual Payment';
-  document.getElementById('pMemberId').value = '';
-  document.getElementById('pAmount').value = '500';
-  document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('pRef').value = '';
-  document.getElementById('pStatus').value = 'APPROVED';
-  document.getElementById('paymentModal').classList.remove('hidden');
-}
-
-function showEditPaymentModal(p) {
-  currentEditingPaymentId = p.id;
-  document.getElementById('paymentModalTitle').textContent = `Edit Payment #${p.id}`;
-  document.getElementById('pMemberId').value = p.member_code || p.member_id;
-  document.getElementById('pAmount').value = p.amount;
-  document.getElementById('pDate').value = p.payment_date.split('T')[0];
-  document.getElementById('pRef').value = p.transaction_reference || '';
-  document.getElementById('pStatus').value = p.status;
-  document.getElementById('paymentModal').classList.remove('hidden');
-}
-
-async function savePaymentForm() {
-  const member_id = document.getElementById('pMemberId').value.trim();
-  const amount = document.getElementById('pAmount').value;
-  const payment_date = document.getElementById('pDate').value;
-  const transaction_reference = document.getElementById('pRef').value.trim();
-  const status = document.getElementById('pStatus').value;
-
-  if (!member_id || !amount) { showToast('Member ID and Amount are required', 'error'); return; }
-
-  try {
-    if (currentEditingPaymentId) {
-      await api(`/api/admin/payments/${currentEditingPaymentId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status })
-      });
-      showToast('Payment record updated', 'success');
-    } else {
-      await api('/api/admin/payments', {
-        method: 'POST',
-        body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status })
-      });
-      showToast('Payment recorded successfully', 'success');
+      } catch (e) { showToast(e.message, 'error'); }
     }
-    closeModal('paymentModal');
-    loadAdminPayments();
-    loadDashboard();
-  } catch (e) { showToast(e.message, 'error'); }
-}
 
-async function deletePayment(id) {
-  openConfirm('Delete Payment', 'Are you sure you want to remove this payment record?', async () => {
-    try {
-      await api(`/api/admin/payments/${id}`, { method: 'DELETE' });
-      showToast('Payment deleted', 'info');
-      loadAdminPayments();
-      loadDashboard();
-    } catch (e) { showToast(e.message, 'error'); }
-  });
-}
+    function showAddPaymentModal() {
+      currentEditingPaymentId = null;
+      document.getElementById('paymentModalTitle').textContent = 'Add Manual Payment';
+      document.getElementById('pMemberId').value = '';
+      document.getElementById('pAmount').value = '500';
+      document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('pRef').value = '';
+      document.getElementById('pStatus').value = 'APPROVED';
+      document.getElementById('paymentModal').classList.remove('hidden');
+    }
 
-// Activation Table
-async function loadActivationList() {
-  try {
-    const d = await api('/api/admin/members?limit=100');
-    const tbody = document.getElementById('activationTableBody');
-    tbody.innerHTML = (d.members || []).map(m => `
+    function showEditPaymentModal(p) {
+      currentEditingPaymentId = p.id;
+      document.getElementById('paymentModalTitle').textContent = `Edit Payment #${p.id}`;
+      document.getElementById('pMemberId').value = p.member_code || p.member_id;
+      document.getElementById('pAmount').value = p.amount;
+      document.getElementById('pDate').value = p.payment_date.split('T')[0];
+      document.getElementById('pRef').value = p.transaction_reference || '';
+      document.getElementById('pStatus').value = p.status;
+      document.getElementById('paymentModal').classList.remove('hidden');
+    }
+
+    async function savePaymentForm() {
+      const member_id = document.getElementById('pMemberId').value.trim();
+      const amount = document.getElementById('pAmount').value;
+      const payment_date = document.getElementById('pDate').value;
+      const transaction_reference = document.getElementById('pRef').value.trim();
+      const status = document.getElementById('pStatus').value;
+
+      if (!member_id || !amount) { showToast('Member ID and Amount are required', 'error'); return; }
+
+      try {
+        if (currentEditingPaymentId) {
+          await api(`/api/admin/payments/${currentEditingPaymentId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status })
+          });
+          showToast('Payment record updated', 'success');
+        } else {
+          await api('/api/admin/payments', {
+            method: 'POST',
+            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status })
+          });
+          showToast('Payment recorded successfully', 'success');
+        }
+        closeModal('paymentModal');
+        loadAdminPayments();
+        loadDashboard();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function deletePayment(id) {
+      openConfirm('Delete Payment', 'Are you sure you want to remove this payment record?', async () => {
+        try {
+          await api(`/api/admin/payments/${id}`, { method: 'DELETE' });
+          showToast('Payment deleted', 'info');
+          loadAdminPayments();
+          loadDashboard();
+        } catch (e) { showToast(e.message, 'error'); }
+      });
+    }
+
+    // Activation Table
+    async function loadActivationList() {
+      try {
+        const d = await api('/api/admin/members?limit=100');
+        const tbody = document.getElementById('activationTableBody');
+        tbody.innerHTML = (d.members || []).map(m => `
       <tr>
         <td><strong style="color:var(--primary)">${m.member_id}</strong></td>
         <td>${esc(m.name)}</td>
@@ -892,15 +1617,15 @@ async function loadActivationList() {
         </td>
       </tr>
     `).join('') || '<tr><td colspan="7" style="text-align:center">No records</td></tr>';
-  } catch (e) {}
-}
+      } catch (e) { }
+    }
 
-// Audit Logs
-async function loadAuditLogs() {
-  try {
-    const d = await api('/api/admin/audit-logs');
-    const tbody = document.getElementById('auditTableBody');
-    tbody.innerHTML = (d.logs || []).map(l => `
+    // Audit Logs
+    async function loadAuditLogs() {
+      try {
+        const d = await api('/api/admin/audit-logs');
+        const tbody = document.getElementById('auditTableBody');
+        tbody.innerHTML = (d.logs || []).map(l => `
       <tr>
         <td>${new Date(l.created_at).toLocaleString()}</td>
         <td><strong>${esc(l.actor_name)}</strong></td>
@@ -910,52 +1635,53 @@ async function loadAuditLogs() {
         <td>${esc(l.ip_address || '—')}</td>
       </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center">No audit logs found.</td></tr>';
-  } catch (e) {}
-}
+      } catch (e) { }
+    }
 
-// Settings
-async function loadSettings() {
-  try {
-    const d = await api('/api/settings');
-    if (d.org_name) document.getElementById('sOrgName').value = d.org_name;
-    if (d.org_name_tamil) document.getElementById('sOrgNameTa').value = d.org_name_tamil;
-    if (d.whatsapp_link) document.getElementById('sWhatsApp').value = d.whatsapp_link;
-    if (d.default_payment_amount) document.getElementById('sPayAmount').value = d.default_payment_amount;
-  } catch (e) {}
-}
+    // Settings
+    async function loadSettings() {
+      try {
+        const d = await api('/api/settings');
+        if (d.org_name) document.getElementById('sOrgName').value = d.org_name;
+        if (d.org_name_tamil) document.getElementById('sOrgNameTa').value = d.org_name_tamil;
+        if (d.whatsapp_link) document.getElementById('sWhatsApp').value = d.whatsapp_link;
+        if (d.default_payment_amount) document.getElementById('sPayAmount').value = d.default_payment_amount;
+      } catch (e) { }
+    }
 
-async function saveSettings() {
-  try {
-    await api('/api/settings', {
-      method: 'PUT',
-      body: JSON.stringify({
-        org_name: document.getElementById('sOrgName').value,
-        org_name_tamil: document.getElementById('sOrgNameTa').value,
-        whatsapp_link: document.getElementById('sWhatsApp').value,
-        default_payment_amount: document.getElementById('sPayAmount').value
-      })
+    async function saveSettings() {
+      try {
+        await api('/api/settings', {
+          method: 'PUT',
+          body: JSON.stringify({
+            org_name: document.getElementById('sOrgName').value,
+            org_name_tamil: document.getElementById('sOrgNameTa').value,
+            whatsapp_link: document.getElementById('sWhatsApp').value,
+            default_payment_amount: document.getElementById('sPayAmount').value
+          })
+        });
+        showToast('Settings saved successfully', 'success');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // Helpers & Modals
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function openConfirm(title, body, cb) {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmBody').textContent = body;
+      confirmCb = cb;
+      document.getElementById('confirmModal').classList.remove('hidden');
+    }
+    document.getElementById('confirmOkBtn').onclick = () => {
+      closeModal('confirmModal');
+      if (confirmCb) confirmCb();
+    };
+    function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (adminToken) initAdminApp();
     });
-    showToast('Settings saved successfully', 'success');
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-// Helpers & Modals
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-function openConfirm(title, body, cb) {
-  document.getElementById('confirmTitle').textContent = title;
-  document.getElementById('confirmBody').textContent = body;
-  confirmCb = cb;
-  document.getElementById('confirmModal').classList.remove('hidden');
-}
-document.getElementById('confirmOkBtn').onclick = () => {
-  closeModal('confirmModal');
-  if (confirmCb) confirmCb();
-};
-function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-window.addEventListener('DOMContentLoaded', () => {
-  if (adminToken) initAdminApp();
-});
-</script>
+  </script>
 </body>
+
 </html>

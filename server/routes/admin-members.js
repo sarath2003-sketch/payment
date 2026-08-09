@@ -338,12 +338,17 @@ router.put('/:id', async (req, res) => {
     group_category = group_category || existing.group_category || 'General';
     status = status || existing.status || 'ACTIVE';
 
+    let passwordHash = existing.password_hash;
+    if (req.body.password && req.body.password.trim()) {
+      passwordHash = await bcrypt.hash(req.body.password.trim(), 10);
+    }
+
     const updateRes = await pool.query(
       `UPDATE members 
-       SET name = $1, email = $2, phone = $3, upi_id = $4, activation_status = $5, payment_status = $6, group_category = $7, status = $8, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $9
+       SET name = $1, email = $2, phone = $3, upi_id = $4, activation_status = $5, payment_status = $6, group_category = $7, status = $8, password_hash = $9, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $10
        RETURNING id, member_id, name, email, phone, upi_id, activation_status, payment_status, group_category, status`,
-      [name, email, phone, upi_id || null, activation_status, payment_status, group_category, status, id]
+      [name, email, phone, upi_id || null, activation_status, payment_status, group_category, status, passwordHash, id]
     );
 
     await logAudit(req, 'EDIT_MEMBER', 'MEMBER', id, { old: existing, updated: updateRes.rows[0] });
