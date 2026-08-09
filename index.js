@@ -422,7 +422,7 @@ app.get('/api/health', async (req, res) => {
     socketConnections: io.engine.clientsCount
   });
 });
-app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date().toISOString() }));
+app.get(['/health', '/api/health-check'], (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // ============================================================
 // Error Handler
@@ -462,16 +462,16 @@ app.get('*', (req, res) => {
 });
 
 // ============================================================
-// Start Server
+// Start Server (Listen on 0.0.0.0 for Railway container deployment)
 // ============================================================
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log('='.repeat(60));
   console.log(`🚀 PF Chit Fund Club Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔌 Socket.IO: enabled`);
-  console.log(`📊 Admin Portal: http://localhost:${PORT}/`);
-  console.log(`👤 Member Portal: http://localhost:${PORT}/member-ui.html`);
+  console.log(`📊 Admin Portal: http://0.0.0.0:${PORT}/admin`);
+  console.log(`👤 Member Portal: http://0.0.0.0:${PORT}/`);
   console.log('='.repeat(60));
 });
 

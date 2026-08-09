@@ -16,9 +16,10 @@ if (!fs.existsSync(dbDir)) {
 const sqliteDbPath = path.join(dbDir, 'payment_system.sqlite');
 
 // Postgres Connection String
+const hasEnvDbUrl = !!(process.env.DATABASE_URL || process.env.RAILWAY_DATABASE_URL);
 let connectionString = process.env.DATABASE_URL || process.env.RAILWAY_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/amount_management_db';
 
-if (connectionString && process.env.DOCKER_ENV !== 'true') {
+if (!hasEnvDbUrl && connectionString && process.env.DOCKER_ENV !== 'true') {
   connectionString = connectionString.replace(/@db:/, '@localhost:');
 }
 
