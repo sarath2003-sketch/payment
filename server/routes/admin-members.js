@@ -123,9 +123,9 @@ router.get('/', async (req, res) => {
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Valid sort fields
+    // Valid sort fields (safe integer parsing for string member_ids)
     const validSorts = {
-      member_id: 'CAST(member_id AS INTEGER)',
+      member_id: "CAST(NULLIF(regexp_replace(member_id, '\\D', '', 'g'), '') AS INTEGER)",
       name: 'name',
       created_at: 'created_at',
       activation_status: 'activation_status',
@@ -142,18 +142,18 @@ router.get('/', async (req, res) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const offset = (pageNum - 1) * limitNum;
 
-    params.push(limitNum, offset);
+    const queryParams = [...params, limitNum, offset];
     const dataSql = `
       SELECT id, member_id, name, email, phone, upi_id, balance, status, 
              activation_status, payment_status, group_category, is_duplicate, 
              duplicate_reason, duplicate_of_id, duplicate_reviewed, deleted_at, created_at
       FROM members
       ${whereClause}
-      ORDER BY ${sortField} ${sortOrder}
-      LIMIT $${params.length - 1} OFFSET $${params.length}
+      ORDER BY ${sortField} ${sortOrder} NULLS LAST
+      LIMIT $${queryParams.length - 1} OFFSET $${queryParams.length}
     `;
 
-    const membersRes = await pool.query(dataSql, params);
+    const membersRes = await pool.query(dataSql, queryParams);
 
     res.json({
       members: membersRes.rows,
@@ -164,7 +164,7 @@ router.get('/', async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching members:', err);
-    res.status(500).json({ error: 'Failed to fetch members list' });
+    res.status(500).json({ error: 'Failed to fetch members list: ' + err.message });
   }
 });
 
@@ -252,18 +252,36 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Phone number must be a valid 10-digit number.' });
     }
 
-    if (!email) {
-      email = `member_${phone}@pfchitfund.com`;
-    }
-
     client = await pool.connect();
     await client.query('BEGIN');
 
-    // Duplicate check
-    const dupCheck = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1 OR email = $2', [phone, email]);
+    // Check if phone number is already registered to another member
+    const existingPhone = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1', [phone]);
+    if (existingPhone.rows.length > 0) {
+      await client.query('ROLLBACK');
+      const m = existingPhone.rows[0];
+      return res.status(400).json({ error: `Phone number ${phone} is already registered to Member ID ${m.member_id} (${m.name}).` });
+    }
+
+    // Auto-generate or format email cleanly with uniqueness check
+    if (!email) {
+      email = `member_${phone}@pfchitfund.com`;
+    }
+    const existingEmail = await client.query('SELECT id FROM members WHERE email = $1', [email]);
+    if (existingEmail.rows.length > 0) {
+      email = `${email.split('@')[0]}_${Date.now().toString().slice(-4)}@${email.split('@')[1] || 'pfchitfund.com'}`;
+    }
+
+    // Check for potential duplicate matching by Name or UPI
     let isDuplicate = false;
     let duplicateReason = null;
     let duplicateOfId = null;
+
+    const dupCheck = await client.query(
+      `SELECT id, member_id, name FROM members 
+       WHERE LOWER(name) = LOWER($1) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))`,
+      [name, upi_id]
+    );
 
     if (dupCheck.rows.length > 0) {
       isDuplicate = true;
@@ -276,6 +294,7 @@ router.post('/', async (req, res) => {
 
     const defaultPwd = password || '123456';
     const passwordHash = await bcrypt.hash(defaultPwd, 10);
+    const mainStatus = (activation_status === 'INACTIVE' || activation_status === 'REJECTED') ? 'INACTIVE' : 'ACTIVE';
 
     const insertRes = await client.query(
       `INSERT INTO members 
@@ -289,7 +308,7 @@ router.post('/', async (req, res) => {
         phone,
         upi_id || null,
         passwordHash,
-        (activation_status === 'ACTIVE' ? 'ACTIVE' : 'ACTIVE'),
+        mainStatus,
         activation_status || 'ACTIVE',
         payment_status || 'UNPAID',
         group_category || 'General',

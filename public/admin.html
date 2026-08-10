@@ -1278,12 +1278,20 @@
       if (adminToken) h['Authorization'] = `Bearer ${adminToken}`;
       const r = await fetch(targetUrl, { ...opts, headers: h });
       const d = await r.json().catch(() => ({}));
+      if ((r.status === 401 || r.status === 403) && !url.includes('/auth/login')) {
+        adminToken = null;
+        localStorage.removeItem('adminToken');
+        doAdminLogout();
+        showToast('Session expired or unauthorized. Please login again.', 'error');
+        throw new Error(d.error || 'Authentication required');
+      }
       if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       return d;
     }
 
     function showToast(msg, type = 'info') {
       const c = document.getElementById('toast-container');
+      if (!c) return;
       const t = document.createElement('div');
       t.className = `toast toast-${type}`;
       t.textContent = msg;
@@ -1338,6 +1346,7 @@
       if (name === 'duplicates') loadDuplicates();
       if (name === 'payments') loadAdminPayments();
       if (name === 'activation') loadActivationList();
+      if (name === 'auction-control') loadAuctionControl();
       if (name === 'admin-chat-groups') { loadAdminGroupRequests(); loadAdminGroups(); }
       if (name === 'audit-log') loadAuditLogs();
       if (name === 'settings') loadSettings();
@@ -1374,7 +1383,7 @@
         document.getElementById('dashRecentMembers').innerHTML = (mData.members || []).map(m => `
       <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
         <div><strong>${esc(m.name)}</strong> <span style="color:var(--primary);font-weight:700">(${m.member_id})</span></div>
-        <span class="badge badge-${m.activation_status.toLowerCase()}">${m.activation_status}</span>
+        <span class="badge badge-${(m.activation_status || 'pending').toLowerCase()}">${m.activation_status || 'PENDING'}</span>
       </div>
     `).join('') || '<div>No recent members</div>';
 
@@ -1387,7 +1396,7 @@
       </div>
     `).join('') || '<div>No recent payments</div>';
 
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error('Dashboard load error:', e); }
     }
 
     // Members Management
@@ -1715,6 +1724,172 @@
         });
         showToast('Settings saved successfully', 'success');
       } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // Activation List Loader
+    async function loadActivationList() {
+      const tbody = document.getElementById('activationTableBody');
+      if (!tbody) return;
+      try {
+        const d = await api('/api/admin/members?limit=100');
+        if (!d.members || !d.members.length) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No members registered yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = d.members.map(m => `
+          <tr>
+            <td><strong style="color:var(--primary)">${m.member_id}</strong></td>
+            <td><strong>${esc(m.name)}</strong></td>
+            <td>${esc(m.phone)}</td>
+            <td>${new Date(m.created_at).toLocaleDateString()}</td>
+            <td><span class="badge badge-${(m.payment_status || 'unpaid').toLowerCase()}">${m.payment_status || 'UNPAID'}</span></td>
+            <td><span class="badge badge-${(m.activation_status || 'pending').toLowerCase()}">${m.activation_status || 'PENDING'}</span></td>
+            <td>
+              ${m.activation_status === 'ACTIVE' 
+                ? `<button class="btn-danger btn-sm" onclick="toggleActivation(${m.id}, 'INACTIVE')">Deactivate</button>` 
+                : `<button class="btn-success btn-sm" onclick="toggleActivation(${m.id}, 'ACTIVE')">✅ Activate</button>`}
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--red)">Failed to load activation list: ${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    // Audit Logs Loader
+    async function loadAuditLogs() {
+      const tbody = document.getElementById('auditTableBody');
+      if (!tbody) return;
+      try {
+        const d = await api('/api/admin/audit-logs?limit=50');
+        if (!d.logs || !d.logs.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">No activity log records yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = d.logs.map(l => `
+          <tr>
+            <td style="font-size:12px;color:var(--text-muted)">${new Date(l.created_at).toLocaleString()}</td>
+            <td><strong>${esc(l.actor_name)}</strong> <span style="font-size:11px;color:var(--text-dim)">(${l.actor_type})</span></td>
+            <td><span class="badge badge-primary" style="font-size:11px">${esc(l.action)}</span></td>
+            <td>${esc(l.entity_type)} ${l.entity_id ? '#' + l.entity_id : ''}</td>
+            <td style="font-size:12px;max-width:250px;word-break:break-word">${esc(typeof l.details === 'object' ? JSON.stringify(l.details) : (l.details || '—'))}</td>
+            <td style="font-size:12px;color:var(--text-muted)">${esc(l.ip_address || '127.0.0.1')}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--red)">Failed to load audit logs: ${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    // Live Auction Control Loader
+    async function loadAuctionControl() {
+      const container = document.getElementById('auctionControlContainer');
+      if (!container) return;
+      try {
+        const res = await api('/api/auction/current');
+        const auction = res.auction;
+        if (!auction) {
+          container.innerHTML = `
+            <div style="text-align:center;padding:40px">
+              <div style="font-size:48px;margin-bottom:12px">🏛️</div>
+              <h3 style="margin-bottom:8px">No Active Live Auction</h3>
+              <p style="color:var(--text-muted);margin-bottom:20px">Create a new live chit fund auction for members to bid.</p>
+              <button class="btn-primary" onclick="showCreateAuctionPrompt()">+ Create New Auction</button>
+            </div>
+          `;
+          return;
+        }
+
+        const isLive = auction.status === 'LIVE';
+        const isPaused = auction.status === 'PAUSED';
+        const isScheduled = auction.status === 'SCHEDULED' || auction.status === 'WAITING';
+
+        container.innerHTML = `
+          <div style="background:var(--bg-surface-hover);padding:20px;border-radius:12px;border:1px solid var(--border);margin-bottom:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div>
+                <h3 style="font-size:18px;color:var(--primary);margin-bottom:4px">${esc(auction.title)}</h3>
+                <div style="font-size:13px;color:var(--text-muted)">Auction ID: #${auction.id} | Date: ${auction.auction_date}</div>
+              </div>
+              <span class="badge badge-${(auction.status || '').toLowerCase()}">${auction.status}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:12px;margin-bottom:20px">
+              <div style="background:var(--bg-card);padding:12px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:12px;color:var(--text-muted)">Starting Amount</div>
+                <div style="font-size:16px;font-weight:700">₹${parseFloat(auction.starting_amount || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-card);padding:12px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:12px;color:var(--text-muted)">Bid Increment</div>
+                <div style="font-size:16px;font-weight:700">₹${parseFloat(auction.bid_increment || 500).toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-card);padding:12px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:12px;color:var(--text-muted)">Current Highest Bid</div>
+                <div style="font-size:16px;font-weight:700;color:var(--green)">₹${parseFloat(auction.current_highest_bid || auction.starting_amount || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-card);padding:12px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:12px;color:var(--text-muted)">Highest Bidder</div>
+                <div style="font-size:15px;font-weight:700;color:var(--primary)">${esc(auction.highest_bidder_name || 'No bids yet')}</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              ${isScheduled || isPaused ? `<button class="btn-success" onclick="startAuction(${auction.id})">▶️ ${isPaused ? 'Resume Auction' : 'Start Live Auction'}</button>` : ''}
+              ${isLive ? `<button class="btn-warning" onclick="pauseAuction(${auction.id})">⏸ Pause Auction</button>` : ''}
+              ${isLive || isPaused ? `<button class="btn-danger" onclick="endAuctionAdmin(${auction.id})">⏹ End Auction</button>` : ''}
+              <button class="btn-secondary" onclick="showCreateAuctionPrompt()">+ Create New Auction</button>
+            </div>
+          </div>
+        `;
+      } catch (e) {
+        container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Failed to load auction control: ${esc(e.message)}</div>`;
+      }
+    }
+
+    async function startAuction(id) {
+      try {
+        await api(`/api/auction/${id}/start`, { method: 'POST' });
+        showToast('Auction is now LIVE!', 'success');
+        loadAuctionControl();
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+    async function pauseAuction(id) {
+      try {
+        await api(`/api/auction/${id}/pause`, { method: 'POST' });
+        showToast('Auction paused', 'warning');
+        loadAuctionControl();
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+    async function endAuctionAdmin(id) {
+      openConfirm('End Auction', 'Are you sure you want to end this auction now?', async () => {
+        try {
+          await api(`/api/auction/${id}/end`, { method: 'POST' });
+          showToast('Auction ended', 'info');
+          loadAuctionControl();
+        } catch(e) { showToast(e.message, 'error'); }
+      });
+    }
+    async function showCreateAuctionPrompt() {
+      const title = prompt('Enter Auction Title:', 'Monthly Chit Fund Auction');
+      if (!title) return;
+      const startAmt = prompt('Enter Starting Amount (₹):', '5000');
+      if (!startAmt) return;
+      const increment = prompt('Enter Bid Increment (₹):', '500');
+      if (!increment) return;
+
+      try {
+        await api('/api/auction', {
+          method: 'POST',
+          body: JSON.stringify({
+            title,
+            auction_date: new Date().toISOString().split('T')[0],
+            duration_seconds: 300,
+            starting_amount: parseFloat(startAmt),
+            bid_increment: parseFloat(increment)
+          })
+        });
+        showToast('New Auction created successfully!', 'success');
+        loadAuctionControl();
+      } catch(e) { showToast(e.message, 'error'); }
     }
 
     // Helpers & Modals

@@ -119,7 +119,7 @@ router.post(['/', '/register'], async (req, res) => {
     const result = await client.query(
       `INSERT INTO members 
         (member_id, name, email, phone, upi_id, password_hash, balance, status, activation_status, payment_status, is_duplicate, duplicate_reason, duplicate_of_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, 0.00, 'ACTIVE', 'PENDING', 'UNPAID', $7, $8, $9) 
+       VALUES ($1, $2, $3, $4, $5, $6, 0.00, 'ACTIVE', 'ACTIVE', 'UNPAID', $7, $8, $9) 
        RETURNING id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status, created_at`,
       [memberId, name, email, cleanPhone, upiId || null, hashedPassword, isDuplicate, duplicateReason, duplicateOfId]
     );
@@ -178,7 +178,7 @@ router.post(['/login', '/login/'], async (req, res) => {
     password = password || '';
 
     if (!member_id || !password) {
-      return res.status(400).json({ error: 'Member ID and password are required.' });
+      return res.status(400).json({ error: 'Member ID, Phone, or Email and password are required.' });
     }
 
     // Find member by member_id, email, or phone
@@ -186,7 +186,9 @@ router.post(['/login', '/login/'], async (req, res) => {
     if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
 
     const result = await pool.query(
-      'SELECT id, member_id, name, email, phone, password_hash, balance, status FROM members WHERE member_id = $1 OR email = $1 OR (phone = $2 AND $2 != \'\')',
+      `SELECT id, member_id, name, email, phone, password_hash, balance, status, activation_status 
+       FROM members 
+       WHERE LOWER(member_id) = LOWER($1) OR LOWER(email) = LOWER($1) OR (phone = $2 AND $2 != '')`,
       [member_id, cleanPhone]
     );
 
