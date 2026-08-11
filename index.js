@@ -37,6 +37,8 @@ const seedFundRoutes = require('./server/routes/seed-fund');
 const repaymentsRoutes = require('./server/routes/repayments');
 const groupsRoutes = require('./server/routes/groups');
 const nomineesRoutes = require('./server/routes/nominees');
+const schedulesRoutes = require('./server/routes/schedules');
+const noticesRoutes = require('./server/routes/notices');
 const { endAuction } = require('./server/routes/auction');
 
 const app = express();
@@ -131,8 +133,16 @@ io.use((socket, next) => {
   }
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log(`[Socket.IO] Client connected: ${socket.id} | User: ${socket.user?.member_id || socket.user?.username || 'guest'}`);
+
+  // Update member online status if logged in as member
+  if (socket.user && socket.user.type === 'member' && socket.user.id) {
+    try {
+      await pool.query(`UPDATE members SET is_online = 1, last_active_at = CURRENT_TIMESTAMP WHERE id = $1`, [socket.user.id]);
+      io.emit('member:status-change', { member_id: socket.user.id, is_online: 1 });
+    } catch (e) { console.error('Error setting member online:', e.message); }
+  }
 
   // Join auction room
   socket.on('join-auction', ({ auction_id }) => {
@@ -348,8 +358,14 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log(`[Socket.IO] Client disconnected: ${socket.id}`);
+    if (socket.user && socket.user.type === 'member' && socket.user.id) {
+      try {
+        await pool.query(`UPDATE members SET is_online = 0, last_active_at = CURRENT_TIMESTAMP WHERE id = $1`, [socket.user.id]);
+        io.emit('member:status-change', { member_id: socket.user.id, is_online: 0 });
+      } catch (e) { console.error('Error setting member offline:', e.message); }
+    }
   });
 });
 
@@ -453,6 +469,12 @@ app.use('/seettu', seettuRoutes);
 
 app.use('/api/seed-fund', seedFundRoutes);
 app.use('/seed-fund', seedFundRoutes);
+
+app.use('/api/schedules', schedulesRoutes);
+app.use('/schedules', schedulesRoutes);
+
+app.use('/api/notices', noticesRoutes);
+app.use('/notices', noticesRoutes);
 
 app.use('/api/repayments', repaymentsRoutes);
 app.use('/repayments', repaymentsRoutes);

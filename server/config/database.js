@@ -494,6 +494,52 @@ function initSQLiteFallback() {
         );
       `);
 
+      // Column migrations for members
+      sqliteDb.run(`ALTER TABLE members ADD COLUMN is_online INTEGER DEFAULT 0`, () => {});
+      sqliteDb.run(`ALTER TABLE members ADD COLUMN last_active_at DATETIME`, () => {});
+
+      // Column migrations for seed_fund_distributions
+      sqliteDb.run(`ALTER TABLE seed_fund_distributions ADD COLUMN monthly_amount REAL`, () => {});
+      sqliteDb.run(`ALTER TABLE seed_fund_distributions ADD COLUMN number_of_months INTEGER DEFAULT 12`, () => {});
+      sqliteDb.run(`ALTER TABLE seed_fund_distributions ADD COLUMN start_date TEXT`, () => {});
+      sqliteDb.run(`ALTER TABLE seed_fund_distributions ADD COLUMN next_payment_date TEXT`, () => {});
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS payment_schedules (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          distribution_id INTEGER NOT NULL,
+          member_id INTEGER NOT NULL,
+          schedule_number INTEGER NOT NULL,
+          due_date TEXT NOT NULL,
+          amount_due REAL NOT NULL,
+          amount_paid REAL DEFAULT 0.00,
+          status TEXT DEFAULT 'PENDING',
+          paid_date TEXT,
+          proof_file_path TEXT,
+          transaction_reference TEXT,
+          rejection_reason TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS notice_board (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          target_type TEXT DEFAULT 'ALL',
+          target_id INTEGER,
+          amount_due REAL,
+          due_date TEXT,
+          notice_date TEXT NOT NULL,
+          status TEXT DEFAULT 'PUBLISHED',
+          created_by INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // Seed initial admin user if missing
       sqliteDb.run(`
         INSERT OR IGNORE INTO admin_users (username, password_hash, email, status)

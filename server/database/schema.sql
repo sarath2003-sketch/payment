@@ -423,6 +423,38 @@ CREATE TABLE IF NOT EXISTS repayments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS payment_schedules (
+    id SERIAL PRIMARY KEY,
+    distribution_id INTEGER NOT NULL REFERENCES seed_fund_distributions(id) ON DELETE CASCADE,
+    member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    schedule_number INTEGER NOT NULL,
+    due_date DATE NOT NULL,
+    amount_due DECIMAL(12, 2) NOT NULL,
+    amount_paid DECIMAL(12, 2) DEFAULT 0.00,
+    status VARCHAR(30) DEFAULT 'PENDING',
+    paid_date DATE,
+    proof_file_path VARCHAR(500),
+    transaction_reference VARCHAR(100),
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notice_board (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    target_type VARCHAR(20) DEFAULT 'ALL',
+    target_id INTEGER,
+    amount_due DECIMAL(12, 2),
+    due_date DATE,
+    notice_date DATE NOT NULL,
+    status VARCHAR(20) DEFAULT 'PUBLISHED',
+    created_by INTEGER REFERENCES admin_users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ============================================================
 -- DEFAULT ADMIN USER (password: Admin@123456)
 -- ============================================================

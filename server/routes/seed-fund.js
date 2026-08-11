@@ -35,7 +35,7 @@ router.get('/distributions', authenticateToken, async (req, res) => {
 });
 
 /**
- * CREATE A NEW SEED FUND DISTRIBUTION (LOAN-LIKE RECORD)
+ * CREATE A NEW SEED FUND DISTRIBUTION (LOAN-LIKE RECORD WITH PAYMENT SCHEDULE)
  * POST /api/seed-fund/distributions
  */
 router.post('/distributions', authenticateToken, requireAdmin, async (req, res) => {
@@ -46,7 +46,10 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
       member_id,
       principal_amount,
       interest_percentage = 5.0,
+      monthly_amount,
+      number_of_months = 12,
       distribution_date,
+      start_date,
       due_date,
       nominee_name,
       notes
@@ -54,6 +57,7 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
 
     principal_amount = parseFloat(principal_amount);
     interest_percentage = parseFloat(interest_percentage);
+    number_of_months = parseInt(number_of_months, 10) || 12;
 
     if (!member_id || isNaN(principal_amount) || principal_amount <= 0) {
       return res.status(400).json({ error: 'Valid member and positive principal amount are required.' });
@@ -68,12 +72,19 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
     const total_payable = Math.round((principal_amount + interest_amount) * 100) / 100;
     const remaining_amount = total_payable;
 
+    // Monthly payment calculation
+    let calculatedMonthly = monthly_amount ? parseFloat(monthly_amount) : Math.round((total_payable / number_of_months) * 100) / 100;
+
     const distDate = distribution_date || new Date().toISOString().split('T')[0];
+    const sDate = start_date || distDate;
     
-    // Default due date to 30 days if omitted
-    let defaultDueDate = new Date();
-    defaultDueDate.setDate(defaultDueDate.getDate() + 30);
-    const dueDate = due_date || defaultDueDate.toISOString().split('T')[0];
+    // Default next payment due date (1 month after start_date if omitted)
+    let startDateObj = new Date(sDate);
+    if (isNaN(startDateObj.getTime())) startDateObj = new Date();
+    
+    const nextPayObj = new Date(startDateObj);
+    nextPayObj.setMonth(nextPayObj.getMonth() + 1);
+    const nextPaymentDate = due_date || nextPayObj.toISOString().split('T')[0];
 
     // Auto-fetch nominee if not provided
     if (!nominee_name) {
@@ -88,9 +99,9 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
     const result = await client.query(`
       INSERT INTO seed_fund_distributions (
         group_id, member_id, principal_amount, interest_percentage, interest_amount,
-        total_payable, total_repaid, remaining_amount, distribution_date, due_date,
-        nominee_name, payment_status, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, 0.00, $7, $8, $9, $10, 'PENDING', $11)
+        total_payable, total_repaid, remaining_amount, monthly_amount, number_of_months,
+        distribution_date, start_date, due_date, next_payment_date, nominee_name, payment_status, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, 0.00, $7, $8, $9, $10, $11, $12, $13, $14, 'PENDING', $15)
       RETURNING *
     `, [
       group_id || null,
@@ -100,13 +111,55 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
       interest_amount,
       total_payable,
       remaining_amount,
+      calculatedMonthly,
+      number_of_months,
       distDate,
-      dueDate,
+      sDate,
+      nextPaymentDate,
+      nextPaymentDate,
       nominee_name || null,
       notes || null
     ]);
 
     const distribution = result.rows[0];
+
+    // Generate N month-by-month payment schedules
+    const schedules = [];
+    let curDueDate = new Date(nextPaymentDate);
+
+    for (let i = 1; i <= number_of_months; i++) {
+      const dueDateStr = curDueDate.toISOString().split('T')[0];
+      const schedRes = await client.query(`
+        INSERT INTO payment_schedules (
+          distribution_id, member_id, schedule_number, due_date, amount_due, amount_paid, status
+        ) VALUES ($1, $2, $3, $4, $5, 0.00, 'PENDING')
+        RETURNING *
+      `, [distribution.id, member_id, i, dueDateStr, calculatedMonthly]);
+
+      schedules.push(schedRes.rows[0]);
+
+      // Increment date by 1 month for next schedule row
+      curDueDate.setMonth(curDueDate.getMonth() + 1);
+    }
+
+    // Auto-create initial notice on Notice Board for member
+    const memRes = await client.query('SELECT name, member_id FROM members WHERE id = $1', [member_id]);
+    const memberName = memRes.rows.length > 0 ? memRes.rows[0].name : 'Member';
+    const memberCode = memRes.rows.length > 0 ? memRes.rows[0].member_id : member_id;
+
+    await client.query(`
+      INSERT INTO notice_board (
+        title, description, target_type, target_id, amount_due, due_date, notice_date, status, created_by
+      ) VALUES ($1, $2, 'MEMBER', $3, $4, $5, $6, 'PUBLISHED', $7)
+    `, [
+      `Upcoming Payment Notice — ${memberName} (${memberCode})`,
+      `Payment of ₹${calculatedMonthly} is due on ${nextPaymentDate} for Seed Fund Loan #${distribution.id}.`,
+      member_id,
+      calculatedMonthly,
+      nextPaymentDate,
+      distDate,
+      req.admin.id
+    ]);
 
     // Record transaction in ledger
     const monthStr = distDate.substring(0, 7);
@@ -119,15 +172,16 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
       distDate,
       monthStr,
       principal_amount,
-      `Fund Distribution #${distribution.id} (Principal: ₹${principal_amount}, Interest: ₹${interest_amount})`,
+      `Fund Distribution #${distribution.id} (${number_of_months} Months @ ${interest_percentage}%, Monthly: ₹${calculatedMonthly})`,
       distribution.id
     ]);
 
     await client.query('COMMIT');
 
     res.status(201).json({
-      message: 'Seed fund distribution created successfully!',
-      distribution
+      message: 'Seed fund distribution and payment schedule created successfully!',
+      distribution,
+      schedules
     });
   } catch (err) {
     await client.query('ROLLBACK');
