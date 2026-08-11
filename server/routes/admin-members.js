@@ -34,7 +34,7 @@ async function getNextMemberId(clientOrPool) {
     let maxNum = 100;
     for (const row of res.rows || []) {
       const num = parseInt(row.member_id, 10);
-      if (!isNaN(num) && num > maxNum) {
+      if (!isNaN(num) && num >= 100 && num < 10000 && num > maxNum) {
         maxNum = num;
       }
     }
@@ -72,6 +72,32 @@ router.get('/dashboard-stats', async (req, res) => {
   } catch (err) {
     console.error('Error fetching dashboard stats:', err);
     res.status(500).json({ error: 'Failed to fetch dashboard summary stats' });
+  }
+});
+
+/**
+ * GET /api/admin/members/lookup/:query
+ * Fast lookup of member by Member ID or Name for auto-fill
+ */
+router.get('/lookup/:query', async (req, res) => {
+  try {
+    const q = req.params.query.trim();
+    const result = await pool.query(`
+      SELECT id, member_id AS member_code, name, phone, email, upi_id
+      FROM members
+      WHERE (CAST(id AS TEXT) = $1 OR member_id = $1 OR phone = $1 OR LOWER(name) LIKE LOWER($2))
+        AND deleted_at IS NULL
+      LIMIT 5
+    `, [q, `%${q}%`]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+
+    res.json({ member: result.rows[0], matches: result.rows });
+  } catch (err) {
+    console.error('Error looking up member:', err);
+    res.status(500).json({ error: 'Lookup failed' });
   }
 });
 
@@ -144,7 +170,7 @@ router.get('/', async (req, res) => {
 
     const queryParams = [...params, limitNum, offset];
     const dataSql = `
-      SELECT id, member_id, name, email, phone, upi_id, balance, status, 
+      SELECT id, member_id, name, email, phone, upi_id, profile_photo, balance, status, 
              activation_status, payment_status, group_category, is_duplicate, 
              duplicate_reason, duplicate_of_id, duplicate_reviewed, deleted_at, created_at
       FROM members
@@ -175,7 +201,7 @@ router.get('/', async (req, res) => {
 router.get('/duplicates', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT m1.id, m1.member_id, m1.name, m1.email, m1.phone, m1.upi_id, m1.activation_status, 
+      SELECT m1.id, m1.member_id, m1.name, m1.email, m1.phone, m1.upi_id, m1.profile_photo, m1.activation_status, 
              m1.is_duplicate, m1.duplicate_reason, m1.duplicate_of_id, m1.created_at,
              m2.member_id AS matching_member_id, m2.name AS matching_name, m2.phone AS matching_phone
       FROM members m1
@@ -236,13 +262,14 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   let client;
   try {
-    let { name, email, phone, upi_id, password, activation_status, payment_status, group_category } = req.body || {};
+    let { name, email, phone, upi_id, profile_photo, password, activation_status, payment_status, group_category } = req.body || {};
 
     name = (name || '').trim();
     phone = (phone || '').trim().replace(/\D/g, '');
     if (phone.length > 10) phone = phone.slice(-10);
     email = (email || '').trim().toLowerCase();
     upi_id = (upi_id || '').trim();
+    profile_photo = (profile_photo || '').trim();
 
     if (!name || !phone) {
       return res.status(400).json({ error: 'Name and phone number are required.' });
@@ -298,15 +325,16 @@ router.post('/', async (req, res) => {
 
     const insertRes = await client.query(
       `INSERT INTO members 
-        (member_id, name, email, phone, upi_id, password_hash, status, activation_status, payment_status, group_category, is_duplicate, duplicate_reason, duplicate_of_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-       RETURNING id, member_id, name, email, phone, upi_id, status, activation_status, payment_status, group_category, created_at`,
+        (member_id, name, email, phone, upi_id, profile_photo, password_hash, status, activation_status, payment_status, group_category, is_duplicate, duplicate_reason, duplicate_of_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       RETURNING id, member_id, name, email, phone, upi_id, profile_photo, status, activation_status, payment_status, group_category, created_at`,
       [
         nextMemberId,
         name,
         email,
         phone,
         upi_id || null,
+        profile_photo || null,
         passwordHash,
         mainStatus,
         activation_status || 'ACTIVE',
@@ -340,7 +368,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    let { name, email, phone, upi_id, activation_status, payment_status, group_category, status } = req.body || {};
+    let { name, email, phone, upi_id, profile_photo, activation_status, payment_status, group_category, status } = req.body || {};
 
     const existingRes = await pool.query('SELECT * FROM members WHERE id = $1', [id]);
     if (existingRes.rows.length === 0) {
@@ -353,6 +381,7 @@ router.put('/:id', async (req, res) => {
     if (phone.length > 10) phone = phone.slice(-10);
     email = (email !== undefined) ? email.trim().toLowerCase() : existing.email;
     upi_id = (upi_id !== undefined) ? upi_id.trim() : existing.upi_id;
+    profile_photo = (profile_photo !== undefined) ? profile_photo.trim() : existing.profile_photo;
     activation_status = activation_status || existing.activation_status || 'ACTIVE';
     payment_status = payment_status || existing.payment_status || 'UNPAID';
     group_category = group_category || existing.group_category || 'General';
@@ -365,10 +394,10 @@ router.put('/:id', async (req, res) => {
 
     const updateRes = await pool.query(
       `UPDATE members 
-       SET name = $1, email = $2, phone = $3, upi_id = $4, activation_status = $5, payment_status = $6, group_category = $7, status = $8, password_hash = $9, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $10
-       RETURNING id, member_id, name, email, phone, upi_id, activation_status, payment_status, group_category, status`,
-      [name, email, phone, upi_id || null, activation_status, payment_status, group_category, status, passwordHash, id]
+       SET name = $1, email = $2, phone = $3, upi_id = $4, profile_photo = $5, activation_status = $6, payment_status = $7, group_category = $8, status = $9, password_hash = $10, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $11
+       RETURNING id, member_id, name, email, phone, upi_id, profile_photo, activation_status, payment_status, group_category, status`,
+      [name, email, phone, upi_id || null, profile_photo || null, activation_status, payment_status, group_category, status, passwordHash, id]
     );
 
     await logAudit(req, 'EDIT_MEMBER', 'MEMBER', id, { old: existing, updated: updateRes.rows[0] });

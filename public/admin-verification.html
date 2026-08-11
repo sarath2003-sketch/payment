@@ -419,39 +419,82 @@
 
     <!-- PAYMENT VERIFICATION SECTION -->
     <div class="card">
-        <h2 class="card-title">💳 Payment Verification</h2>
+        <div class="card-title">💳 Payment Verification</div>
 
-        <div class="filter-section">
-            <button class="filter-btn active" onclick="filterPayments('PENDING')">Pending</button>
-            <button class="filter-btn" onclick="filterPayments('APPROVED')">Approved</button>
-            <button class="filter-btn" onclick="filterPayments('REJECTED')">Rejected</button>
-            <button class="filter-btn" onclick="filterPayments('ALL')">All</button>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('paymentVerification')">Payment Verification</button>
+            <button class="tab-btn" onclick="showTab('monthlyDues')">Monthly Dues</button>
         </div>
 
-        <div id="alertContainer"></div>
+        <!-- Payment Verification Tab -->
+        <div id="paymentVerificationTab">
+            <div class="filter-section">
+                <button class="filter-btn active" onclick="filterPayments('PENDING')">Pending</button>
+                <button class="filter-btn" onclick="filterPayments('APPROVED')">Approved</button>
+                <button class="filter-btn" onclick="filterPayments('REJECTED')">Rejected</button>
+                <button class="filter-btn" onclick="filterPayments('ALL')">All</button>
+            </div>
 
-        <div id="paymentLoading" class="loading">Loading payments...</div>
+            <div id="alertContainer"></div>
 
-        <table id="paymentTable" class="hidden">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Member ID</th>
-                    <th>Member Name</th>
-                    <th>Amount</th>
-                    <th>Reference ID</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="paymentBody">
-            </tbody>
-        </table>
+            <div id="paymentLoading" class="loading">Loading payments...</div>
 
-        <div id="paymentEmpty" class="empty-state hidden">
-            <div class="empty-state-icon">📄</div>
-            <p>No payments found</p>
+            <table id="paymentTable" class="hidden">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Member ID</th>
+                        <th>Member Name</th>
+                        <th>Amount</th>
+                        <th>Reference ID</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentBody">
+                </tbody>
+            </table>
+
+            <div id="paymentEmpty" class="empty-state hidden">
+                <div class="empty-state-icon">📄</div>
+                <p>No payments found</p>
+            </div>
         </div>
+
+        <!-- Monthly Dues Tab -->
+        <div id="monthlyDuesTab" class="hidden">
+            <div class="card-title">🗓️ Monthly Dues Status</div>
+            
+            <div class="filter-section">
+                <select id="duesYear" class="filter-btn"></select>
+                <select id="duesMonth" class="filter-btn"></select>
+                <button class="btn btn-view" onclick="loadMonthlyDues()">Load Status</button>
+                <button class="btn btn-approve" onclick="generateDues()">Generate Dues for Selected Month</button>
+            </div>
+
+            <div id="duesAlertContainer"></div>
+            <div id="duesLoading" class="loading hidden">Loading...</div>
+
+            <table id="duesTable" class="hidden">
+                <thead>
+                    <tr>
+                        <th>Member ID</th>
+                        <th>Member Name</th>
+                        <th>Member Status</th>
+                        <th>Payment Status</th>
+                        <th>Amount Paid</th>
+                        <th>Payment Date</th>
+                    </tr>
+                </thead>
+                <tbody id="duesBody"></tbody>
+            </table>
+
+            <div id="duesEmpty" class="empty-state hidden">
+                <div class="empty-state-icon">📅</div>
+                <p>No dues information found for the selected month.</p>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -529,22 +572,148 @@
 <script>
     const API_BASE_URL = '/api';
     let adminToken = null;
-    let currentProofId = null;
     let currentFilter = 'PENDING';
+
+    // --- NEW ---
+    let currentTab = 'paymentVerification';
 
     // AUTHENTICATION CHECK
     window.addEventListener('load', () => {
         const token = localStorage.getItem('adminToken');
         if (!token) {
             alert('Please login first');
-            window.location.href = 'index.html';
+            window.location.href = 'index-1.html';
             return;
         }
         adminToken = token;
+
+        // --- NEW ---
+        populateDuesDateFilters();
+        
         loadPayments();
         loadStats();
         setInterval(loadStats, 30000); // Refresh stats every 30 seconds
     });
+
+    // --- NEW ---
+    // TAB MANAGEMENT
+    function showTab(tabName) {
+        currentTab = tabName;
+        // Hide all tabs
+        document.getElementById('paymentVerificationTab').classList.add('hidden');
+        document.getElementById('monthlyDuesTab').classList.add('hidden');
+        // Deactivate all tab buttons
+        document.querySelectorAll('.tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+
+        // Show selected tab and activate its button
+        document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+        document.querySelector(`.tabs .tab-btn[onclick="showTab('${tabName}')"]`).classList.add('active');
+
+        if (tabName === 'monthlyDues') {
+            loadMonthlyDues();
+        }
+    }
+
+    // --- NEW ---
+    // MONTHLY DUES MANAGEMENT
+    function populateDuesDateFilters() {
+        const yearSelect = document.getElementById('duesYear');
+        const monthSelect = document.getElementById('duesMonth');
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+
+        // Populate years (e.g., current year + last 3 years)
+        for (let i = 0; i < 4; i++) {
+            const year = currentYear - i;
+            yearSelect.innerHTML += `<option value="${year}">${year}</option>`;
+        }
+        yearSelect.value = currentYear;
+
+        // Populate months
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        for (let i = 1; i <= 12; i++) {
+            monthSelect.innerHTML += `<option value="${i}">${monthNames[i-1]}</option>`;
+        }
+        monthSelect.value = currentMonth;
+    }
+
+    async function loadMonthlyDues() {
+        const year = document.getElementById('duesYear').value;
+        const month = document.getElementById('duesMonth').value;
+
+        document.getElementById('duesLoading').classList.remove('hidden');
+        document.getElementById('duesTable').classList.add('hidden');
+        document.getElementById('duesEmpty').classList.add('hidden');
+        document.getElementById('duesAlertContainer').innerHTML = '';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/monthly-payments/status/${year}/${month}`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                duesAlert('Error loading dues: ' + data.error);
+                return;
+            }
+
+            if (data.length === 0) {
+                document.getElementById('duesEmpty').classList.remove('hidden');
+            } else {
+                const tbody = document.getElementById('duesBody');
+                tbody.innerHTML = '';
+                data.forEach(due => {
+                    const row = `<tr>
+                        <td>${due.member_id}</td>
+                        <td>${due.name}</td>
+                        <td><span class="badge badge-${due.member_status.toLowerCase()}">${due.member_status}</span></td>
+                        <td><span class="badge badge-${due.payment_status.toLowerCase()}">${due.payment_status.replace('_', ' ')}</span></td>
+                        <td>${due.amount_paid ? `₹${due.amount_paid}` : '-'}</td>
+                        <td>${due.payment_date ? new Date(due.payment_date).toLocaleDateString() : '-'}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+                document.getElementById('duesTable').classList.remove('hidden');
+            }
+        } catch (error) {
+            duesAlert('Error loading monthly dues: ' + error.message);
+        } finally {
+            document.getElementById('duesLoading').classList.add('hidden');
+        }
+    }
+
+    async function generateDues() {
+        const year = document.getElementById('duesYear').value;
+        const month = document.getElementById('duesMonth').value;
+        
+        if (!confirm(`Are you sure you want to generate dues for ${month}/${year}? This cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/monthly-payments/generate/${year}/${month}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                duesAlert(data.message, 'success');
+                loadMonthlyDues(); // Refresh the view
+            } else {
+                duesAlert('Error generating dues: ' + data.error);
+            }
+        } catch (error) {
+            duesAlert('A network error occurred: ' + error.message);
+        }
+    }
+
+    function duesAlert(message, type = 'error') {
+        const container = document.getElementById('duesAlertContainer');
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+        container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+        setTimeout(() => container.innerHTML = '', 5000);
+    }
 
     // LOAD PAYMENTS
     async function loadPayments(filter = 'PENDING') {
@@ -552,6 +721,7 @@
         document.getElementById('paymentLoading').classList.remove('hidden');
         document.getElementById('paymentTable').classList.add('hidden');
         document.getElementById('paymentEmpty').classList.add('hidden');
+        document.getElementById('alertContainer').innerHTML = '';
 
         try {
             const url = filter === 'ALL' 
@@ -729,7 +899,7 @@
 
     function logoutAdmin() {
         localStorage.removeItem('adminToken');
-        window.location.href = 'index.html';
+        window.location.href = 'index-1.html';
     }
 
     // CLOSE MODAL ON BACKGROUND CLICK

@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const pool = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -198,6 +198,50 @@ router.post('/verify-proof/:proof_id', authenticateToken, async (req, res) => {
     await client.query('ROLLBACK');
     console.error('Error verifying proof:', error);
     res.status(500).json({ error: 'Failed to verify payment proof' });
+  } finally {
+    client.release();
+  }
+});
+
+// Alias: PUT /api/payments/:id/approve & PUT /api/payment-verification/:id/approve
+router.put('/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
+  const proofId = req.params.id;
+  const verified = req.body.status !== 'REJECTED';
+  const notes = req.body.notes || 'Approved by Admin';
+  const adminId = req.admin.id;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const proofRes = await client.query('SELECT * FROM payment_proofs WHERE id = $1', [proofId]);
+    if (proofRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    const proof = proofRes.rows[0];
+    const newStatus = verified ? 'APPROVED' : 'REJECTED';
+
+    await client.query(`
+      UPDATE payment_proofs 
+      SET status = $1, admin_notes = $2, verified_by = $3, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $4
+    `, [newStatus, notes, adminId, proofId]);
+
+    if (verified) {
+      await client.query("UPDATE members SET payment_status = 'PAID', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [proof.member_id]);
+      await client.query(`
+        INSERT INTO transactions (member_id, transaction_date, transaction_time, month, transaction_type, amount, description, reference_type, reference_id, status)
+        VALUES ($1, CURRENT_DATE, '12:00:00', $2, 'PAYMENT', $3, $4, 'PAYMENT_PROOF', $5, 'COMPLETED')
+      `, [proof.member_id, proof.payment_month || '2026-08', proof.amount, `Payment Approved (Ref: ${proof.transaction_reference || 'N/A'})`, proofId]);
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: `Payment ${newStatus.toLowerCase()} successfully`, status: newStatus });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error approving payment:', err);
+    res.status(500).json({ success: false, message: 'Failed to approve payment' });
   } finally {
     client.release();
   }

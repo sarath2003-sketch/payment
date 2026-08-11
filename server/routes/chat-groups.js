@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
         (SELECT role FROM chat_group_members cgm WHERE cgm.group_id = g.id AND cgm.member_id = $1 LIMIT 1) AS user_role
       FROM chat_groups g
       LEFT JOIN members m ON g.group_admin_id = m.id
-      WHERE g.status IN ('ACTIVE', 'FULL')
+      WHERE g.status IN ('APPROVED', 'ACTIVE', 'FULL')
       ORDER BY g.created_at DESC
     `, [memberId]);
 
@@ -50,20 +50,24 @@ router.get('/', async (req, res) => {
       ORDER BY created_at DESC
     `, [memberId]);
 
+    const formattedGroups = result.rows.map(r => ({
+      ...r,
+      total_member_count: parseInt(r.total_member_count || 0),
+      speaker_count: parseInt(r.speaker_count || 0),
+      max_members: 12, // 12 Speaker Slots max
+      is_member: !!r.user_role,
+      is_owner: parseInt(r.group_admin_id) === memberId
+    }));
+
     res.json({
-      groups: result.rows.map(r => ({
-        ...r,
-        total_member_count: parseInt(r.total_member_count || 0),
-        speaker_count: parseInt(r.speaker_count || 0),
-        max_members: 12, // 12 Speaker Slots max
-        is_member: !!r.user_role,
-        is_owner: parseInt(r.group_admin_id) === memberId
-      })),
+      success: true,
+      groups: formattedGroups,
+      rooms: formattedGroups,
       pending_requests: userRequests.rows
     });
   } catch (err) {
     console.error('Error fetching chat groups:', err);
-    res.status(500).json({ error: 'Failed to fetch chat groups' });
+    res.status(500).json({ success: false, error: 'Failed to fetch chat groups', message: 'Failed to fetch chat groups' });
   }
 });
 
@@ -210,8 +214,9 @@ router.post('/:id/join', async (req, res) => {
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Chat group not found' });
     const group = groupRes.rows[0];
 
-    if (group.status !== 'ACTIVE' && group.status !== 'FULL') {
-      return res.status(400).json({ error: 'This chat room is not active for joining' });
+    const allowedJoinStatuses = ['APPROVED', 'ACTIVE', 'FULL'];
+    if (!allowedJoinStatuses.includes(group.status)) {
+      return res.status(400).json({ error: 'This chat room is not currently accepting members' });
     }
 
     // Check existing membership
@@ -229,8 +234,8 @@ router.post('/:id/join', async (req, res) => {
 
     await pool.query(`
       INSERT INTO chat_group_members (group_id, member_id, role, is_muted, is_speaker, is_online)
-      VALUES ($1, $2, 'MEMBER', FALSE, $3, TRUE)
-    `, [groupId, memberId, assignSpeaker]);
+      VALUES ($1, $2, 'MEMBER', 0, $3, 1)
+    `, [groupId, memberId, assignSpeaker ? 1 : 0]);
 
     // Get updated total member count
     const totalCountRes = await pool.query('SELECT COUNT(*) FROM chat_group_members WHERE group_id = $1', [groupId]);
@@ -279,7 +284,7 @@ router.post('/:id/take-speaker-slot', async (req, res) => {
       return res.status(400).json({ error: 'All 12 Speaker Slots are currently occupied.' });
     }
 
-    await pool.query('UPDATE chat_group_members SET is_speaker = TRUE WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
+    await pool.query('UPDATE chat_group_members SET is_speaker = 1 WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
 
     if (io) {
       io.to(`group_${groupId}`).emit('group:member-muted', { group_id: groupId, member_id_pk: memberId });
@@ -302,7 +307,7 @@ router.post('/:id/leave-speaker-slot', async (req, res) => {
     const groupId = parseInt(req.params.id);
     const memberId = req.admin.id;
 
-    await pool.query('UPDATE chat_group_members SET is_speaker = FALSE WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
+    await pool.query('UPDATE chat_group_members SET is_speaker = 0 WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
 
     if (io) {
       io.to(`group_${groupId}`).emit('group:member-muted', { group_id: groupId, member_id_pk: memberId });
@@ -478,7 +483,7 @@ router.post('/:id/mute', async (req, res) => {
       return res.status(403).json({ error: 'Only Group Owner can mute other members' });
     }
 
-    await pool.query('UPDATE chat_group_members SET is_muted = TRUE WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
+    await pool.query('UPDATE chat_group_members SET is_muted = 1 WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
 
     if (io) {
       io.to(`group_${groupId}`).emit('group:member-muted', { group_id: groupId, member_id_pk: targetMemberId });
@@ -508,7 +513,7 @@ router.post('/:id/unmute', async (req, res) => {
       return res.status(403).json({ error: 'Only Group Owner can unmute other members' });
     }
 
-    await pool.query('UPDATE chat_group_members SET is_muted = FALSE WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
+    await pool.query('UPDATE chat_group_members SET is_muted = 0 WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
 
     if (io) {
       io.to(`group_${groupId}`).emit('group:member-unmuted', { group_id: groupId, member_id_pk: targetMemberId });

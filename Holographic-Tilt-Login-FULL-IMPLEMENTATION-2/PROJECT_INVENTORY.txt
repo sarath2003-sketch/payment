@@ -1,0 +1,5 @@
+Files found in uploaded project:
+
+.gitattributes
+index.html
+style.css

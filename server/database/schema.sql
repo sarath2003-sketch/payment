@@ -92,12 +92,35 @@ CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
     member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
     transaction_date DATE NOT NULL,
+    transaction_time VARCHAR(20) DEFAULT '12:00:00',
     month VARCHAR(20) NOT NULL,
     transaction_type VARCHAR(20) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     description TEXT,
+    seettu_cycle_id INTEGER,
+    reference_type VARCHAR(50) DEFAULT 'MANUAL',
+    reference_id INTEGER,
+    status VARCHAR(20) DEFAULT 'COMPLETED',
     balance_after DECIMAL(12, 2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create Seettu Cycles table
+CREATE TABLE IF NOT EXISTS seettu_cycles (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    cycle_month VARCHAR(20) NOT NULL,
+    total_members INTEGER DEFAULT 20,
+    monthly_contribution DECIMAL(12, 2) DEFAULT 1000.00,
+    total_collection DECIMAL(12, 2) DEFAULT 20000.00,
+    amount_distributed DECIMAL(12, 2) DEFAULT 0.00,
+    remaining_amount DECIMAL(12, 2) DEFAULT 20000.00,
+    winner_member_id INTEGER REFERENCES members(id),
+    winner_amount DECIMAL(12, 2) DEFAULT 0.00,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create OTP table for password reset
@@ -333,9 +356,78 @@ INSERT INTO app_settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
+-- GROUPS, NOMINEES, SEED FUND & REPAYMENT TABLES
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS groups (
+    id SERIAL PRIMARY KEY,
+    group_name VARCHAR(100) NOT NULL,
+    monthly_contribution DECIMAL(12, 2) DEFAULT 500.00,
+    total_members INTEGER DEFAULT 20,
+    interest_percentage DECIMAL(5, 2) DEFAULT 5.00,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS group_members (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+    member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(group_id, member_id)
+);
+
+CREATE TABLE IF NOT EXISTS nominees (
+    id SERIAL PRIMARY KEY,
+    member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
+    nominee_name VARCHAR(255) NOT NULL,
+    relationship VARCHAR(100) NOT NULL,
+    contact_phone VARCHAR(20),
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS seed_fund_distributions (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER REFERENCES groups(id) ON DELETE SET NULL,
+    member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    principal_amount DECIMAL(12, 2) NOT NULL,
+    interest_percentage DECIMAL(5, 2) DEFAULT 5.00,
+    interest_amount DECIMAL(12, 2) NOT NULL,
+    total_payable DECIMAL(12, 2) NOT NULL,
+    total_repaid DECIMAL(12, 2) DEFAULT 0.00,
+    remaining_amount DECIMAL(12, 2) NOT NULL,
+    distribution_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    nominee_name VARCHAR(255),
+    payment_status VARCHAR(20) DEFAULT 'PENDING',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS repayments (
+    id SERIAL PRIMARY KEY,
+    distribution_id INTEGER NOT NULL REFERENCES seed_fund_distributions(id) ON DELETE CASCADE,
+    member_id INTEGER NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    payment_amount DECIMAL(12, 2) NOT NULL,
+    payment_date DATE NOT NULL,
+    payment_method VARCHAR(50) DEFAULT 'UPI',
+    transaction_ref VARCHAR(100),
+    remaining_amount DECIMAL(12, 2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'COMPLETED',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
 -- DEFAULT ADMIN USER (password: Admin@123456)
 -- ============================================================
 
 INSERT INTO admin_users (username, password_hash, email, status)
 VALUES ('admin', '$2b$10$xJ8K9L3m2N4p6Q8r0S2t4uVwXyZ.1234567890abcdef', 'admin@pfchitfund.com', 'ACTIVE')
 ON CONFLICT (username) DO NOTHING;
+

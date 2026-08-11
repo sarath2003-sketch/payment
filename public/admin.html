@@ -840,6 +840,7 @@
         </button>
 
         <div class="nav-group-label">Payments & Activation</div>
+        <button class="nav-item" onclick="showPage('seettu')" id="nav-seettu"><span class="nav-icon">💰</span> Seettu Cycles</button>
         <button class="nav-item" onclick="showPage('payments')" id="nav-payments"><span class="nav-icon">💳</span>
           Payments</button>
         <button class="nav-item" onclick="showPage('activation')" id="nav-activation"><span class="nav-icon">⚡</span>
@@ -848,6 +849,13 @@
             class="nav-icon">🏛️</span> Live Auction</button>
         <button class="nav-item" onclick="showPage('admin-chat-groups')" id="nav-admin-chat-groups"><span
             class="nav-icon">💬</span> Chat Groups</button>
+
+        <div class="nav-group-label">Seed Fund & Accounting</div>
+        <button class="nav-item" onclick="showPage('seed-fund')" id="nav-seed-fund"><span class="nav-icon">🌿</span> Seed Fund Distributions</button>
+        <button class="nav-item" onclick="showPage('groups')" id="nav-groups"><span class="nav-icon">🤝</span> Group Management</button>
+        <button class="nav-item" onclick="showPage('repayments')" id="nav-repayments"><span class="nav-icon">🔄</span> Repayment Tracking</button>
+        <button class="nav-item" onclick="showPage('transactions')" id="nav-transactions"><span class="nav-icon">📑</span> Transaction Ledger</button>
+        <button class="nav-item" onclick="showPage('reports')" id="nav-reports"><span class="nav-icon">📈</span> Financial Reports</button>
 
         <div class="nav-group-label">System</div>
         <button class="nav-item" onclick="showPage('audit-log')" id="nav-audit-log"><span class="nav-icon">📜</span>
@@ -976,10 +984,12 @@
                 <thead>
                   <tr>
                     <th>Member ID</th>
+                    <th>Photo</th>
                     <th>Name</th>
                     <th>Phone</th>
+                    <th>Email</th>
                     <th>UPI ID</th>
-                    <th>Group</th>
+                    <th>Reg Date</th>
                     <th>Payment</th>
                     <th>Activation</th>
                     <th>Actions</th>
@@ -987,10 +997,26 @@
                 </thead>
                 <tbody id="membersTableBody">
                   <tr>
-                    <td colspan="8" style="text-align:center;padding:30px">Loading members...</td>
+                    <td colspan="10" style="text-align:center;padding:30px">Loading members...</td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SEETTU MANAGEMENT ================= -->
+        <div id="seettu" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💰 Seettu / Monthly Collection Management</div>
+              <button class="btn-primary" onclick="showCreateSeettuModal()">+ Create New Seettu Cycle</button>
+            </div>
+            <p style="color:var(--text-muted);font-size:13.5px;margin-bottom:20px">
+              Manage Seettu cycles (e.g. 20 members × ₹1,000 = ₹20,000 total collection), track winner payouts, remaining balances, and member contribution status.
+            </p>
+            <div id="seettuCyclesContainer">
+              <div style="text-align:center;padding:30px;color:var(--text-muted)">Loading Seettu cycles...</div>
             </div>
           </div>
         </div>
@@ -1052,77 +1078,225 @@
           </div>
         </div>
 
-        <!-- ================= ACTIVATION MANAGEMENT ================= -->
+        <!-- ================= ACTIVATION STATUS ================= -->
         <div id="activation" class="page">
           <div class="card">
             <div class="card-header">
-              <div class="card-title">⚡ Member Activation Status Management</div>
+              <div class="card-title">⚡ Member Activation Control</div>
+              <button class="btn-secondary btn-sm" onclick="loadActivationList()">🔄 Refresh</button>
+            </div>
+            <div id="activationList">
+              <div style="text-align:center;padding:30px;color:var(--text-muted)">Loading activation requests...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= AUCTION CONTROL ================= -->
+        <div id="auction-control" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🏛️ Live Auction Control Center</div>
+              <button class="btn-primary" onclick="showCreateAuctionModal()">+ Create New Auction</button>
+            </div>
+            <div id="adminAuctionContent">
+              <div style="text-align:center;padding:30px;color:var(--text-muted)">Loading live auction status...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= ADMIN CHAT GROUPS ================= -->
+        <div id="admin-chat-groups" class="page">
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header">
+              <div class="card-title">⏳ Chat Group Requests (Pending Approval)</div>
+              <button class="btn-secondary btn-sm" onclick="loadAdminGroupRequests()">🔄 Refresh Requests</button>
+            </div>
+            <div id="adminGroupRequestsContainer">
+              <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading requests...</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💬 Active Chat Groups & Moderation</div>
+              <button class="btn-primary" onclick="showAdminCreateGroupModal()">+ Direct Create Chat Room</button>
+            </div>
+            <div id="adminGroupsContainer">
+              <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading groups...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SEED FUND DISTRIBUTIONS ================= -->
+        <div id="seed-fund" class="page">
+          <div class="stats-grid" id="seedFundStatsGrid">
+            <div class="stat-card">
+              <div class="stat-label">Total Monthly Collections</div>
+              <div class="stat-value green" id="sfTotalCollection">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Amount Distributed</div>
+              <div class="stat-value primary" id="sfTotalDistributed">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Interest Earned (5%)</div>
+              <div class="stat-value gold" id="sfTotalInterest">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Repaid</div>
+              <div class="stat-value green" id="sfTotalRepaid">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Pending Repayments</div>
+              <div class="stat-value orange" id="sfPendingDue">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Current Available Fund</div>
+              <div class="stat-value green" id="sfAvailableFund">₹0</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🌿 Seed Fund Distributions / Loans</div>
+              <button class="btn-primary" onclick="showNewDistributionModal()">+ Create Fund Distribution</button>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th>Member ID</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Date</th>
-                    <th>Payment Status</th>
-                    <th>Activation Status</th>
+                    <th>ID</th>
+                    <th>Member</th>
+                    <th>Group</th>
+                    <th>Principal</th>
+                    <th>Interest %</th>
+                    <th>Interest</th>
+                    <th>Total Payable</th>
+                    <th>Repaid</th>
+                    <th>Remaining</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
                     <th>Action</th>
                   </tr>
                 </thead>
-                <tbody id="activationTableBody">
-                  <tr>
-                    <td colspan="7" style="text-align:center;padding:30px">Loading activation list...</td>
-                  </tr>
+                <tbody id="seedFundTableBody">
+                  <tr><td colspan="12" style="text-align:center;padding:30px">Loading distributions...</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- ================= LIVE AUCTION CONTROL ================= -->
-        <div id="auction-control" class="page">
+        <!-- ================= GROUP MANAGEMENT ================= -->
+        <div id="groups" class="page">
           <div class="card">
-            <div class="card-title">🏛️ Live Auction Control</div>
-            <div id="auctionControlContainer">
-              <div style="text-align:center;padding:30px;color:var(--text-muted)">Loading auction status...</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ================= CHAT GROUPS MANAGEMENT ================= -->
-        <div id="admin-chat-groups" class="page">
-          <div class="card" style="margin-bottom:20px">
             <div class="card-header">
-              <div class="card-title">⏳ Pending Group Creation Requests</div>
-              <button class="btn-secondary btn-sm" onclick="loadAdminGroupRequests()">🔄 Refresh</button>
+              <div class="card-title">🤝 Member Groups & Collections</div>
+              <button class="btn-primary" onclick="showCreateGroupModal()">+ Create Group</button>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
-                  <tr><th>Group Name</th><th>Requested By</th><th>Phone</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+                  <tr>
+                    <th>ID</th>
+                    <th>Group Name</th>
+                    <th>Contribution / Member</th>
+                    <th>Capacity</th>
+                    <th>Members Enrolled</th>
+                    <th>Monthly Collection</th>
+                    <th>Interest %</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
                 </thead>
-                <tbody id="adminGroupRequestsTableBody"><tr><td colspan="6" style="text-align:center;padding:20px">Loading requests...</td></tr></tbody>
+                <tbody id="groupsTableBody">
+                  <tr><td colspan="9" style="text-align:center;padding:30px">Loading groups...</td></tr>
+                </tbody>
               </table>
             </div>
           </div>
+        </div>
 
+        <!-- ================= REPAYMENT TRACKING ================= -->
+        <div id="repayments" class="page">
           <div class="card">
             <div class="card-header">
-              <div class="card-title">💬 All Active & Live Chat Groups</div>
-              <div>
-                <button class="btn-primary btn-sm" onclick="showAdminCreateGroupModal()">+ Create New Room</button>
-                <button class="btn-secondary btn-sm" onclick="loadAdminGroups()">🔄 Refresh</button>
+              <div class="card-title">🔄 Repayment History</div>
+              <button class="btn-primary" onclick="showRecordRepaymentModal()">+ Record Repayment</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Member</th>
+                    <th>Distribution Ref</th>
+                    <th>Amount Paid</th>
+                    <th>Method</th>
+                    <th>Ref #</th>
+                    <th>Remaining Balance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="repaymentsTableBody">
+                  <tr><td colspan="9" style="text-align:center;padding:30px">Loading repayments...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TRANSACTION LEDGER ================= -->
+        <div id="transactions" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📑 Complete Financial Ledger</div>
+              <div style="display:flex;gap:10px">
+                <input type="text" class="filter-input" id="txSearchInput" placeholder="Search member, ID, ref..." onkeyup="filterTxTable()">
+                <button class="btn-secondary" onclick="exportTransactionsCSV()">📥 Export CSV</button>
               </div>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
-                  <tr><th>ID</th><th>Group Name</th><th>Group Owner (Admin)</th><th>Members</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+                  <tr>
+                    <th>Tx ID</th>
+                    <th>Date</th>
+                    <th>Member</th>
+                    <th>Type</th>
+                    <th>Amount (₹)</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                  </tr>
                 </thead>
-                <tbody id="adminGroupsTableBody"><tr><td colspan="7" style="text-align:center;padding:20px">Loading chat groups...</td></tr></tbody>
+                <tbody id="transactionsTableBody">
+                  <tr><td colspan="7" style="text-align:center;padding:30px">Loading transaction ledger...</td></tr>
+                </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= FINANCIAL REPORTS ================= -->
+        <div id="reports" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📈 Financial Reports & Summary</div>
+              <button class="btn-primary" onclick="exportReportsCSV()">📥 Export Full Report CSV</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+              <div style="background:var(--bg-surface-hover);padding:16px;border-radius:12px">
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;font-weight:700;margin-bottom:6px">Net Monthly Balance</div>
+                <div style="font-size:24px;font-weight:800;color:var(--green)" id="repNetBalance">₹0</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:16px;border-radius:12px">
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;font-weight:700;margin-bottom:6px">Total Interest Earned</div>
+                <div style="font-size:24px;font-weight:800;color:var(--gold)" id="repTotalInterest">₹0</div>
+              </div>
+            </div>
+            <div id="reportsContainer">
+              <div style="text-align:center;padding:20px;color:var(--text-muted)">Generating report summary...</div>
             </div>
           </div>
         </div>
@@ -1131,21 +1305,22 @@
         <div id="audit-log" class="page">
           <div class="card">
             <div class="card-header">
-              <div class="card-title">📜 Admin Activity & Audit Logs</div>
+              <div class="card-title">📜 Admin Audit Trail</div>
+              <button class="btn-secondary btn-sm" onclick="loadAuditLogs()">🔄 Refresh Logs</button>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th>Time</th>
+                    <th>Timestamp</th>
                     <th>Actor</th>
                     <th>Action</th>
-                    <th>Target Entity</th>
+                    <th>Entity</th>
+                    <th>IP Address</th>
                     <th>Details</th>
-                    <th>IP</th>
                   </tr>
                 </thead>
-                <tbody id="auditTableBody">
+                <tbody id="auditLogsTableBody">
                   <tr>
                     <td colspan="6" style="text-align:center;padding:30px">Loading activity logs...</td>
                   </tr>
@@ -1196,6 +1371,7 @@
         <div class="form-group"><label>UPI ID</label><input type="text" id="mUpi" placeholder="name@upi"></div>
       </div>
       <div class="form-group"><label>Email (Optional)</label><input type="email" id="mEmail" placeholder="Email address (Auto-generated if blank)"></div>
+      <div class="form-group"><label>📷 Profile Photo URL / Path (Optional)</label><input type="text" id="mPhoto" placeholder="/uploads/profile_101.png or image URL"></div>
       <div class="form-group"><label>🔑 Login Password (Optional - Default: 123456)</label><input type="text" id="mPassword" placeholder="Set custom login password for member (e.g. 123456)"></div>
       <div class="form-row">
         <div class="form-group">
@@ -1251,6 +1427,212 @@
     </div>
   </div>
 
+  <!-- CREATE SEETTU CYCLE MODAL -->
+  <div id="seettuModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">Create New Seettu Cycle</div>
+      <div class="form-group"><label>Seettu Title *</label><input type="text" id="secTitle" placeholder="e.g. August 2026 Monthly Seettu"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Cycle Month (YYYY-MM) *</label><input type="month" id="secMonth"></div>
+        <div class="form-group"><label>Total Members *</label><input type="number" id="secMembers" value="20"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Monthly Contribution per Member (₹) *</label><input type="number" id="secContribution" value="1000"></div>
+      </div>
+      <div class="form-group"><label>Notes / Instructions</label><input type="text" id="secNotes" placeholder="Optional notes"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('seettuModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveSeettuCycle()">Save Seettu Cycle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT SEETTU CYCLE MODAL -->
+  <div id="seettuEditModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">Edit Seettu Cycle</div>
+      <input type="hidden" id="editSecId">
+      <div class="form-group"><label>Seettu Title *</label><input type="text" id="editSecTitle"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Cycle Month (YYYY-MM) *</label><input type="month" id="editSecMonth"></div>
+        <div class="form-group"><label>Total Members *</label><input type="number" id="editSecMembers"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Monthly Contribution per Member (₹) *</label><input type="number" id="editSecContribution"></div>
+      </div>
+      <div class="form-group"><label>Notes / Instructions</label><input type="text" id="editSecNotes"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('seettuEditModal')">Cancel</button>
+        <button class="btn-primary" onclick="updateSeettuCycle()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW SEED FUND DISTRIBUTION MODAL -->
+  <div id="newDistributionModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-title">🌿 Create Seed Fund Distribution / Loan</div>
+      <div id="distModalAlert"></div>
+      <div class="form-group">
+        <label>Recipient Member *</label>
+        <select id="distMemberSelect"><option value="">Loading members...</option></select>
+      </div>
+      <div class="form-group">
+        <label>Group (Optional)</label>
+        <select id="distGroupSelect"><option value="">No specific group</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Principal Amount (₹) *</label>
+          <input type="number" id="distPrincipal" value="5000" oninput="recalcDistInterest()">
+        </div>
+        <div class="form-group">
+          <label>Interest Percentage (%) *</label>
+          <input type="number" id="distInterestPct" value="5.0" step="0.5" oninput="recalcDistInterest()">
+        </div>
+      </div>
+      <div style="background:var(--primary-light);border:1px solid var(--border-accent);padding:12px;border-radius:10px;margin-bottom:16px;display:flex;justify-content:space-between">
+        <div>Interest Amount: <strong style="color:var(--gold)" id="distCalcInterest">₹250</strong></div>
+        <div>Total Payable: <strong style="color:var(--green)" id="distCalcTotal">₹5,250</strong></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Distribution Date *</label>
+          <input type="date" id="distDate">
+        </div>
+        <div class="form-group">
+          <label>Due Date *</label>
+          <input type="date" id="distDueDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nominee Name</label>
+        <input type="text" id="distNominee" placeholder="Full name of nominee">
+      </div>
+      <div class="form-group">
+        <label>Notes / Purpose</label>
+        <input type="text" id="distNotes" placeholder="Optional details">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('newDistributionModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveDistributionForm()">Create Distribution</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE GROUP MODAL -->
+  <div id="createGroupModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-title">🤝 Create New Member Group</div>
+      <div class="form-group">
+        <label>Group Name *</label>
+        <input type="text" id="grpName" placeholder="e.g. Alpha Seed Fund Group 1">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Monthly Contribution / Member (₹) *</label>
+          <input type="number" id="grpContribution" value="500">
+        </div>
+        <div class="form-group">
+          <label>Group Member Limit *</label>
+          <input type="number" id="grpCapacity" value="20">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Default Interest Rate (%)</label>
+        <input type="number" id="grpInterest" value="5.0" step="0.5">
+      </div>
+      <div class="form-group">
+        <label>Notes / Guidelines</label>
+        <input type="text" id="grpNotes" placeholder="Optional notes">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('createGroupModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveGroupForm()">Save Group</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECORD REPAYMENT MODAL -->
+  <div id="recordRepaymentModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-title">🔄 Record Loan Repayment</div>
+      <div id="repayModalAlert"></div>
+      <div class="form-group">
+        <label>Select Distribution / Loan *</label>
+        <select id="repayDistSelect" onchange="updateRepayDistInfo()"><option value="">Select active loan...</option></select>
+      </div>
+      <div style="background:var(--bg-surface-hover);padding:12px;border-radius:10px;margin-bottom:16px" id="repayInfoBox">
+        <div style="font-size:12px;color:var(--text-muted)">Loan Info: <span id="repayLoanInfo">—</span></div>
+        <div style="font-size:16px;font-weight:800;color:var(--red);margin-top:4px">Remaining Payable: <span id="repayRemainingPayable">₹0</span></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Repayment Amount (₹) *</label>
+          <input type="number" id="repayAmount" value="500">
+        </div>
+        <div class="form-group">
+          <label>Payment Date *</label>
+          <input type="date" id="repayDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Payment Method</label>
+        <select id="repayMethod">
+          <option value="UPI">UPI</option>
+          <option value="CASH">CASH</option>
+          <option value="BANK_TRANSFER">BANK TRANSFER</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Transaction Reference / Tx ID</label>
+        <input type="text" id="repayTxRef" placeholder="e.g. UPI/123456789">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" id="repayNotes" placeholder="Optional notes">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('recordRepaymentModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveRepaymentForm()">Record Repayment</button>
+      </div>
+    </div>
+  </div>
+  <div id="distributionModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:650px">
+      <div class="modal-title">💸 Monthly Amount Distribution</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px" id="distCycleInfo">Cycle Info...</div>
+
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Monthly Collection</div>
+          <div style="font-size:18px;font-weight:800;color:var(--green)" id="distCollectionAmount">₹0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Total Distributed</div>
+          <div style="font-size:18px;font-weight:800;color:var(--orange)" id="distTotalDistributed">₹0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Remaining Balance</div>
+          <div style="font-size:18px;font-weight:800;color:var(--primary)" id="distRemainingBalance">₹0</div>
+        </div>
+      </div>
+
+      <div id="distAlert" style="margin-bottom:12px"></div>
+
+      <!-- Member Distribution Rows -->
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px">Member Distributions</div>
+      <div id="distRowsContainer" style="max-height:220px;overflow-y:auto;margin-bottom:12px"></div>
+
+      <button class="btn-secondary btn-sm" onclick="addDistributionRow()" style="margin-bottom:16px">+ Add Member</button>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('distributionModal')">Cancel</button>
+        <button class="btn-primary" id="saveDistBtn" onclick="saveDistributions()">Save Distributions</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CONFIRMATION MODAL -->
   <div id="confirmModal" class="modal-overlay hidden">
     <div class="modal" style="max-width:400px">
@@ -1287,6 +1669,11 @@
       }
       if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
       return d;
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
     }
 
     function showToast(msg, type = 'info') {
@@ -1343,6 +1730,7 @@
 
       if (name === 'dashboard') loadDashboard();
       if (name === 'members') loadMembers();
+      if (name === 'seettu') loadSeettuCycles();
       if (name === 'duplicates') loadDuplicates();
       if (name === 'payments') loadAdminPayments();
       if (name === 'activation') loadActivationList();
@@ -1350,6 +1738,402 @@
       if (name === 'admin-chat-groups') { loadAdminGroupRequests(); loadAdminGroups(); }
       if (name === 'audit-log') loadAuditLogs();
       if (name === 'settings') loadSettings();
+      if (name === 'seed-fund') loadSeedFundDistributions();
+      if (name === 'groups') loadGroups();
+      if (name === 'repayments') loadRepayments();
+      if (name === 'transactions') loadTransactionLedger();
+      if (name === 'reports') loadFinancialReports();
+    }
+
+    // ============================================================
+    // SEED FUND & LOAN DISTRIBUTION HANDLERS
+    // ============================================================
+    let cachedDistributions = [];
+    let cachedMembersList = [];
+    let cachedGroupsList = [];
+
+    function recalcDistInterest() {
+      const principal = parseFloat(document.getElementById('distPrincipal').value) || 0;
+      const pct = parseFloat(document.getElementById('distInterestPct').value) || 0;
+      const interest = Math.round((principal * (pct / 100)) * 100) / 100;
+      const total = Math.round((principal + interest) * 100) / 100;
+      document.getElementById('distCalcInterest').textContent = `₹${interest.toLocaleString('en-IN')}`;
+      document.getElementById('distCalcTotal').textContent = `₹${total.toLocaleString('en-IN')}`;
+    }
+
+    async function loadSeedFundDistributions() {
+      try {
+        const summary = await api('/api/seed-fund/summary');
+        if (document.getElementById('sfTotalCollection')) document.getElementById('sfTotalCollection').textContent = `₹${parseFloat(summary.total_collection || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfTotalDistributed')) document.getElementById('sfTotalDistributed').textContent = `₹${parseFloat(summary.total_distributed || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfTotalInterest')) document.getElementById('sfTotalInterest').textContent = `₹${parseFloat(summary.total_interest_earned || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfTotalRepaid')) document.getElementById('sfTotalRepaid').textContent = `₹${parseFloat(summary.total_repaid || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfPendingDue')) document.getElementById('sfPendingDue').textContent = `₹${parseFloat(summary.total_pending_due || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfAvailableFund')) document.getElementById('sfAvailableFund').textContent = `₹${parseFloat(summary.current_available_fund || 0).toLocaleString('en-IN')}`;
+
+        const data = await api('/api/seed-fund/distributions');
+        cachedDistributions = data.distributions || [];
+        const tbody = document.getElementById('seedFundTableBody');
+        if (!tbody) return;
+
+        if (cachedDistributions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--text-muted)">No seed fund distributions recorded yet. Click "+ Create Fund Distribution" to add one.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = cachedDistributions.map(d => {
+          const statusBadge = d.payment_status === 'PAID' ? '<span class="badge badge-active">PAID</span>' :
+            (d.payment_status === 'PARTIALLY_PAID' ? '<span class="badge badge-pending">PARTIAL</span>' : '<span class="badge badge-rejected">PENDING</span>');
+          return `
+            <tr>
+              <td><strong>#${d.id}</strong></td>
+              <td><strong>${esc(d.member_name)}</strong> <span style="font-size:11px;color:var(--text-muted)">(${d.member_code})</span></td>
+              <td>${esc(d.group_name || 'General')}</td>
+              <td>₹${parseFloat(d.principal_amount).toLocaleString('en-IN')}</td>
+              <td>${d.interest_percentage}%</td>
+              <td style="color:var(--gold);font-weight:700">₹${parseFloat(d.interest_amount).toLocaleString('en-IN')}</td>
+              <td style="font-weight:800;color:var(--green)">₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</td>
+              <td>₹${parseFloat(d.total_repaid || 0).toLocaleString('en-IN')}</td>
+              <td style="font-weight:700;color:var(--red)">₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')}</td>
+              <td style="font-size:12px">${d.due_date || '—'}</td>
+              <td>${statusBadge}</td>
+              <td>
+                ${parseFloat(d.remaining_amount) > 0 ? `<button class="btn-success btn-sm" onclick="openRepayForDist(${d.id})">💵 Record Pay</button>` : '✅ Complete'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        showToast('Failed to load seed fund distributions: ' + e.message, 'error');
+      }
+    }
+
+    async function showNewDistributionModal() {
+      try {
+        const membersData = await api('/api/members');
+        cachedMembersList = membersData || [];
+        const groupsData = await api('/api/groups');
+        cachedGroupsList = groupsData.groups || [];
+
+        const mSelect = document.getElementById('distMemberSelect');
+        mSelect.innerHTML = '<option value="">Select Member...</option>' + cachedMembersList.map(m => `<option value="${m.id}">${m.member_id} - ${m.name} (${m.phone})</option>`).join('');
+
+        const gSelect = document.getElementById('distGroupSelect');
+        gSelect.innerHTML = '<option value="">No specific group</option>' + cachedGroupsList.map(g => `<option value="${g.id}">${g.group_name}</option>`).join('');
+
+        document.getElementById('distDate').value = new Date().toISOString().split('T')[0];
+        const nextMonth = new Date(); nextMonth.setDate(nextMonth.getDate() + 30);
+        document.getElementById('distDueDate').value = nextMonth.toISOString().split('T')[0];
+
+        recalcDistInterest();
+        document.getElementById('newDistributionModal').classList.remove('hidden');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function saveDistributionForm() {
+      const member_id = document.getElementById('distMemberSelect').value;
+      const group_id = document.getElementById('distGroupSelect').value;
+      const principal_amount = document.getElementById('distPrincipal').value;
+      const interest_percentage = document.getElementById('distInterestPct').value;
+      const distribution_date = document.getElementById('distDate').value;
+      const due_date = document.getElementById('distDueDate').value;
+      const nominee_name = document.getElementById('distNominee').value.trim();
+      const notes = document.getElementById('distNotes').value.trim();
+
+      if (!member_id || !principal_amount || parseFloat(principal_amount) <= 0) {
+        showToast('Please select a member and enter a valid principal amount.', 'error');
+        return;
+      }
+
+      try {
+        await api('/api/seed-fund/distributions', {
+          method: 'POST',
+          body: JSON.stringify({
+            member_id, group_id: group_id || null, principal_amount, interest_percentage,
+            distribution_date, due_date, nominee_name, notes
+          })
+        });
+        showToast('Seed Fund distribution recorded successfully!', 'success');
+        closeModal('newDistributionModal');
+        loadSeedFundDistributions();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // ============================================================
+    // GROUPS HANDLERS
+    // ============================================================
+    async function loadGroups() {
+      try {
+        const data = await api('/api/groups');
+        const groups = data.groups || [];
+        const tbody = document.getElementById('groupsTableBody');
+        if (!tbody) return;
+
+        if (groups.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">No groups found. Click "+ Create Group" to add one.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = groups.map(g => `
+          <tr>
+            <td><strong>#${g.id}</strong></td>
+            <td><strong>${esc(g.group_name)}</strong></td>
+            <td>₹${parseFloat(g.monthly_contribution).toLocaleString('en-IN')}</td>
+            <td>${g.total_members} members</td>
+            <td><strong>${g.current_member_count || 0}</strong> / ${g.total_members}</td>
+            <td style="color:var(--green);font-weight:800">₹${parseFloat(g.total_monthly_collection || 0).toLocaleString('en-IN')}</td>
+            <td>${g.interest_percentage}%</td>
+            <td><span class="badge badge-${g.status === 'ACTIVE' ? 'active' : 'rejected'}">${g.status}</span></td>
+            <td>
+              <button class="btn-secondary btn-sm" onclick="viewGroupMembers(${g.id}, '${esc(g.group_name)}')">👥 View Members</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { showToast('Failed to load groups: ' + e.message, 'error'); }
+    }
+
+    function showCreateGroupModal() {
+      document.getElementById('grpName').value = '';
+      document.getElementById('grpContribution').value = '500';
+      document.getElementById('grpCapacity').value = '20';
+      document.getElementById('grpInterest').value = '5.0';
+      document.getElementById('grpNotes').value = '';
+      document.getElementById('createGroupModal').classList.remove('hidden');
+    }
+
+    async function saveGroupForm() {
+      const group_name = document.getElementById('grpName').value.trim();
+      const monthly_contribution = document.getElementById('grpContribution').value;
+      const total_members = document.getElementById('grpCapacity').value;
+      const interest_percentage = document.getElementById('grpInterest').value;
+      const notes = document.getElementById('grpNotes').value.trim();
+
+      if (!group_name) { showToast('Group name is required.', 'error'); return; }
+
+      try {
+        await api('/api/groups', {
+          method: 'POST',
+          body: JSON.stringify({ group_name, monthly_contribution, total_members, interest_percentage, notes })
+        });
+        showToast('Group created successfully!', 'success');
+        closeModal('createGroupModal');
+        loadGroups();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function viewGroupMembers(groupId, groupName) {
+      try {
+        const data = await api(`/api/groups/${groupId}/members`);
+        const members = data.members || [];
+        const memberListStr = members.length > 0
+          ? members.map(m => `• ${m.member_id} - ${m.name} (${m.phone})`).join('\n')
+          : 'No members currently assigned to this group.';
+        alert(`Group: ${groupName}\nTotal Members: ${members.length}\n\nEnrolled Members:\n${memberListStr}`);
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // ============================================================
+    // REPAYMENT HANDLERS
+    // ============================================================
+    async function loadRepayments() {
+      try {
+        const data = await api('/api/repayments');
+        const repayments = data.repayments || [];
+        const tbody = document.getElementById('repaymentsTableBody');
+        if (!tbody) return;
+
+        if (repayments.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">No repayments recorded yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = repayments.map(r => `
+          <tr>
+            <td><strong>#${r.id}</strong></td>
+            <td>${r.payment_date}</td>
+            <td><strong>${esc(r.member_name)}</strong> (${r.member_code})</td>
+            <td>Loan #${r.distribution_id} (Principal: ₹${parseFloat(r.principal_amount).toLocaleString('en-IN')})</td>
+            <td style="color:var(--green);font-weight:800">₹${parseFloat(r.payment_amount).toLocaleString('en-IN')}</td>
+            <td><span class="badge badge-active">${r.payment_method}</span></td>
+            <td>${r.transaction_ref || 'N/A'}</td>
+            <td style="color:var(--red);font-weight:700">₹${parseFloat(r.remaining_amount).toLocaleString('en-IN')}</td>
+            <td><span class="badge badge-active">${r.status}</span></td>
+          </tr>
+        `).join('');
+      } catch (e) { showToast('Failed to load repayments: ' + e.message, 'error'); }
+    }
+
+    async function showRecordRepaymentModal() {
+      try {
+        const distData = await api('/api/seed-fund/distributions');
+        cachedDistributions = distData.distributions || [];
+        const activeDist = cachedDistributions.filter(d => parseFloat(d.remaining_amount) > 0);
+
+        const select = document.getElementById('repayDistSelect');
+        select.innerHTML = '<option value="">Select active loan...</option>' + activeDist.map(d => `
+          <option value="${d.id}" data-rem="${d.remaining_amount}">
+            Loan #${d.id} — ${d.member_name} (${d.member_code}) — Due: ₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')}
+          </option>
+        `).join('');
+
+        document.getElementById('repayDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('repayAmount').value = '500';
+        document.getElementById('repayTxRef').value = '';
+        document.getElementById('repayNotes').value = '';
+        updateRepayDistInfo();
+        document.getElementById('recordRepaymentModal').classList.remove('hidden');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    function openRepayForDist(distId) {
+      showRecordRepaymentModal().then(() => {
+        const select = document.getElementById('repayDistSelect');
+        if (select) {
+          select.value = distId;
+          updateRepayDistInfo();
+        }
+      });
+    }
+
+    function updateRepayDistInfo() {
+      const select = document.getElementById('repayDistSelect');
+      const distId = select.value;
+      if (!distId) {
+        document.getElementById('repayLoanInfo').textContent = 'None selected';
+        document.getElementById('repayRemainingPayable').textContent = '₹0';
+        return;
+      }
+
+      const dist = cachedDistributions.find(d => String(d.id) === String(distId));
+      if (dist) {
+        document.getElementById('repayLoanInfo').textContent = `#${dist.id} - ${dist.member_name} (Total Payable: ₹${parseFloat(dist.total_payable).toLocaleString('en-IN')})`;
+        document.getElementById('repayRemainingPayable').textContent = `₹${parseFloat(dist.remaining_amount).toLocaleString('en-IN')}`;
+        document.getElementById('repayAmount').value = parseFloat(dist.remaining_amount);
+      }
+    }
+
+    async function saveRepaymentForm() {
+      const distribution_id = document.getElementById('repayDistSelect').value;
+      const payment_amount = document.getElementById('repayAmount').value;
+      const payment_date = document.getElementById('repayDate').value;
+      const payment_method = document.getElementById('repayMethod').value;
+      const transaction_ref = document.getElementById('repayTxRef').value.trim();
+      const notes = document.getElementById('repayNotes').value.trim();
+
+      if (!distribution_id || !payment_amount || parseFloat(payment_amount) <= 0) {
+        showToast('Select a distribution and enter a valid positive payment amount.', 'error');
+        return;
+      }
+
+      try {
+        await api('/api/repayments', {
+          method: 'POST',
+          body: JSON.stringify({ distribution_id, payment_amount, payment_date, payment_method, transaction_ref, notes })
+        });
+        showToast('Repayment recorded successfully!', 'success');
+        closeModal('recordRepaymentModal');
+        loadRepayments();
+        loadSeedFundDistributions();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // ============================================================
+    // TRANSACTION LEDGER & REPORTS HANDLERS
+    // ============================================================
+    let cachedTransactions = [];
+
+    async function loadTransactionLedger() {
+      try {
+        const data = await api('/api/transactions');
+        cachedTransactions = data.transactions || data || [];
+        renderTxTable(cachedTransactions);
+      } catch (e) { showToast('Failed to load transactions: ' + e.message, 'error'); }
+    }
+
+    function renderTxTable(txList) {
+      const tbody = document.getElementById('transactionsTableBody');
+      if (!tbody) return;
+
+      if (!Array.isArray(txList) || txList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No ledger transactions recorded yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = txList.map(t => {
+        const isCredit = t.transaction_type === 'MEMBER_CONTRIBUTION' || t.transaction_type === 'REPAYMENT' || t.transaction_type === 'PAYMENT';
+        const color = isCredit ? 'var(--green)' : 'var(--orange)';
+        return `
+          <tr>
+            <td><strong>#${t.id}</strong></td>
+            <td>${t.transaction_date || t.created_at?.substring(0, 10) || '—'}</td>
+            <td><strong>${esc(t.member_name || t.name || 'Member')}</strong> (${t.member_code || t.member_id || ''})</td>
+            <td><span class="badge badge-active">${t.transaction_type}</span></td>
+            <td style="font-weight:800;color:${color}">${isCredit ? '+' : '-'}₹${parseFloat(t.amount).toLocaleString('en-IN')}</td>
+            <td>${esc(t.description || '—')}</td>
+            <td><span class="badge badge-active">${t.status || 'COMPLETED'}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterTxTable() {
+      const q = document.getElementById('txSearchInput').value.toLowerCase().trim();
+      if (!q) { renderTxTable(cachedTransactions); return; }
+      const filtered = cachedTransactions.filter(t => 
+        (t.member_name && t.member_name.toLowerCase().includes(q)) ||
+        (t.description && t.description.toLowerCase().includes(q)) ||
+        (t.transaction_type && t.transaction_type.toLowerCase().includes(q)) ||
+        String(t.id).includes(q)
+      );
+      renderTxTable(filtered);
+    }
+
+    function exportTransactionsCSV() {
+      if (cachedTransactions.length === 0) { showToast('No transactions to export', 'error'); return; }
+      let csv = 'Tx ID,Date,Member Name,Member Code,Type,Amount,Description,Status\n';
+      cachedTransactions.forEach(t => {
+        csv += `"${t.id}","${t.transaction_date}","${t.member_name}","${t.member_code}","${t.transaction_type}","${t.amount}","${t.description}","${t.status}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `transactions_ledger_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    }
+
+    async function loadFinancialReports() {
+      try {
+        const summary = await api('/api/seed-fund/summary');
+        if (document.getElementById('repNetBalance')) document.getElementById('repNetBalance').textContent = `₹${parseFloat(summary.current_available_fund || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('repTotalInterest')) document.getElementById('repTotalInterest').textContent = `₹${parseFloat(summary.total_interest_earned || 0).toLocaleString('en-IN')}`;
+
+        const container = document.getElementById('reportsContainer');
+        if (container) {
+          container.innerHTML = `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px">
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:10px">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Total Monthly Collection</div>
+                <div style="font-size:18px;font-weight:800;color:var(--green)">₹${parseFloat(summary.total_collection || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:10px">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Total Seed Fund Distributed</div>
+                <div style="font-size:18px;font-weight:800;color:var(--primary)">₹${parseFloat(summary.total_distributed || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:10px">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Total Repayments Collected</div>
+                <div style="font-size:18px;font-weight:800;color:var(--green)">₹${parseFloat(summary.total_repaid || 0).toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:10px">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Pending Due Balance</div>
+                <div style="font-size:18px;font-weight:800;color:var(--red)">₹${parseFloat(summary.total_pending_due || 0).toLocaleString('en-IN')}</div>
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) { showToast('Failed to load report summary', 'error'); }
+    }
+
+    function exportReportsCSV() {
+      exportTransactionsCSV();
     }
 
     async function initAdminApp() {
@@ -1400,6 +2184,7 @@
     }
 
     // Members Management
+    // Members Management
     async function loadMembers() {
       const search = document.getElementById('memberSearch').value;
       const act = document.getElementById('filterActivationStatus').value;
@@ -1410,31 +2195,44 @@
         const d = await api(`/api/admin/members?search=${encodeURIComponent(search)}&activation_status=${act}&payment_status=${pay}&sort_by=${sort}`);
         const tbody = document.getElementById('membersTableBody');
         if (!d.members || !d.members.length) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px">No members found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px">No members found.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = d.members.map(m => `
-      <tr>
-        <td><strong style="color:var(--primary)">${m.member_id}</strong></td>
-        <td>${esc(m.name)} ${m.is_duplicate ? '<span class="badge badge-duplicate">DUPLICATE</span>' : ''}</td>
-        <td>${esc(m.phone)}</td>
-        <td>${esc(m.upi_id || '—')}</td>
-        <td>${esc(m.group_category || 'General')}</td>
-        <td><span class="badge badge-${m.payment_status.toLowerCase()}">${m.payment_status}</span></td>
-        <td><span class="badge badge-${m.activation_status.toLowerCase()}">${m.activation_status}</span></td>
-        <td style="display:flex;gap:4px">
-          <button class="btn-secondary btn-sm" onclick="showEditMemberModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">✏️ Edit</button>
-          ${m.activation_status === 'ACTIVE'
-            ? `<button class="btn-danger btn-sm" onclick="toggleActivation(${m.id}, 'INACTIVE')">Deactivate</button>`
-            : `<button class="btn-success btn-sm" onclick="toggleActivation(${m.id}, 'ACTIVE')">Activate</button>`}
-          <button class="btn-danger btn-sm" onclick="confirmDeleteMember(${m.id}, '${esc(m.name)}')">🗑</button>
-      </tr>
-    `).join('');
+        tbody.innerHTML = d.members.map(m => {
+          const avatar = m.profile_photo 
+            ? `<img src="${m.profile_photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" alt="Photo">`
+            : `<div style="width:36px;height:36px;border-radius:50%;background:rgba(245,200,66,0.15);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">${m.name ? m.name.charAt(0).toUpperCase() : '?'}</div>`;
+
+          const regDate = m.created_at ? new Date(m.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+          const payStatus = m.payment_status || 'UNPAID';
+          const actStatus = m.activation_status || 'PENDING';
+
+          return `
+            <tr>
+              <td><strong style="color:var(--primary)">${m.member_id}</strong></td>
+              <td>${avatar}</td>
+              <td><strong>${esc(m.name)}</strong> ${m.is_duplicate ? '<span class="badge badge-duplicate">DUPLICATE</span>' : ''}</td>
+              <td>${esc(m.phone)}</td>
+              <td>${esc(m.email || '—')}</td>
+              <td>${esc(m.upi_id || '—')}</td>
+              <td style="font-size:12px;color:var(--text-muted)">${regDate}</td>
+              <td><span class="badge badge-${payStatus.toLowerCase()}">${payStatus}</span></td>
+              <td><span class="badge badge-${actStatus.toLowerCase()}">${actStatus}</span></td>
+              <td style="display:flex;gap:4px">
+                <button class="btn-secondary btn-sm" onclick="showEditMemberModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">✏️ Edit</button>
+                ${actStatus === 'ACTIVE'
+                  ? `<button class="btn-danger btn-sm" onclick="toggleActivation(${m.id}, 'INACTIVE')">Deactivate</button>`
+                  : `<button class="btn-success btn-sm" onclick="toggleActivation(${m.id}, 'ACTIVE')">Activate</button>`}
+                <button class="btn-danger btn-sm" onclick="confirmDeleteMember(${m.id}, '${esc(m.name)}')">🗑</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (e) {
         showToast(e.message || 'Failed to load members', 'error');
         const tbody = document.getElementById('membersTableBody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--red)">Failed to load members: ${esc(e.message)}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--red)">Failed to load members: ${esc(e.message)}</td></tr>`;
       }
     }
 
@@ -1445,6 +2243,7 @@
       document.getElementById('mPhone').value = '';
       document.getElementById('mUpi').value = '';
       document.getElementById('mEmail').value = '';
+      if (document.getElementById('mPhoto')) document.getElementById('mPhoto').value = '';
       document.getElementById('mPassword').value = '123456';
       document.getElementById('mActivation').value = 'ACTIVE';
       document.getElementById('mPaymentStatus').value = 'UNPAID';
@@ -1459,6 +2258,7 @@
       document.getElementById('mPhone').value = m.phone || '';
       document.getElementById('mUpi').value = m.upi_id || '';
       document.getElementById('mEmail').value = m.email || '';
+      if (document.getElementById('mPhoto')) document.getElementById('mPhoto').value = m.profile_photo || '';
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
       document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
@@ -1471,6 +2271,7 @@
       const phone = document.getElementById('mPhone').value.trim();
       const upi_id = document.getElementById('mUpi').value.trim();
       const email = document.getElementById('mEmail').value.trim();
+      const profile_photo = document.getElementById('mPhoto') ? document.getElementById('mPhoto').value.trim() : '';
       const password = document.getElementById('mPassword').value.trim();
       const activation_status = document.getElementById('mActivation').value;
       const payment_status = document.getElementById('mPaymentStatus').value;
@@ -1482,13 +2283,13 @@
         if (currentEditingMemberId) {
           await api(`/api/admin/members/${currentEditingMemberId}`, {
             method: 'PUT',
-            body: JSON.stringify({ name, phone, upi_id, email, password, activation_status, payment_status, group_category })
+            body: JSON.stringify({ name, phone, upi_id, email, profile_photo, password, activation_status, payment_status, group_category })
           });
           showToast('Member updated successfully', 'success');
         } else {
           await api('/api/admin/members', {
             method: 'POST',
-            body: JSON.stringify({ name, phone, upi_id, email, password: password || '123456', activation_status, payment_status, group_category })
+            body: JSON.stringify({ name, phone, upi_id, email, profile_photo, password: password || '123456', activation_status, payment_status, group_category })
           });
           showToast('New member added with auto ID & Password!', 'success');
         }
@@ -1516,6 +2317,271 @@
           loadDashboard();
         } catch (e) { showToast(e.message, 'error'); }
       });
+    }
+
+    // Seettu Cycles Management
+    let allSeettuCycles = [];
+    let currentDistCycle = null;
+
+    async function loadSeettuCycles() {
+      const container = document.getElementById('seettuCyclesContainer');
+      if (!container) return;
+      try {
+        const d = await api('/api/seettu/cycles');
+        allSeettuCycles = d.cycles || [];
+        const activeCycles = allSeettuCycles.filter(c => c.status !== 'DELETED');
+        if (!activeCycles.length) {
+          container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No Seettu cycles created yet. Click "+ Create New Seettu Cycle" above.</div>';
+          return;
+        }
+
+        container.innerHTML = activeCycles.map(c => `
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div>
+                <strong style="color:var(--primary);font-size:16px">${esc(c.title)}</strong>
+                <span style="font-size:12px;color:var(--text-muted);margin-left:8px">(${c.cycle_month})</span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="badge badge-${(c.status || '').toLowerCase()}">${c.status}</span>
+                <button class="btn-secondary btn-sm" onclick="openEditSeettuModal(${c.id})">✏️ Edit</button>
+                <button class="btn-danger btn-sm" onclick="deleteSeettuCycle(${c.id}, '${esc(c.title)}')">🗑️ Delete</button>
+              </div>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:12px">
+              <div style="background:var(--bg-surface);padding:10px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted)">Total Members</div>
+                <div style="font-size:16px;font-weight:700">${c.total_members} Members</div>
+              </div>
+              <div style="background:var(--bg-surface);padding:10px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted)">Monthly Contribution</div>
+                <div style="font-size:16px;font-weight:700">₹${c.monthly_contribution.toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-surface);padding:10px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted)">Total Collection</div>
+                <div style="font-size:16px;font-weight:700;color:var(--green)">₹${c.total_collection.toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-surface);padding:10px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted)">Distributed / Winner</div>
+                <div style="font-size:16px;font-weight:700;color:var(--orange)">₹${c.amount_distributed.toLocaleString('en-IN')}</div>
+              </div>
+              <div style="background:var(--bg-surface);padding:10px;border-radius:8px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted)">Remaining Amount</div>
+                <div style="font-size:16px;font-weight:700;color:var(--primary)">₹${c.remaining_amount.toLocaleString('en-IN')}</div>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:13px;color:var(--text-muted)">
+                Current Winner: <strong>${esc(c.winner_name || 'No winner yet')} ${c.winner_code ? '('+c.winner_code+')' : ''}</strong>
+                ${c.winner_amount ? ' — Payout: ₹' + parseFloat(c.winner_amount).toLocaleString('en-IN') : ''}
+              </div>
+              <button class="btn-primary btn-sm" onclick="openDistributionModal(${c.id})">💸 Amount Distribution</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Failed to load Seettu cycles: ${esc(e.message)}</div>`;
+      }
+    }
+
+    function showCreateSeettuModal() {
+      document.getElementById('secTitle').value = '';
+      document.getElementById('secMonth').value = new Date().toISOString().substring(0, 7);
+      document.getElementById('secMembers').value = '20';
+      document.getElementById('secContribution').value = '1000';
+      document.getElementById('secNotes').value = '';
+      document.getElementById('seettuModal').classList.remove('hidden');
+    }
+
+    async function saveSeettuCycle() {
+      const title = document.getElementById('secTitle').value.trim();
+      const cycle_month = document.getElementById('secMonth').value;
+      const total_members = document.getElementById('secMembers').value;
+      const monthly_contribution = document.getElementById('secContribution').value;
+      const notes = document.getElementById('secNotes').value.trim();
+
+      if (!title || !cycle_month) {
+        showToast('Title and Cycle Month are required', 'error');
+        return;
+      }
+
+      try {
+        await api('/api/seettu/cycles', {
+          method: 'POST',
+          body: JSON.stringify({ title, cycle_month, total_members, monthly_contribution, notes })
+        });
+        showToast('Seettu cycle created successfully!', 'success');
+        closeModal('seettuModal');
+        loadSeettuCycles();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    function openEditSeettuModal(id) {
+      const c = allSeettuCycles.find(item => item.id === id);
+      if (!c) return;
+      document.getElementById('editSecId').value = c.id;
+      document.getElementById('editSecTitle').value = c.title || '';
+      document.getElementById('editSecMonth').value = c.cycle_month || '';
+      document.getElementById('editSecMembers').value = c.total_members || 20;
+      document.getElementById('editSecContribution').value = c.monthly_contribution || 1000;
+      document.getElementById('editSecNotes').value = c.notes || '';
+      document.getElementById('seettuEditModal').classList.remove('hidden');
+    }
+
+    async function updateSeettuCycle() {
+      const id = document.getElementById('editSecId').value;
+      const title = document.getElementById('editSecTitle').value.trim();
+      const cycle_month = document.getElementById('editSecMonth').value;
+      const total_members = document.getElementById('editSecMembers').value;
+      const monthly_contribution = document.getElementById('editSecContribution').value;
+      const notes = document.getElementById('editSecNotes').value.trim();
+
+      if (!title || !cycle_month) { showToast('Title and Month required', 'error'); return; }
+
+      try {
+        await api(`/api/seettu/cycles/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ title, cycle_month, total_members, monthly_contribution, notes })
+        });
+        showToast('Seettu cycle updated successfully', 'success');
+        closeModal('seettuEditModal');
+        loadSeettuCycles();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    function deleteSeettuCycle(id, title) {
+      openConfirm('Delete Seettu Cycle', `Are you sure you want to delete cycle "${title}"? Member accounts and past payments will remain safe.`, async () => {
+        try {
+          await api(`/api/seettu/cycles/${id}`, { method: 'DELETE' });
+          showToast('Seettu cycle deleted', 'info');
+          loadSeettuCycles();
+        } catch (e) { showToast(e.message, 'error'); }
+      });
+    }
+
+    // ============================================================
+    // Amount Distribution & Member ID Lookup
+    // ============================================================
+    function openDistributionModal(cycleId) {
+      const c = allSeettuCycles.find(item => item.id === cycleId);
+      if (!c) return;
+      currentDistCycle = c;
+      document.getElementById('distCycleInfo').textContent = `${c.title} (${c.cycle_month}) — ${c.total_members} Members × ₹${c.monthly_contribution}`;
+      document.getElementById('distCollectionAmount').textContent = `₹${c.total_collection.toLocaleString('en-IN')}`;
+      document.getElementById('distAlert').innerHTML = '';
+
+      const container = document.getElementById('distRowsContainer');
+      container.innerHTML = '';
+      
+      // Default 4 rows matching example requirement
+      addDistributionRow('101', 5000);
+      addDistributionRow('102', 5000);
+      addDistributionRow('103', 5000);
+      addDistributionRow('104', 5000);
+
+      document.getElementById('distributionModal').classList.remove('hidden');
+    }
+
+    function addDistributionRow(defaultMemberId = '', defaultAmount = '') {
+      const container = document.getElementById('distRowsContainer');
+      const rowIndex = container.children.length;
+      const div = document.createElement('div');
+      div.className = 'dist-row';
+      div.style.cssText = 'display:grid;grid-template-columns:100px 1fr 120px 36px;gap:8px;align-items:center;margin-bottom:8px';
+      div.innerHTML = `
+        <input type="text" placeholder="Member ID" class="dist-mid" value="${defaultMemberId}" oninput="autoLookupMemberName(${rowIndex}, this.value)">
+        <input type="text" placeholder="Member Name" class="dist-mname" readonly style="background:var(--bg);color:var(--text-muted)">
+        <input type="number" placeholder="Amount (₹)" class="dist-mamt" value="${defaultAmount}" oninput="calculateDistTotals()">
+        <button class="btn-danger btn-sm" onclick="this.parentElement.remove();calculateDistTotals()" style="padding:4px 8px">✕</button>
+      `;
+      container.appendChild(div);
+
+      if (defaultMemberId) {
+        autoLookupMemberName(rowIndex, defaultMemberId);
+      }
+      calculateDistTotals();
+    }
+
+    async function autoLookupMemberName(rowIndex, query) {
+      const rows = document.getElementById('distRowsContainer').children;
+      if (!rows[rowIndex]) return;
+      const nameInput = rows[rowIndex].querySelector('.dist-mname');
+      const q = query.trim();
+      if (!q) { nameInput.value = ''; return; }
+
+      nameInput.value = 'Searching...';
+      try {
+        const d = await api(`/api/admin/members/lookup/${encodeURIComponent(q)}`);
+        if (d.member && d.member.name) {
+          nameInput.value = d.member.name;
+        } else {
+          nameInput.value = 'Member not found';
+        }
+      } catch (e) {
+        nameInput.value = 'Not found';
+      }
+    }
+
+    function calculateDistTotals() {
+      if (!currentDistCycle) return;
+      const totalCollection = currentDistCycle.total_collection;
+      const rows = document.getElementById('distRowsContainer').children;
+      let sum = 0;
+
+      for (const row of rows) {
+        const amt = parseFloat(row.querySelector('.dist-mamt')?.value || 0);
+        if (!isNaN(amt)) sum += amt;
+      }
+
+      const remaining = totalCollection - sum;
+      document.getElementById('distTotalDistributed').textContent = `₹${sum.toLocaleString('en-IN')}`;
+      document.getElementById('distRemainingBalance').textContent = `₹${remaining.toLocaleString('en-IN')}`;
+
+      const alertEl = document.getElementById('distAlert');
+      const saveBtn = document.getElementById('saveDistBtn');
+
+      if (sum > totalCollection) {
+        alertEl.innerHTML = `<div style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid var(--red);padding:10px;border-radius:8px;font-size:13px;font-weight:700">
+          ⚠️ Total Distributed (₹${sum.toLocaleString('en-IN')}) exceeds Monthly Collection (₹${totalCollection.toLocaleString('en-IN')})! Please reduce amounts before saving.
+        </div>`;
+        saveBtn.disabled = true;
+      } else {
+        alertEl.innerHTML = '';
+        saveBtn.disabled = false;
+      }
+    }
+
+    async function saveDistributions() {
+      if (!currentDistCycle) return;
+      const rows = document.getElementById('distRowsContainer').children;
+      const distributions = [];
+
+      for (const row of rows) {
+        const mid = row.querySelector('.dist-mid')?.value?.trim();
+        const amt = parseFloat(row.querySelector('.dist-mamt')?.value || 0);
+        if (mid && !isNaN(amt) && amt > 0) {
+          distributions.push({ member_id: mid, amount: amt });
+        }
+      }
+
+      if (!distributions.length) {
+        showToast('Please add at least one valid member distribution', 'error');
+        return;
+      }
+
+      try {
+        const d = await api(`/api/seettu/cycles/${currentDistCycle.id}/distributions`, {
+          method: 'POST',
+          body: JSON.stringify({ distributions })
+        });
+        showToast(d.message, 'success');
+        closeModal('distributionModal');
+        loadSeettuCycles();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
     }
 
     // Duplicates Resolution
@@ -1703,12 +2769,27 @@
     // Settings
     async function loadSettings() {
       try {
-        const d = await api('/api/settings');
+        const d = await api('/api/settings/public');
         if (d.org_name) document.getElementById('sOrgName').value = d.org_name;
         if (d.org_name_tamil) document.getElementById('sOrgNameTa').value = d.org_name_tamil;
+        if (d.admin_upi_id) document.getElementById('sAdminUpiId').value = d.admin_upi_id;
+        if (d.admin_upi_name) document.getElementById('sAdminUpiName').value = d.admin_upi_name;
         if (d.whatsapp_link) document.getElementById('sWhatsApp').value = d.whatsapp_link;
         if (d.default_payment_amount) document.getElementById('sPayAmount').value = d.default_payment_amount;
-      } catch (e) { }
+
+        const qrContainer = document.getElementById('adminQrPreview');
+        if (qrContainer) {
+          const qrPath = d.qr_path_versioned || (d.qr_path ? `${d.qr_path}?v=${Date.now()}` : '/assets/qr.png');
+          qrContainer.innerHTML = `
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;max-width:280px;text-align:center">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:700">CURRENT QR CODE PREVIEW</div>
+              <img src="${qrPath}" id="currentAdminQrImg" style="max-width:200px;border-radius:8px;border:1px solid var(--border);margin-bottom:8px">
+              <div style="font-size:12px;color:var(--text-muted)">UPI ID: <strong>${esc(d.admin_upi_id || '9025893352@idfcfirst')}</strong></div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Last Updated: ${d.qr_version ? new Date(parseInt(d.qr_version, 10)).toLocaleString() : 'Just now'}</div>
+            </div>
+          `;
+        }
+      } catch (e) { console.warn('Could not load settings:', e); }
     }
 
     async function saveSettings() {
@@ -1718,12 +2799,40 @@
           body: JSON.stringify({
             org_name: document.getElementById('sOrgName').value,
             org_name_tamil: document.getElementById('sOrgNameTa').value,
+            admin_upi_id: document.getElementById('sAdminUpiId').value,
+            admin_upi_name: document.getElementById('sAdminUpiName').value,
             whatsapp_link: document.getElementById('sWhatsApp').value,
             default_payment_amount: document.getElementById('sPayAmount').value
           })
         });
-        showToast('Settings saved successfully', 'success');
+        showToast('Payment settings saved successfully!', 'success');
+        loadSettings();
       } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function uploadAdminQrCode() {
+      const fileInput = document.getElementById('adminQrFileInput');
+      const file = fileInput?.files[0];
+      if (!file) {
+        showToast('Please select a QR code image file to upload', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        try {
+          const d = await api('/api/settings/upload-qr', {
+            method: 'POST',
+            body: JSON.stringify({ image_data: base64Data })
+          });
+          showToast('Payment QR Code updated and saved to server!', 'success');
+          loadSettings();
+        } catch (err) {
+          showToast(err.message || 'Failed to upload QR Code', 'error');
+        }
+      };
+      reader.readAsDataURL(file);
     }
 
     // Activation List Loader
@@ -1908,54 +3017,78 @@
 
     // Chat Groups Admin
     async function loadAdminGroupRequests() {
+      const container = document.getElementById('adminGroupRequestsContainer');
+      if (!container) return;
       try {
         const d = await api('/api/admin/chat-groups/requests');
-        const tbody = document.getElementById('adminGroupRequestsTableBody');
         if (!d.requests || !d.requests.length) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">✅ No pending group creation requests.</td></tr>';
+          container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">✅ No pending group creation requests.</div>';
           return;
         }
-        tbody.innerHTML = d.requests.map(r => `
-          <tr>
-            <td><strong style="color:var(--primary);font-size:15px">${esc(r.group_name)}</strong></td>
-            <td>${esc(r.requester_name)} <span style="color:var(--text-muted);font-size:12px">(${r.requester_member_id})</span></td>
-            <td>${esc(r.requester_phone)}</td>
-            <td>${new Date(r.created_at).toLocaleDateString()}</td>
-            <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
-            <td style="display:flex;gap:6px">
-              ${r.status === 'PENDING' ? `
-                <button class="btn-success btn-sm" onclick="approveGroupRequest(${r.id})">✅ Approve</button>
-                <button class="btn-danger btn-sm" onclick="rejectGroupRequest(${r.id})">❌ Reject</button>
-              ` : `<span>—</span>`}
-            </td>
-          </tr>
-        `).join('');
-      } catch(e) { showToast(e.message, 'error'); }
+        container.innerHTML = `
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Group Name</th><th>Requested By</th><th>Phone</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                ${d.requests.map(r => `
+                  <tr>
+                    <td><strong style="color:var(--primary);font-size:15px">${esc(r.group_name)}</strong></td>
+                    <td>${esc(r.requester_name)} <span style="color:var(--text-muted);font-size:12px">(${r.requester_member_id})</span></td>
+                    <td>${esc(r.requester_phone)}</td>
+                    <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                    <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
+                    <td style="display:flex;gap:6px">
+                      ${r.status === 'PENDING' ? `
+                        <button class="btn-success btn-sm" onclick="approveGroupRequest(${r.id})">✅ Approve</button>
+                        <button class="btn-danger btn-sm" onclick="rejectGroupRequest(${r.id})">❌ Reject</button>
+                      ` : `<span>—</span>`}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch(e) { container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Failed to load requests: ${esc(e.message)}</div>`; }
     }
 
     async function loadAdminGroups() {
+      const container = document.getElementById('adminGroupsContainer');
+      if (!container) return;
       try {
         const d = await api('/api/admin/chat-groups');
-        const tbody = document.getElementById('adminGroupsTableBody');
         if (!d.groups || !d.groups.length) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">No active chat groups found.</td></tr>';
+          container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No active chat groups found.</div>';
           return;
         }
-        tbody.innerHTML = d.groups.map(g => `
-          <tr>
-            <td>#${g.id}</td>
-            <td><strong style="color:var(--primary);font-size:15px">${esc(g.group_name)}</strong></td>
-            <td>${esc(g.owner_name || 'Admin')} <span style="color:var(--text-muted);font-size:12px">(${g.owner_member_id || ''})</span></td>
-            <td><strong>${g.member_count} / ${g.max_members}</strong> Members</td>
-            <td><span class="badge badge-${g.status.toLowerCase()}">${g.status}</span></td>
-            <td>${new Date(g.created_at).toLocaleDateString()}</td>
-            <td style="display:flex;gap:6px">
-              ${g.status === 'ACTIVE' || g.status === 'FULL' ? `<button class="btn-warning btn-sm" onclick="deactivateGroup(${g.id})">Deactivate</button>` : ''}
-              <button class="btn-danger btn-sm" onclick="deleteGroup(${g.id}, '${esc(g.group_name)}')">🗑 Delete</button>
-            </td>
-          </tr>
-        `).join('');
-      } catch(e) { showToast(e.message, 'error'); }
+        container.innerHTML = `
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Group Name</th><th>Group Owner (Admin)</th><th>Members</th><th>Status</th><th>Created</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                ${d.groups.map(g => `
+                  <tr>
+                    <td>#${g.id}</td>
+                    <td><strong style="color:var(--primary);font-size:15px">${esc(g.group_name)}</strong></td>
+                    <td>${esc(g.owner_name || 'Admin')} <span style="color:var(--text-muted);font-size:12px">(${g.owner_member_id || ''})</span></td>
+                    <td><strong>${g.member_count} / ${g.max_members}</strong> Members</td>
+                    <td><span class="badge badge-${g.status.toLowerCase()}">${g.status}</span></td>
+                    <td>${new Date(g.created_at).toLocaleDateString()}</td>
+                    <td style="display:flex;gap:6px">
+                      ${g.status === 'ACTIVE' || g.status === 'FULL' ? `<button class="btn-warning btn-sm" onclick="deactivateGroup(${g.id})">Deactivate</button>` : ''}
+                      <button class="btn-danger btn-sm" onclick="deleteGroup(${g.id}, '${esc(g.group_name)}')">🗑 Delete</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch(e) { container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Failed to load chat groups: ${esc(e.message)}</div>`; }
     }
 
     async function approveGroupRequest(id) {

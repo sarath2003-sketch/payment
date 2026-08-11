@@ -73,8 +73,8 @@ router.post('/create', async (req, res) => {
 
     if (ownerId) {
       await client.query(`
-        INSERT INTO chat_group_members (group_id, member_id, is_speaker, is_owner, is_muted)
-        VALUES ($1, $2, TRUE, TRUE, FALSE)
+        INSERT INTO chat_group_members (group_id, member_id, role, is_speaker, is_muted, is_online)
+        VALUES ($1, $2, 'ADMIN', 1, 0, 1)
         ON CONFLICT (group_id, member_id) DO NOTHING
       `, [newGroup.id, ownerId]);
     }
@@ -157,17 +157,35 @@ router.post('/requests/:id/approve', async (req, res) => {
 
     const newGroup = grpRes.rows[0];
 
-    // Add requester as Group Admin member
+    // Add requester as Group Admin member — fix booleans for SQLite (0/1 not TRUE/FALSE)
     await client.query(`
-      INSERT INTO chat_group_members (group_id, member_id, role, is_muted, is_online)
-      VALUES ($1, $2, 'ADMIN', FALSE, TRUE)
+      INSERT INTO chat_group_members (group_id, member_id, role, is_speaker, is_muted, is_online)
+      VALUES ($1, $2, 'ADMIN', 1, 0, 1)
+      ON CONFLICT (group_id, member_id) DO NOTHING
     `, [newGroup.id, groupReq.requested_by]);
 
     await client.query('COMMIT');
 
-    // Socket notification
+    // Create in-app notification for the requester
+    try {
+      await pool.query(`
+        INSERT INTO notifications (member_id, title, body, type, reference_type, reference_id)
+        VALUES ($1, $2, $3, 'chat_group', 'chat_group', $4)
+      `, [
+        groupReq.requested_by,
+        '✅ Chat Room Approved!',
+        `Your chat room "${groupReq.group_name}" has been approved and is now live!`,
+        newGroup.id
+      ]);
+    } catch (notifErr) {
+      // Non-fatal: log but don't block the response
+      console.warn('Notification insert warning:', notifErr.message);
+    }
+
+    // Socket notification — broadcast to all members so room list updates immediately
     if (io) {
       io.emit('group:request-approved', { group: newGroup, request_id: requestId });
+      io.emit('group:list-updated', { action: 'approved', group: newGroup });
     }
 
     res.json({ message: 'Group request approved! Group is now live.', group: newGroup });

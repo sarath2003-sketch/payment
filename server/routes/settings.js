@@ -13,10 +13,16 @@ router.get('/public', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT key, value FROM app_settings
-      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','admin_upi_id','admin_upi_name','whatsapp_link','default_payment_amount','payment_instructions_en','payment_instructions_ta')
+      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','qr_version','admin_upi_id','admin_upi_name','whatsapp_link','default_payment_amount','payment_instructions_en','payment_instructions_ta')
     `);
     const settings = {};
     result.rows.forEach(row => { settings[row.key] = row.value; });
+    const version = settings.qr_version || Date.now();
+    if (settings.qr_path && !settings.qr_path.includes('?v=')) {
+      settings.qr_path_versioned = `${settings.qr_path}?v=${version}`;
+    } else {
+      settings.qr_path_versioned = settings.qr_path || '/assets/qr.png';
+    }
     res.json(settings);
   } catch (err) {
     console.error('Error fetching public settings:', err);
@@ -98,12 +104,23 @@ router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'No image provided for QR code.' });
     }
 
+    const version = Date.now();
     await pool.query(`
       INSERT INTO app_settings (key, value, updated_at) VALUES ('qr_path', $1, CURRENT_TIMESTAMP)
       ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP
     `, [qrUrl]);
+    await pool.query(`
+      INSERT INTO app_settings (key, value, updated_at) VALUES ('qr_version', $1, CURRENT_TIMESTAMP)
+      ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP
+    `, [String(version)]);
 
-    res.json({ message: 'QR Code uploaded successfully!', qr_path: qrUrl });
+    // Audit Log
+    await pool.query(`
+      INSERT INTO audit_logs (actor_type, actor_id, actor_name, action, entity_type, details)
+      VALUES ('admin', $1, 'Admin', 'UPLOAD_PAYMENT_QR', 'settings', $2)
+    `, [req.admin.id, `Uploaded new Payment QR Scanner image: ${qrUrl}`]);
+
+    res.json({ message: 'QR Code uploaded successfully!', qr_path: qrUrl, qr_version: version, qr_path_versioned: `${qrUrl}?v=${version}` });
   } catch (err) {
     console.error('Error uploading QR code:', err);
     res.status(500).json({ error: err.message || 'Failed to upload QR code' });

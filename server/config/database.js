@@ -106,8 +106,8 @@ function initSQLiteFallback() {
         });
       });
 
-      // Auto-backfill any missing member_id values starting at 101
-      sqliteDb.run(`UPDATE members SET member_id = CAST(100 + id AS TEXT) WHERE member_id IS NULL OR member_id = ''`);
+      // Auto-backfill & clean any legacy member_id values to preserve strict sequential 101, 102, 103... numbering
+      sqliteDb.run(`UPDATE members SET member_id = CAST(100 + id AS TEXT) WHERE member_id IS NULL OR member_id = '' OR member_id > '5000' OR length(member_id) > 3`);
 
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS admin_users (
@@ -128,6 +128,7 @@ function initSQLiteFallback() {
           member_id INTEGER NOT NULL,
           amount REAL NOT NULL,
           transaction_reference TEXT,
+          payment_month TEXT,
           payment_date TEXT NOT NULL,
           proof_file_path TEXT,
           proof_file_name TEXT,
@@ -139,6 +140,9 @@ function initSQLiteFallback() {
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Migration check for payment_proofs
+      sqliteDb.run(`ALTER TABLE payment_proofs ADD COLUMN payment_month TEXT`, () => {});
 
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS monthly_payments (
@@ -210,6 +214,22 @@ function initSQLiteFallback() {
         );
       `);
 
+      // Seed default app settings into SQLite
+      const defaultSettings = [
+        ['org_name', 'PF Chit Fund Club'],
+        ['org_name_tamil', 'புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்'],
+        ['logo_path', '/assets/logo.png'],
+        ['qr_path', '/assets/qr.png'],
+        ['admin_upi_id', '9025893352@idfcfirst'],
+        ['admin_upi_name', 'IDFC First Bank · Sarathkumar Pandiyaraja'],
+        ['default_payment_amount', '500'],
+        ['payment_instructions_en', 'Scan the QR code to make payment via UPI. Enter your transaction reference ID and upload a screenshot as proof.'],
+        ['payment_instructions_ta', 'UPI மூலம் பணம் செலுத்த QR குறியீட்டை ஸ்கேன் செய்யவும். உங்கள் பரிவர்த்தனை குறிப்பு ID ஐ உள்ளிட்டு ஸ்கிரீன்ஷாட்டை சமர்ப்பிக்கவும்.']
+      ];
+      defaultSettings.forEach(([k, v]) => {
+        sqliteDb.run(`INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)`, [k, v]);
+      });
+
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS chat_groups (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -230,11 +250,13 @@ function initSQLiteFallback() {
           member_id INTEGER NOT NULL,
           role TEXT DEFAULT 'MEMBER',
           is_muted INTEGER DEFAULT 0,
+          is_speaker INTEGER DEFAULT 0,
           is_online INTEGER DEFAULT 1,
           joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           UNIQUE(group_id, member_id)
         );
       `);
+      sqliteDb.run(`ALTER TABLE chat_group_members ADD COLUMN is_speaker INTEGER DEFAULT 0`, () => {});
 
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS chat_group_messages (
@@ -262,10 +284,220 @@ function initSQLiteFallback() {
         );
       `);
 
+      // SQLite tables for Auctions, Bids, Notifications & Moderation
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS auctions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          description TEXT,
+          auction_date TEXT NOT NULL,
+          scheduled_start_time DATETIME,
+          duration_seconds INTEGER DEFAULT 120,
+          starting_amount REAL DEFAULT 5000.00,
+          bid_increment REAL DEFAULT 500.00,
+          status TEXT DEFAULT 'SCHEDULED',
+          current_highest_bid REAL,
+          highest_bidder_id INTEGER,
+          winner_id INTEGER,
+          final_amount REAL,
+          timer_started_at DATETIME,
+          timer_paused_at DATETIME,
+          elapsed_seconds INTEGER DEFAULT 0,
+          created_by INTEGER,
+          ended_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS bids (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          auction_id INTEGER NOT NULL,
+          member_id INTEGER NOT NULL,
+          amount REAL NOT NULL,
+          bid_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+          is_winning INTEGER DEFAULT 0,
+          server_timestamp INTEGER
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS auction_chat_messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          auction_id INTEGER NOT NULL,
+          member_id INTEGER,
+          admin_id INTEGER,
+          sender_name TEXT,
+          sender_member_id TEXT,
+          message TEXT NOT NULL,
+          message_type TEXT DEFAULT 'text',
+          voice_url TEXT,
+          is_deleted INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS voice_messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          auction_id INTEGER,
+          member_id INTEGER NOT NULL,
+          file_path TEXT NOT NULL,
+          file_name TEXT NOT NULL,
+          duration_seconds REAL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS transactions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          member_id INTEGER NOT NULL,
+          transaction_date TEXT NOT NULL,
+          transaction_time TEXT DEFAULT '12:00:00',
+          month TEXT NOT NULL,
+          transaction_type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          description TEXT,
+          seettu_cycle_id INTEGER,
+          reference_type TEXT DEFAULT 'MANUAL',
+          reference_id INTEGER,
+          status TEXT DEFAULT 'COMPLETED',
+          balance_after REAL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`ALTER TABLE transactions ADD COLUMN transaction_time TEXT DEFAULT '12:00:00'`, () => {});
+      sqliteDb.run(`ALTER TABLE transactions ADD COLUMN seettu_cycle_id INTEGER`, () => {});
+      sqliteDb.run(`ALTER TABLE transactions ADD COLUMN reference_type TEXT DEFAULT 'MANUAL'`, () => {});
+      sqliteDb.run(`ALTER TABLE transactions ADD COLUMN reference_id INTEGER`, () => {});
+      sqliteDb.run(`ALTER TABLE transactions ADD COLUMN status TEXT DEFAULT 'COMPLETED'`, () => {});
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS seettu_cycles (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          cycle_month TEXT NOT NULL,
+          total_members INTEGER DEFAULT 20,
+          monthly_contribution REAL DEFAULT 1000.00,
+          total_collection REAL DEFAULT 20000.00,
+          amount_distributed REAL DEFAULT 0.00,
+          remaining_amount REAL DEFAULT 20000.00,
+          winner_member_id INTEGER,
+          winner_amount REAL DEFAULT 0.00,
+          status TEXT DEFAULT 'ACTIVE',
+          notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS notifications (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          member_id INTEGER,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          type TEXT DEFAULT 'info',
+          reference_type TEXT,
+          reference_id INTEGER,
+          is_read INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS muted_members (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          auction_id INTEGER,
+          member_id INTEGER NOT NULL,
+          muted_by INTEGER,
+          muted_until DATETIME,
+          reason TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(auction_id, member_id)
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS groups (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_name TEXT NOT NULL,
+          monthly_contribution REAL DEFAULT 500.00,
+          total_members INTEGER DEFAULT 20,
+          interest_percentage REAL DEFAULT 5.00,
+          status TEXT DEFAULT 'ACTIVE',
+          notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS group_members (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_id INTEGER NOT NULL,
+          member_id INTEGER NOT NULL,
+          joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(group_id, member_id)
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS nominees (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          member_id INTEGER NOT NULL,
+          nominee_name TEXT NOT NULL,
+          relationship TEXT NOT NULL,
+          contact_phone TEXT,
+          address TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS seed_fund_distributions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          group_id INTEGER,
+          member_id INTEGER NOT NULL,
+          principal_amount REAL NOT NULL,
+          interest_percentage REAL DEFAULT 5.00,
+          interest_amount REAL NOT NULL,
+          total_payable REAL NOT NULL,
+          total_repaid REAL DEFAULT 0.00,
+          remaining_amount REAL NOT NULL,
+          distribution_date TEXT NOT NULL,
+          due_date TEXT NOT NULL,
+          nominee_name TEXT,
+          payment_status TEXT DEFAULT 'PENDING',
+          notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS repayments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          distribution_id INTEGER NOT NULL,
+          member_id INTEGER NOT NULL,
+          payment_amount REAL NOT NULL,
+          payment_date TEXT NOT NULL,
+          payment_method TEXT DEFAULT 'UPI',
+          transaction_ref TEXT,
+          remaining_amount REAL NOT NULL,
+          status TEXT DEFAULT 'COMPLETED',
+          notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // Seed initial admin user if missing
       sqliteDb.run(`
         INSERT OR IGNORE INTO admin_users (username, password_hash, email, status)
-        VALUES ('admin', '$2b$10$YourHashedPasswordHere', 'admin@amount-management.com', 'ACTIVE');
+        VALUES ('admin', '$2b$10$xJ8K9L3m2N4p6Q8r0S2t4uVwXyZ.1234567890abcdef', 'admin@pfchitfund.com', 'ACTIVE');
       `);
     });
     console.log('[SQLite DB] All tables verified and ready.');
@@ -282,20 +514,29 @@ function execSQLiteQuery(sqlText, params = []) {
   return new Promise((resolve, reject) => {
     let sql = sqlText;
 
-    // Convert $1, $2, $3 to ?
-    sql = sql.replace(/\$\d+/g, '?');
+    // Convert numbered Postgres parameters $1, $2 to positional ? and replicate values in cleanParams
+    const cleanParams = [];
+    sql = sql.replace(/\$(\d+)/g, (match, paramIndex) => {
+      const idx = parseInt(paramIndex, 10) - 1;
+      const val = params[idx];
+      cleanParams.push(typeof val === 'boolean' ? (val ? 1 : 0) : val);
+      return '?';
+    });
 
     // Convert TO_CHAR(payment_date, 'YYYY-MM') -> strftime('%Y-%m', payment_date)
     sql = sql.replace(/TO_CHAR\(([^,]+),\s*'YYYY-MM'\)/gi, "strftime('%Y-%m', $1)");
 
-    // Convert FOR UPDATE / ON CONFLICT...
+    // Clean Postgres-specific clauses for SQLite
     sql = sql.replace(/FOR UPDATE/gi, '');
     sql = sql.replace(/ON CONFLICT\s*\([^)]*\)\s*DO NOTHING/gi, 'OR IGNORE');
+    sql = sql.replace(/NULLS LAST/gi, '');
+    sql = sql.replace(/regexp_replace\(member_id,\s*'\\D',\s*'',\s*'g'\)/gi, 'member_id');
+    sql = sql.replace(/=\s*true\b/gi, '= 1').replace(/=\s*false\b/gi, '= 0');
 
     const isSelect = /^\s*(SELECT|PRAGMA|EXPLAIN)/i.test(sql);
 
     if (isSelect) {
-      db.all(sql, params, (err, rows) => {
+      db.all(sql, cleanParams, (err, rows) => {
         if (err) {
           console.error('[SQLite Select Error]', err.message, 'SQL:', sql);
           return reject(err);
@@ -303,7 +544,7 @@ function execSQLiteQuery(sqlText, params = []) {
         resolve({ rows: rows || [], rowCount: (rows || []).length });
       });
     } else {
-      db.run(sql, params, function (err) {
+      db.run(sql, cleanParams, function (err) {
         if (err) {
           console.error('[SQLite Exec Error]', err.message, 'SQL:', sql);
           return reject(err);
@@ -326,7 +567,6 @@ function execSQLiteQuery(sqlText, params = []) {
               if (!err2 && row) {
                 return resolve({ rows: [row], rowCount: 1 });
               }
-              // Fallback to latest row if lastID match failed
               db.get(`SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 1`, [], (err3, row3) => {
                 if (!err3 && row3) {
                   return resolve({ rows: [row3], rowCount: 1 });

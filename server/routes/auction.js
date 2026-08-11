@@ -434,6 +434,122 @@ router.post('/:id/bid', authenticateToken, async (req, res) => {
   } finally { client.release(); }
 });
 
+// Alias: GET /api/live-activities/:id & GET /api/auction/:id
+router.get('/details/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT a.*,
+             m.name AS highest_bidder_name, m.member_id AS highest_bidder_code, m.profile_photo AS highest_bidder_photo,
+             w.name AS winner_name, w.member_id AS winner_code, w.profile_photo AS winner_photo
+      FROM auctions a
+      LEFT JOIN members m ON a.highest_bidder_id = m.id
+      LEFT JOIN members w ON a.winner_id = w.id
+      WHERE a.id = $1
+    `, [req.params.id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Live activity not found' });
+    }
+
+    const a = result.rows[0];
+    if (a.status === 'LIVE' && a.timer_started_at) {
+      const elapsed = (a.elapsed_seconds || 0) + Math.floor((Date.now() - new Date(a.timer_started_at).getTime()) / 1000);
+      a.remainingSeconds = Math.max(0, a.duration_seconds - elapsed);
+    } else {
+      a.remainingSeconds = a.duration_seconds || 0;
+    }
+
+    res.json({ success: true, data: a, auction: a });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch live activity' });
+  }
+});
+
+// Alias: POST /api/live-activities/:id/amount & POST /api/auction/:id/amount (With ₹100 rule & 409 Conflict concurrency check)
+router.post('/:id/amount', authenticateToken, async (req, res) => {
+  const io = req.app.get('io');
+  if (req.admin?.type === 'admin') return res.status(403).json({ success: false, message: 'Admins cannot update amount' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const auctionId = req.params.id;
+    const auctionResult = await client.query('SELECT * FROM auctions WHERE id = $1 FOR UPDATE', [auctionId]);
+    if (auctionResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Live activity not found' });
+    }
+    const auction = auctionResult.rows[0];
+    if (auction.status !== 'LIVE') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Live activity is not active' });
+    }
+
+    const elapsed = (auction.elapsed_seconds || 0) + Math.floor((Date.now() - new Date(auction.timer_started_at).getTime()) / 1000);
+    if (elapsed >= auction.duration_seconds) {
+      await client.query('ROLLBACK');
+      await endAuction(auction.id, io, pool);
+      return res.status(400).json({ success: false, message: 'Live activity has ended' });
+    }
+
+    const newAmount = parseFloat(req.body.amount || req.body.newAmount);
+    const currentAmount = parseFloat(auction.current_highest_bid || auction.starting_amount);
+    const increment = parseFloat(auction.bid_increment || 100);
+
+    if (isNaN(newAmount)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: 'Invalid amount' });
+    }
+
+    if (auction.current_highest_bid !== null && (newAmount - currentAmount !== increment)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, message: `Amount must be increased by exactly ₹${increment}` });
+    }
+
+    const memberId = req.admin.id;
+
+    // Optimistic concurrency update
+    const updateResult = await client.query(`
+      UPDATE auctions 
+      SET current_highest_bid = $1, highest_bidder_id = $2, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3 AND status = 'LIVE' AND (current_highest_bid = $4 OR current_highest_bid IS NULL)
+      RETURNING *
+    `, [newAmount, memberId, auctionId, auction.current_highest_bid]);
+
+    if (updateResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ success: false, message: 'Amount has already been updated. Refresh and try again.' });
+    }
+
+    await client.query('INSERT INTO bids (auction_id, member_id, amount, is_winning, server_timestamp) VALUES ($1, $2, $3, TRUE, $4)', [auctionId, memberId, newAmount, Date.now()]);
+    await client.query('COMMIT');
+
+    const mRes = await pool.query('SELECT name, member_id, profile_photo FROM members WHERE id = $1', [memberId]);
+    const member = mRes.rows[0];
+
+    const broadcastData = {
+      auction_id: parseInt(auctionId),
+      amount: newAmount,
+      highest_bidder_id: memberId,
+      highest_bidder_name: member?.name,
+      highest_bidder_code: member?.member_id,
+      profile_photo: member?.profile_photo
+    };
+
+    if (io) {
+      io.emit('auction:bid-update', broadcastData);
+      io.to(`auction_${auctionId}`).emit('bid-placed', broadcastData);
+    }
+
+    res.json({ success: true, message: 'Amount updated successfully', data: broadcastData });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error updating amount:', err);
+    res.status(500).json({ success: false, message: 'Failed to update amount' });
+  } finally {
+    client.release();
+  }
+});
+
 // ============================================================
 // SHARED: End Auction Logic (called by timer or admin)
 // ============================================================
@@ -472,6 +588,39 @@ async function endAuction(auctionId, io, db) {
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $3
     `, [winnerId, finalAmount, auctionId]);
+
+    // Automatically create a ledger transaction for winner
+    if (winnerId && finalAmount) {
+      const todayDate = new Date().toISOString().split('T')[0];
+      const timeStr = new Date().toTimeString().split(' ')[0];
+      const monthStr = todayDate.substring(0, 7);
+      const winAmt = parseFloat(finalAmount);
+
+      await client.query(`
+        INSERT INTO transactions (
+          member_id, transaction_date, transaction_time, month,
+          transaction_type, amount, description, reference_type,
+          reference_id, status
+        ) VALUES ($1, $2, $3, $4, 'DEBIT', $5, $6, 'AUCTION_WIN', $7, 'COMPLETED')
+      `, [
+        winnerId,
+        todayDate,
+        timeStr,
+        monthStr,
+        winAmt,
+        `Auction Winner Payout — ${auction.title} (Winning Bid: ₹${winAmt.toLocaleString('en-IN')})`,
+        auctionId
+      ]);
+
+      // Audit Log
+      await client.query(`
+        INSERT INTO audit_logs (actor_type, actor_id, actor_name, action, entity_type, entity_id, details)
+        VALUES ('system', 0, 'System', 'AUCTION_WINNER_SELECTED', 'auction', $1, $2)
+      `, [
+        auctionId,
+        `Winner ${winnerName} (${winnerCode}) won auction #${auctionId} with bid ₹${winAmt}`
+      ]);
+    }
 
     await client.query('COMMIT');
 

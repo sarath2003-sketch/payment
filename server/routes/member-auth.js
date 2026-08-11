@@ -77,7 +77,7 @@ router.post(['/', '/register'], async (req, res) => {
     }
 
     // Check for potential duplicate matching by Name or UPI
-    let upiId = (req.body.upi_id || '').trim();
+    let upiId = (req.body.upi_id || req.body.upiId || req.body.upi || '').trim();
     let isDuplicate = false;
     let duplicateReason = null;
     let duplicateOfId = null;
@@ -106,7 +106,7 @@ router.post(['/', '/register'], async (req, res) => {
     let maxNum = 100;
     for (const row of idRes.rows || []) {
       const num = parseInt(row.member_id, 10);
-      if (!isNaN(num) && num > maxNum) {
+      if (!isNaN(num) && num >= 100 && num < 10000 && num > maxNum) {
         maxNum = num;
       }
     }
@@ -130,9 +130,11 @@ router.post(['/', '/register'], async (req, res) => {
     const finalMemberId = member.member_id || memberId;
     const finalName = member.name || name;
     const finalEmail = member.email || email;
+    const finalPhone = member.phone || cleanPhone;
+    const finalUpi = member.upi_id || upiId || '';
     const finalId = member.id || 0;
 
-    console.log(`[REGISTRATION SUCCESS] Member ID: ${finalMemberId}, Email: ${finalEmail}`);
+    console.log(`[REGISTRATION SUCCESS] Member ID: ${finalMemberId}, Name: ${finalName}, Phone: ${finalPhone}, Email: ${finalEmail}`);
 
     // Generate JWT token for instant login
     const token = jwt.sign(
@@ -148,9 +150,12 @@ router.post(['/', '/register'], async (req, res) => {
     res.status(201).json({
       message: 'Registration successful!',
       token: token,
+      id: finalId,
       member_id: finalMemberId,
       name: finalName,
       email: finalEmail,
+      phone: finalPhone,
+      upi_id: finalUpi
     });
 
   } catch (error) {
@@ -288,10 +293,67 @@ router.get('/profile', authenticateToken, async (req, res) => {
     }
 
     res.json(member);
-
   } catch (error) {
-    console.error('Error fetching profile:', error);
+    console.error('Profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+/**
+ * POST /api/members/photo & POST /api/member-auth/photo
+ * Upload, change, or remove member profile photo
+ */
+router.post('/photo', authenticateToken, async (req, res) => {
+  const io = req.app.get('io');
+  try {
+    const memberId = req.admin.id;
+    let photoUrl = null;
+
+    if (req.files && req.files.photo) {
+      const file = req.files.photo;
+      const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
+      const ext = path.extname(file.name).toLowerCase();
+      if (!allowedExts.includes(ext)) {
+        return res.status(400).json({ success: false, message: 'Invalid format. Allowed: JPG, PNG, WEBP' });
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return res.status(400).json({ success: false, message: 'Image size exceeds 5MB limit' });
+      }
+
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const fileName = `profile_${memberId}_${Date.now()}${ext}`;
+      const filePath = path.join(uploadsDir, fileName);
+
+      await file.mv(filePath);
+      photoUrl = `/uploads/${fileName}`;
+    } else if (req.body.photo_url) {
+      photoUrl = req.body.photo_url.trim();
+    } else {
+      return res.status(400).json({ success: false, message: 'No photo file or photo URL provided' });
+    }
+
+    await pool.query('UPDATE members SET profile_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [photoUrl, memberId]);
+
+    if (io) {
+      io.emit('member:profile-updated', { member_id: memberId, profile_photo: photoUrl });
+    }
+
+    res.json({ success: true, message: 'Profile photo updated successfully', profile_photo: photoUrl });
+  } catch (err) {
+    console.error('Error updating profile photo:', err);
+    res.status(500).json({ success: false, message: 'Failed to update profile photo' });
+  }
+});
+
+router.delete('/photo', authenticateToken, async (req, res) => {
+  try {
+    const memberId = req.admin.id;
+    await pool.query('UPDATE members SET profile_photo = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [memberId]);
+    res.json({ success: true, message: 'Profile photo removed' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to remove profile photo' });
   }
 });
 

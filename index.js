@@ -32,6 +32,11 @@ const adminPaymentsNewRoutes = require('./server/routes/admin-payments');
 const auditLogsRoutes = require('./server/routes/audit-logs');
 const chatGroupsRoutes = require('./server/routes/chat-groups');
 const adminChatGroupsRoutes = require('./server/routes/admin-chat-groups');
+const seettuRoutes = require('./server/routes/seettu');
+const seedFundRoutes = require('./server/routes/seed-fund');
+const repaymentsRoutes = require('./server/routes/repayments');
+const groupsRoutes = require('./server/routes/groups');
+const nomineesRoutes = require('./server/routes/nominees');
 const { endAuction } = require('./server/routes/auction');
 
 const app = express();
@@ -113,7 +118,6 @@ app.set('auctionTimerManager', auctionTimerManager);
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token || socket.handshake.query?.token;
   if (!token) {
-    // Allow unauthenticated for read-only listeners
     socket.user = null;
     return next();
   }
@@ -159,13 +163,53 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ============================================================
+  // WebRTC Voice Call Signaling Events
+  // ============================================================
+  socket.on('voice:start-call', ({ target_group_id, room_name }) => {
+    const room = room_name || `group_${target_group_id}`;
+    socket.join(room);
+    socket.to(room).emit('voice:incoming-call', {
+      caller_id: socket.id,
+      caller_name: socket.user?.username || socket.user?.member_id || 'Group Member',
+      room_name: room
+    });
+  });
+
+  socket.on('voice:offer', ({ room_name, offer }) => {
+    socket.to(room_name).emit('voice:offer', {
+      sender_id: socket.id,
+      offer
+    });
+  });
+
+  socket.on('voice:answer', ({ room_name, answer }) => {
+    socket.to(room_name).emit('voice:answer', {
+      sender_id: socket.id,
+      answer
+    });
+  });
+
+  socket.on('voice:ice-candidate', ({ room_name, candidate }) => {
+    socket.to(room_name).emit('voice:ice-candidate', {
+      sender_id: socket.id,
+      candidate
+    });
+  });
+
+  socket.on('voice:end-call', ({ room_name }) => {
+    socket.to(room_name).emit('voice:call-ended', {
+      sender_id: socket.id
+    });
+    if (room_name) socket.leave(room_name);
+  });
+
   // Send chat message via socket
   socket.on('send-chat', async ({ auction_id, message }) => {
     if (!socket.user || !message || !auction_id) return;
     if (message.trim().length === 0 || message.length > 500) return;
 
     try {
-      // Rate limit: max 1 message per second
       const now = Date.now();
       const lastMsg = socket.lastChatTime || 0;
       if (now - lastMsg < 1000) {
@@ -174,7 +218,6 @@ io.on('connection', (socket) => {
       }
       socket.lastChatTime = now;
 
-      // Check mute status
       if (socket.user.type === 'member') {
         const muteCheck = await pool.query(`
           SELECT id FROM muted_members
@@ -223,7 +266,6 @@ io.on('connection', (socket) => {
   // Place bid via socket
   socket.on('send-bid', async ({ auction_id, amount }) => {
     if (!socket.user || socket.user.type === 'admin') return;
-    // Throttle: max 1 bid per 2 seconds
     const now = Date.now();
     const lastBid = socket.lastBidTime || 0;
     if (now - lastBid < 2000) {
@@ -406,6 +448,24 @@ app.use('/chat-groups', chatGroupsRoutes);
 app.use('/api/admin/chat-groups', adminChatGroupsRoutes);
 app.use('/admin/chat-groups', adminChatGroupsRoutes);
 
+app.use('/api/seettu', seettuRoutes);
+app.use('/seettu', seettuRoutes);
+
+app.use('/api/seed-fund', seedFundRoutes);
+app.use('/seed-fund', seedFundRoutes);
+
+app.use('/api/repayments', repaymentsRoutes);
+app.use('/repayments', repaymentsRoutes);
+
+app.use('/api/groups', groupsRoutes);
+app.use('/groups', groupsRoutes);
+
+app.use('/api/nominees', nomineesRoutes);
+app.use('/nominees', nomineesRoutes);
+
+app.use('/api/payment-verification', paymentVerificationRoutes);
+app.use('/payment-verification', paymentVerificationRoutes);
+
 app.use('/api/payment-verification', paymentVerificationRoutes);
 app.use('/payment-verification', paymentVerificationRoutes);
 
@@ -415,6 +475,14 @@ app.use('/monthly-payments', monthlyPaymentsRoutes);
 // New routes
 app.use('/api/auction', auctionRoutes);
 app.use('/auction', auctionRoutes);
+app.use('/api/live-activities', auctionRoutes);
+app.use('/live-activities', auctionRoutes);
+
+app.use('/api/members', memberAuthRoutes);
+app.use('/members', memberAuthRoutes);
+
+app.use('/api/payments', paymentVerificationRoutes);
+app.use('/payments', paymentVerificationRoutes);
 
 app.use('/api/chat', chatRoutes);
 app.use('/chat', chatRoutes);
