@@ -854,6 +854,8 @@
         <button class="nav-item" onclick="showPage('seed-fund')" id="nav-seed-fund"><span class="nav-icon">🌿</span> Seed Fund Distributions</button>
         <button class="nav-item" onclick="showPage('groups')" id="nav-groups"><span class="nav-icon">🤝</span> Group Management</button>
         <button class="nav-item" onclick="showPage('repayments')" id="nav-repayments"><span class="nav-icon">🔄</span> Repayment Tracking</button>
+        <button class="nav-item" onclick="showPage('proof-verification')" id="nav-proof-verification"><span class="nav-icon">✅</span> Proof Verification</button>
+        <button class="nav-item" onclick="showPage('notice-board')" id="nav-notice-board"><span class="nav-icon">📢</span> Notice Board</button>
         <button class="nav-item" onclick="showPage('transactions')" id="nav-transactions"><span class="nav-icon">📑</span> Transaction Ledger</button>
         <button class="nav-item" onclick="showPage('reports')" id="nav-reports"><span class="nav-icon">📈</span> Financial Reports</button>
 
@@ -1301,6 +1303,63 @@
           </div>
         </div>
 
+        <!-- ================= PROOF VERIFICATION ================= -->
+        <div id="proof-verification" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">✅ Schedule Payment Proof Verification</div>
+              <button class="btn-secondary btn-sm" onclick="loadPendingScheduleProofs()">🔄 Refresh Proofs</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Schedule #</th>
+                    <th>Member</th>
+                    <th>Amount Due</th>
+                    <th>Due Date</th>
+                    <th>Tx Ref</th>
+                    <th>Screenshot Proof</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="proofsTableBody">
+                  <tr><td colspan="7" style="text-align:center;padding:30px">Loading pending payment proofs...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= NOTICE BOARD MANAGER ================= -->
+        <div id="notice-board" class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📢 Notice Board & Announcements</div>
+              <button class="btn-primary" onclick="showCreateNoticeModal()">+ Create Notice</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Notice Title</th>
+                    <th>Target</th>
+                    <th>Amount Due</th>
+                    <th>Due Date</th>
+                    <th>Notice Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="noticesTableBody">
+                  <tr><td colspan="8" style="text-align:center;padding:30px">Loading notice board...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- ================= AUDIT LOGS ================= -->
         <div id="audit-log" class="page">
           <div class="card">
@@ -1468,9 +1527,9 @@
     </div>
   </div>
 
-  <!-- NEW SEED FUND DISTRIBUTION MODAL -->
+  <!-- NEW SEED FUND DISTRIBUTION MODAL WITH MONTHS SELECTOR -->
   <div id="newDistributionModal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:560px">
+    <div class="modal" style="max-width:580px">
       <div class="modal-title">🌿 Create Seed Fund Distribution / Loan</div>
       <div id="distModalAlert"></div>
       <div class="form-group">
@@ -1484,25 +1543,58 @@
       <div class="form-row">
         <div class="form-group">
           <label>Principal Amount (₹) *</label>
-          <input type="number" id="distPrincipal" value="5000" oninput="recalcDistInterest()">
+          <input type="number" id="distPrincipal" value="10000" oninput="recalcDistInterest()">
         </div>
         <div class="form-group">
           <label>Interest Percentage (%) *</label>
           <input type="number" id="distInterestPct" value="5.0" step="0.5" oninput="recalcDistInterest()">
         </div>
       </div>
-      <div style="background:var(--primary-light);border:1px solid var(--border-accent);padding:12px;border-radius:10px;margin-bottom:16px;display:flex;justify-content:space-between">
-        <div>Interest Amount: <strong style="color:var(--gold)" id="distCalcInterest">₹250</strong></div>
-        <div>Total Payable: <strong style="color:var(--green)" id="distCalcTotal">₹5,250</strong></div>
-      </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Distribution Date *</label>
-          <input type="date" id="distDate">
+          <label>Number of Months *</label>
+          <select id="distMonths" onchange="recalcDistInterest()">
+            <option value="1">1 Month</option>
+            <option value="2">2 Months</option>
+            <option value="3">3 Months</option>
+            <option value="6">6 Months</option>
+            <option value="9">9 Months</option>
+            <option value="12" selected>12 Months</option>
+            <option value="18">18 Months</option>
+            <option value="24">24 Months</option>
+            <option value="custom">Custom Months</option>
+          </select>
+        </div>
+        <div class="form-group hidden" id="customMonthsGroup">
+          <label>Custom Months *</label>
+          <input type="number" id="distCustomMonths" value="12" min="1" oninput="recalcDistInterest()">
+        </div>
+      </div>
+
+      <!-- AUTO-CALCULATION SUMMARY PREVIEW -->
+      <div style="background:var(--primary-light);border:1px solid var(--border-accent);padding:14px;border-radius:10px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted)">Interest Amount</div>
+          <strong style="color:var(--gold);font-size:15px" id="distCalcInterest">₹500</strong>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted)">Total Payable</div>
+          <strong style="color:var(--green);font-size:15px" id="distCalcTotal">₹10,500</strong>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted)">Monthly Payment</div>
+          <strong style="color:var(--primary);font-size:15px" id="distCalcMonthly">₹875</strong>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" id="distStartDate" onchange="updateNextPaymentDate()">
         </div>
         <div class="form-group">
-          <label>Due Date *</label>
-          <input type="date" id="distDueDate">
+          <label>Next Payment Date *</label>
+          <input type="date" id="distNextPayDate">
         </div>
       </div>
       <div class="form-group">
@@ -1515,7 +1607,48 @@
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('newDistributionModal')">Cancel</button>
-        <button class="btn-primary" onclick="saveDistributionForm()">Create Distribution</button>
+        <button class="btn-primary" onclick="saveDistributionForm()">Create Distribution & Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN CREATE / EDIT NOTICE MODAL -->
+  <div id="createNoticeModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:540px">
+      <div class="modal-title" id="noticeModalTitle">📢 Create Notice / Announcement</div>
+      <input type="hidden" id="noticeEditId">
+      <div class="form-group">
+        <label>Notice Title *</label>
+        <input type="text" id="notTitle" placeholder="e.g. September Payment Reminder">
+      </div>
+      <div class="form-group">
+        <label>Target Audience *</label>
+        <select id="notTargetType" onchange="toggleNoticeTargetSelect()">
+          <option value="ALL">All Members</option>
+          <option value="MEMBER">Specific Member</option>
+        </select>
+      </div>
+      <div class="form-group hidden" id="notMemberGroup">
+        <label>Select Member *</label>
+        <select id="notMemberSelect"><option value="">Loading members...</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Amount Due (Optional ₹)</label>
+          <input type="number" id="notAmount" placeholder="e.g. 500">
+        </div>
+        <div class="form-group">
+          <label>Payment Due Date</label>
+          <input type="date" id="notDueDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notice Description *</label>
+        <textarea id="notDesc" rows="3" class="filter-input" style="width:100%" placeholder="Notice message details..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal('createNoticeModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveNoticeForm()">Publish Notice</button>
       </div>
     </div>
   </div>
@@ -1741,6 +1874,8 @@
       if (name === 'seed-fund') loadSeedFundDistributions();
       if (name === 'groups') loadGroups();
       if (name === 'repayments') loadRepayments();
+      if (name === 'proof-verification') loadPendingScheduleProofs();
+      if (name === 'notice-board') loadAdminNotices();
       if (name === 'transactions') loadTransactionLedger();
       if (name === 'reports') loadFinancialReports();
     }
@@ -1755,10 +1890,32 @@
     function recalcDistInterest() {
       const principal = parseFloat(document.getElementById('distPrincipal').value) || 0;
       const pct = parseFloat(document.getElementById('distInterestPct').value) || 0;
+      const monthsSel = document.getElementById('distMonths').value;
+      
+      const customGroup = document.getElementById('customMonthsGroup');
+      if (monthsSel === 'custom') {
+        if (customGroup) customGroup.classList.remove('hidden');
+      } else {
+        if (customGroup) customGroup.classList.add('hidden');
+      }
+
+      const numMonths = monthsSel === 'custom' ? (parseInt(document.getElementById('distCustomMonths').value, 10) || 12) : parseInt(monthsSel, 10);
+      
       const interest = Math.round((principal * (pct / 100)) * 100) / 100;
       const total = Math.round((principal + interest) * 100) / 100;
-      document.getElementById('distCalcInterest').textContent = `₹${interest.toLocaleString('en-IN')}`;
-      document.getElementById('distCalcTotal').textContent = `₹${total.toLocaleString('en-IN')}`;
+      const monthly = Math.round((total / numMonths) * 100) / 100;
+
+      if (document.getElementById('distCalcInterest')) document.getElementById('distCalcInterest').textContent = `₹${interest.toLocaleString('en-IN')}`;
+      if (document.getElementById('distCalcTotal')) document.getElementById('distCalcTotal').textContent = `₹${total.toLocaleString('en-IN')}`;
+      if (document.getElementById('distCalcMonthly')) document.getElementById('distCalcMonthly').textContent = `₹${monthly.toLocaleString('en-IN')}`;
+    }
+
+    function updateNextPaymentDate() {
+      const sDateVal = document.getElementById('distStartDate').value;
+      if (!sDateVal) return;
+      const d = new Date(sDateVal);
+      d.setMonth(d.getMonth() + 1);
+      document.getElementById('distNextPayDate').value = d.toISOString().split('T')[0];
     }
 
     async function loadSeedFundDistributions() {
@@ -1795,7 +1952,7 @@
               <td style="font-weight:800;color:var(--green)">₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</td>
               <td>₹${parseFloat(d.total_repaid || 0).toLocaleString('en-IN')}</td>
               <td style="font-weight:700;color:var(--red)">₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')}</td>
-              <td style="font-size:12px">${d.due_date || '—'}</td>
+              <td style="font-size:12px">${d.next_payment_date || d.due_date || '—'}</td>
               <td>${statusBadge}</td>
               <td>
                 ${parseFloat(d.remaining_amount) > 0 ? `<button class="btn-success btn-sm" onclick="openRepayForDist(${d.id})">💵 Record Pay</button>` : '✅ Complete'}
@@ -1821,9 +1978,9 @@
         const gSelect = document.getElementById('distGroupSelect');
         gSelect.innerHTML = '<option value="">No specific group</option>' + cachedGroupsList.map(g => `<option value="${g.id}">${g.group_name}</option>`).join('');
 
-        document.getElementById('distDate').value = new Date().toISOString().split('T')[0];
-        const nextMonth = new Date(); nextMonth.setDate(nextMonth.getDate() + 30);
-        document.getElementById('distDueDate').value = nextMonth.toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('distStartDate').value = today;
+        updateNextPaymentDate();
 
         recalcDistInterest();
         document.getElementById('newDistributionModal').classList.remove('hidden');
@@ -1835,8 +1992,12 @@
       const group_id = document.getElementById('distGroupSelect').value;
       const principal_amount = document.getElementById('distPrincipal').value;
       const interest_percentage = document.getElementById('distInterestPct').value;
-      const distribution_date = document.getElementById('distDate').value;
-      const due_date = document.getElementById('distDueDate').value;
+      
+      const monthsSel = document.getElementById('distMonths').value;
+      const number_of_months = monthsSel === 'custom' ? (document.getElementById('distCustomMonths').value || 12) : monthsSel;
+      
+      const start_date = document.getElementById('distStartDate').value;
+      const due_date = document.getElementById('distNextPayDate').value;
       const nominee_name = document.getElementById('distNominee').value.trim();
       const notes = document.getElementById('distNotes').value.trim();
 
@@ -1850,12 +2011,153 @@
           method: 'POST',
           body: JSON.stringify({
             member_id, group_id: group_id || null, principal_amount, interest_percentage,
-            distribution_date, due_date, nominee_name, notes
+            number_of_months, start_date, due_date, nominee_name, notes
           })
         });
-        showToast('Seed Fund distribution recorded successfully!', 'success');
+        showToast('Seed Fund distribution & payment schedule created successfully!', 'success');
         closeModal('newDistributionModal');
         loadSeedFundDistributions();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // ============================================================
+    // PROOF VERIFICATION HANDLERS
+    // ============================================================
+    async function loadPendingScheduleProofs() {
+      try {
+        const data = await api('/api/schedules/pending-proofs');
+        const proofs = data.pending_proofs || [];
+        const tbody = document.getElementById('proofsTableBody');
+        if (!tbody) return;
+
+        if (proofs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No pending schedule payment proofs awaiting verification.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = proofs.map(p => `
+          <tr>
+            <td><strong>#${p.schedule_number}</strong></td>
+            <td><strong>${esc(p.member_name)}</strong> (${p.member_code})</td>
+            <td style="color:var(--green);font-weight:800">₹${parseFloat(p.amount_due).toLocaleString('en-IN')}</td>
+            <td>${p.due_date}</td>
+            <td><strong>${p.transaction_reference || 'N/A'}</strong></td>
+            <td>
+              ${p.proof_file_path ? `<a href="${p.proof_file_path}" target="_blank" style="color:var(--primary);text-decoration:underline">📷 View Proof Screenshot</a>` : 'No Image'}
+            </td>
+            <td>
+              <button class="btn-success btn-sm" onclick="verifyScheduleProof(${p.id}, 'PAID')">✅ Approve</button>
+              <button class="btn-danger btn-sm" onclick="verifyScheduleProof(${p.id}, 'REJECTED')">❌ Reject</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { showToast('Failed to load pending proofs: ' + e.message, 'error'); }
+    }
+
+    async function verifyScheduleProof(schedId, status) {
+      let rejection_reason = null;
+      if (status === 'REJECTED') {
+        rejection_reason = prompt('Enter rejection reason for member:');
+        if (!rejection_reason) return;
+      }
+
+      try {
+        await api(`/api/schedules/${schedId}/verify`, {
+          method: 'POST',
+          body: JSON.stringify({ status, rejection_reason })
+        });
+        showToast(`Schedule payment verified as ${status}!`, 'success');
+        loadPendingScheduleProofs();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // ============================================================
+    // NOTICE BOARD HANDLERS
+    // ============================================================
+    async function loadAdminNotices() {
+      try {
+        const data = await api('/api/notices/admin');
+        const notices = data.notices || [];
+        const tbody = document.getElementById('noticesTableBody');
+        if (!tbody) return;
+
+        if (notices.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">No notices created yet. Click "+ Create Notice" to publish one.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = notices.map(n => `
+          <tr>
+            <td><strong>#${n.id}</strong></td>
+            <td><strong>${esc(n.title)}</strong></td>
+            <td><span class="badge badge-active">${n.target_type} ${n.member_name ? `(${n.member_name})` : ''}</span></td>
+            <td style="color:var(--green);font-weight:700">${n.amount_due ? `₹${parseFloat(n.amount_due).toLocaleString('en-IN')}` : '—'}</td>
+            <td>${n.due_date || '—'}</td>
+            <td>${n.notice_date}</td>
+            <td><span class="badge badge-${n.status === 'PAID' ? 'active' : 'pending'}">${n.status}</span></td>
+            <td>
+              <button class="btn-danger btn-sm" onclick="deleteAdminNotice(${n.id})">🗑️ Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { showToast('Failed to load notices: ' + e.message, 'error'); }
+    }
+
+    async function showCreateNoticeModal() {
+      try {
+        const membersData = await api('/api/members');
+        cachedMembersList = membersData || [];
+
+        const mSelect = document.getElementById('notMemberSelect');
+        mSelect.innerHTML = '<option value="">Select Member...</option>' + cachedMembersList.map(m => `<option value="${m.id}">${m.member_id} - ${m.name}</option>`).join('');
+
+        document.getElementById('notTitle').value = '';
+        document.getElementById('notTargetType').value = 'ALL';
+        toggleNoticeTargetSelect();
+        document.getElementById('notAmount').value = '';
+        document.getElementById('notDueDate').value = '';
+        document.getElementById('notDesc').value = '';
+        document.getElementById('createNoticeModal').classList.remove('hidden');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    function toggleNoticeTargetSelect() {
+      const type = document.getElementById('notTargetType').value;
+      const grp = document.getElementById('notMemberGroup');
+      if (type === 'MEMBER') grp.classList.remove('hidden');
+      else grp.classList.add('hidden');
+    }
+
+    async function saveNoticeForm() {
+      const title = document.getElementById('notTitle').value.trim();
+      const target_type = document.getElementById('notTargetType').value;
+      const target_id = target_type === 'MEMBER' ? document.getElementById('notMemberSelect').value : null;
+      const amount_due = document.getElementById('notAmount').value;
+      const due_date = document.getElementById('notDueDate').value;
+      const description = document.getElementById('notDesc').value.trim();
+
+      if (!title || !description) {
+        showToast('Notice Title and Description are required.', 'error');
+        return;
+      }
+
+      try {
+        await api('/api/notices', {
+          method: 'POST',
+          body: JSON.stringify({ title, description, target_type, target_id, amount_due, due_date })
+        });
+        showToast('Notice published successfully!', 'success');
+        closeModal('createNoticeModal');
+        loadAdminNotices();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function deleteAdminNotice(id) {
+      if (!confirm('Are you sure you want to delete this notice?')) return;
+      try {
+        await api(`/api/notices/${id}`, { method: 'DELETE' });
+        showToast('Notice deleted successfully!', 'success');
+        loadAdminNotices();
       } catch (e) { showToast(e.message, 'error'); }
     }
 

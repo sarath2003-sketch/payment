@@ -82,15 +82,16 @@
       outline: none;
     }
 
-    .holo-layer { position: absolute; inset: 0; border-radius: 24px; }
+    .holo-layer { position: absolute; inset: 0; border-radius: 24px; pointer-events: none; }
 
     .aurora {
       transform: translateZ(-45px);
       overflow: hidden;
       filter: blur(36px) saturate(135%);
       opacity: 0.55;
+      pointer-events: none;
     }
-    .blob { position: absolute; width: 65%; height: 80%; border-radius: 50%; mix-blend-mode: screen; will-change: transform; }
+    .blob { position: absolute; width: 65%; height: 80%; border-radius: 50%; mix-blend-mode: screen; will-change: transform; pointer-events: none; }
     .blob-a { background: radial-gradient(circle, var(--c1, #f5c842) 0%, transparent 62%); top: -10%; left: 0%; animation: drift-a 11s ease-in-out infinite; }
     .blob-b { background: radial-gradient(circle, var(--c2, #45f3ff) 0%, transparent 62%); top: 10%; left: 45%; animation: drift-b 13s ease-in-out infinite; }
     .blob-c { background: radial-gradient(circle, var(--c3, #ff2770) 0%, transparent 62%); top: 35%; left: 18%; animation: drift-c 15s ease-in-out infinite; }
@@ -108,6 +109,7 @@
       animation: spin-rings 14s linear infinite;
       -webkit-mask: radial-gradient(circle at 50% 50%, transparent 28%, #000 78%);
               mask: radial-gradient(circle at 50% 50%, transparent 28%, #000 78%);
+      pointer-events: none;
     }
     @keyframes spin-rings { to { --a: 360deg; } }
 
@@ -121,6 +123,7 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.16),
         inset 0 -24px 50px rgba(0, 0, 0, 0.5),
         0 40px 80px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
     }
 
     .beam {
@@ -153,7 +156,7 @@
       opacity: 0.9;
     }
 
-    .reveal { transform: translateZ(30px); z-index: 2; padding: 32px 28px; position: relative; }
+    .reveal { transform: translateZ(30px); z-index: 2; padding: 32px 28px; position: relative; pointer-events: auto; }
 
     .theme-picker {
       display: flex;
@@ -1319,24 +1322,80 @@
         <div class="profile-id" id="dashMemberId">ID: —</div>
         <div class="profile-status" data-i18n="activeStatus">Active Member</div>
       </div>
-      <div class="stats-grid">
+
+      <!-- MEMBER DASHBOARD TOTAL SUMMARY -->
+      <div class="stats-grid" id="memDashboardSummary">
         <div class="stat-card">
-          <div class="stat-label" data-i18n="totalPaid">Total Paid</div>
-          <div class="stat-value green" id="dashTotalPaid">₹0</div>
+          <div class="stat-label">TOTAL AMOUNT</div>
+          <div class="stat-value green" id="memSumTotalAmount">₹0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="balance">Balance</div>
-          <div class="stat-value" id="dashBalance">₹0</div>
+          <div class="stat-label">TOTAL MEMBERS</div>
+          <div class="stat-value" id="memSumTotalMembers">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="pendingReq">Pending Requests</div>
-          <div class="stat-value" id="dashPending" style="color:var(--orange)">0</div>
+          <div class="stat-label">ACTIVE MEMBERS</div>
+          <div class="stat-value green" id="memSumActiveMembers">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="thisMonth">This Month</div>
-          <div class="stat-value" id="dashThisMonth" style="color:var(--text)">—</div>
+          <div class="stat-label">PAID THIS MONTH</div>
+          <div class="stat-value green" id="memSumPaidMonth">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">PENDING</div>
+          <div class="stat-value orange" id="memSumPending">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">AVAILABLE AMOUNT</div>
+          <div class="stat-value gold" id="memSumAvailable">₹0</div>
         </div>
       </div>
+
+      <!-- FUND TAKEN / AMOUNT RECEIVED CARD -->
+      <div class="card card-gold" id="memFundCard">
+        <div class="card-title">💰 Fund Details & Assigned Loan</div>
+        <div id="memFundCardContent">
+          <div style="text-align:center;padding:14px;color:var(--text3)">Loading your fund information...</div>
+        </div>
+      </div>
+
+      <!-- MONTH-BY-MONTH PAYMENT SCHEDULE -->
+      <div class="card" id="memScheduleSection">
+        <div class="card-title">📅 Month-by-Month Payment Schedule</div>
+        <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:10px">
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <thead style="background:var(--surface);position:sticky;top:0">
+              <tr style="text-align:left;color:var(--text3)">
+                <th style="padding:8px">#</th>
+                <th style="padding:8px">Due Date</th>
+                <th style="padding:8px">Amount</th>
+                <th style="padding:8px">Status</th>
+                <th style="padding:8px">Action</th>
+              </tr>
+            </thead>
+            <tbody id="memScheduleTableBody">
+              <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">Loading schedule...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NOTICE BOARD SECTION -->
+      <div class="card" id="memNoticeSection">
+        <div class="card-title">📢 Notice Board</div>
+        <div id="memNoticeContainer">
+          <div style="text-align:center;padding:14px;color:var(--text3)">Loading notices...</div>
+        </div>
+      </div>
+
+      <!-- MEMBER LIST WITH ONLINE STATUS -->
+      <div class="card" id="memListSection">
+        <div class="card-title">👥 Member List & Online Status</div>
+        <div id="memListContainer" style="max-height:300px;overflow-y:auto">
+          <div style="text-align:center;padding:14px;color:var(--text3)">Loading member list...</div>
+        </div>
+      </div>
+
       <!-- Auction status card -->
       <div class="card card-gold" id="dashAuctionCard">
         <div class="card-title">⚡ <span data-i18n="liveAuction">Live Auction</span></div>
@@ -1722,6 +1781,29 @@
       <span class="nav-label" data-i18n="settings">Settings</span>
     </button>
   </nav>
+<!-- SCHEDULE PROOF UPLOAD MODAL LINKED TO MEMBER ID & SCHEDULE ID -->
+<div id="scheduleProofModal" class="modal-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:500px">
+    <div class="modal-title">📤 Upload Payment Proof</div>
+    <input type="hidden" id="spSchedId">
+    <div style="background:var(--surface);padding:12px;border-radius:10px;margin-bottom:14px">
+      <div style="font-size:12px;color:var(--text3)">Schedule Item: <span style="font-weight:700;color:var(--gold)" id="spSchedTitle">#1 — Due: ₹500</span></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Member ID: <span style="font-weight:700" id="spMemberCode">—</span></div>
+    </div>
+    <div class="form-group">
+      <label>Transaction / Reference ID *</label>
+      <input type="text" id="spTxRef" placeholder="e.g. UPI/123456789 or Bank Ref">
+    </div>
+    <div class="form-group">
+      <label>📷 Payment Screenshot / Receipt</label>
+      <input type="file" id="spFile" accept="image/*" onchange="previewScheduleProof(event)">
+      <img id="spPreview" style="max-height:150px;display:none;margin-top:8px;border-radius:8px;border:1px solid var(--border)">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('scheduleProofModal').classList.add('hidden')">Cancel</button>
+      <button class="btn-primary" onclick="submitScheduleProof()">Upload Proof</button>
+    </div>
+  </div>
 </div>
 
 <!-- Change Password Modal -->
@@ -2195,6 +2277,17 @@ function doLogout() {
   switchAuthTab('login');
 }
 
+function initSocket() {
+  if (typeof io !== 'undefined' && authToken && !socket) {
+    try {
+      socket = io({ auth: { token: authToken } });
+      socket.on('member:status-change', ({ member_id, is_online }) => {
+        updateOnlineBadgeInUI(member_id, is_online);
+      });
+    } catch (e) { console.warn('Socket init warning:', e.message); }
+  }
+}
+
 // ============================================================
 // App Init
 // ============================================================
@@ -2208,17 +2301,18 @@ async function initApp() {
     updateHeaderUI();
     updateDashboard(profile);
   } catch (e) { console.error('Profile error:', e); }
-  // Load notifications
+  // Load dashboard metrics & features
+  loadMemberDashboardMetrics();
+  loadMemberFundCardAndSchedule();
+  loadMemberNoticeBoard();
+  loadMemberListWithOnlineStatus();
+
   loadNotifications();
-  // Load payment history
   loadPaymentHistory();
-  // Load auction
   loadAuction();
-  // Init socket
   initSocket();
-  // Payment month options
   populateMonthOptions();
-  // Sound/notif toggles
+
   document.getElementById('soundToggle').classList.toggle('on', soundEnabled);
   document.getElementById('notifToggle').classList.toggle('on', notifEnabled);
   // Start notification polling
@@ -2387,6 +2481,216 @@ async function saveMemberNominee() {
       body: JSON.stringify({ member_id: currentUser.id, nominee_name, relationship, contact_phone, address })
     });
     showToast('Nominee details saved successfully!', 'success');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ============================================================
+// Member Dashboard Total Summary, Schedules, Notices & Online Status
+// ============================================================
+async function loadMemberDashboardMetrics() {
+  try {
+    const summary = await api('/api/dashboard/summary');
+    if (document.getElementById('memSumTotalAmount')) document.getElementById('memSumTotalAmount').textContent = `₹${parseFloat(summary.total_collected || 0).toLocaleString('en-IN')}`;
+    if (document.getElementById('memSumTotalMembers')) document.getElementById('memSumTotalMembers').textContent = summary.total_members || 0;
+    if (document.getElementById('memSumActiveMembers')) document.getElementById('memSumActiveMembers').textContent = summary.active_members || 0;
+    if (document.getElementById('memSumPaidMonth')) document.getElementById('memSumPaidMonth').textContent = summary.paid_this_month || 0;
+    if (document.getElementById('memSumPending')) document.getElementById('memSumPending').textContent = summary.pending_members || 0;
+    if (document.getElementById('memSumAvailable')) document.getElementById('memSumAvailable').textContent = `₹${parseFloat(summary.available_balance || 0).toLocaleString('en-IN')}`;
+  } catch (e) { console.warn('Dashboard summary error:', e.message); }
+}
+
+async function loadMemberFundCardAndSchedule() {
+  if (!currentUser) return;
+  try {
+    const distData = await api('/api/seed-fund/distributions');
+    const distributions = distData.distributions || [];
+    const fundContainer = document.getElementById('memFundCardContent');
+
+    if (!distributions || distributions.length === 0) {
+      if (fundContainer) fundContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3)">No active fund/loan assigned yet. Contact Admin for distribution.</div>';
+      document.getElementById('memScheduleTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No payment schedule available.</td></tr>';
+      return;
+    }
+
+    const d = distributions[0]; // Active distribution
+    if (fundContainer) {
+      fundContainer.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+          <div><strong>Member Name:</strong> ${esc(currentUser.name)}</div>
+          <div><strong>Member ID:</strong> ${currentUser.member_id}</div>
+          <div><strong>Amount Received:</strong> <span style="color:var(--gold);font-weight:800">₹${parseFloat(d.principal_amount).toLocaleString('en-IN')}</span></div>
+          <div><strong>Interest Rate:</strong> ${d.interest_percentage}%</div>
+          <div><strong>Interest Amount:</strong> ₹${parseFloat(d.interest_amount).toLocaleString('en-IN')}</div>
+          <div><strong>Monthly Amount:</strong> <span style="color:var(--green);font-weight:800">₹${parseFloat(d.monthly_amount || (d.total_payable / (d.number_of_months || 12))).toLocaleString('en-IN')}</span></div>
+          <div><strong>Number of Months:</strong> ${d.number_of_months || 12} Months</div>
+          <div><strong>Total Payable:</strong> <span style="color:var(--green);font-weight:800">₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</span></div>
+          <div><strong>Next Payment Date:</strong> <span style="color:var(--gold);font-weight:700">${d.next_payment_date || d.due_date}</span></div>
+          <div><strong>Status:</strong> <span class="badge ${d.payment_status === 'PAID' ? 'badge-active' : 'badge-pending'}">${d.payment_status}</span></div>
+        </div>
+      `;
+    }
+
+    // Load month-by-month schedule
+    const schedData = await api(`/api/schedules/distribution/${d.id}`);
+    const schedules = schedData.schedules || [];
+    const tbody = document.getElementById('memScheduleTableBody');
+
+    if (!schedules || schedules.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No schedule items generated.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = schedules.map(s => {
+      let badgeHtml = '<span class="badge badge-pending">Pending</span>';
+      if (s.status === 'WAITING_VERIFICATION') badgeHtml = '<span class="badge badge-pending">Waiting Verif</span>';
+      else if (s.status === 'PAID') badgeHtml = '<span class="badge badge-active">PAID</span>';
+      else if (s.status === 'REJECTED') badgeHtml = '<span class="badge badge-rejected">REJECTED</span>';
+
+      let actionHtml = '—';
+      if (s.status === 'PENDING' || s.status === 'REJECTED') {
+        actionHtml = `<button class="btn-primary" style="padding:2px 8px;font-size:11px" onclick="openScheduleProofModal(${s.id}, ${s.schedule_number}, ${s.amount_due}, '${s.due_date}')">📤 Upload Proof</button>`;
+      } else if (s.status === 'WAITING_VERIFICATION') {
+        actionHtml = '<span style="font-size:11px;color:var(--orange)">⏳ Verification Pending</span>';
+      } else if (s.status === 'PAID') {
+        actionHtml = `<span style="font-size:11px;color:var(--green)">Paid on ${s.paid_date || '—'}</span>`;
+      }
+
+      return `
+        <tr>
+          <td style="padding:8px"><strong>#${s.schedule_number}</strong></td>
+          <td style="padding:8px">${s.due_date}</td>
+          <td style="padding:8px;font-weight:700;color:var(--green)">₹${parseFloat(s.amount_due).toLocaleString('en-IN')}</td>
+          <td style="padding:8px">${badgeHtml}</td>
+          <td style="padding:8px">${actionHtml}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (e) { console.warn('Error loading schedule:', e.message); }
+}
+
+async function loadMemberNoticeBoard() {
+  try {
+    const data = await api('/api/notices');
+    const notices = data.notices || [];
+    const container = document.getElementById('memNoticeContainer');
+    if (!container) return;
+
+    if (!notices || notices.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3)">No active notices at this time.</div>';
+      return;
+    }
+
+    container.innerHTML = notices.map(n => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <strong style="color:var(--gold);font-size:13px">${esc(n.title)}</strong>
+          <span class="badge ${n.status === 'PAID' ? 'badge-active' : 'badge-pending'}">${n.status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${esc(n.description)}</div>
+        ${n.amount_due ? `<div style="font-size:12px;font-weight:700;color:var(--green)">Amount Due: ₹${parseFloat(n.amount_due).toLocaleString('en-IN')} ${n.due_date ? `· Due Date: ${n.due_date}` : ''}</div>` : ''}
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Notice Date: ${n.notice_date || n.created_at?.substring(0,10)}</div>
+      </div>
+    `).join('');
+  } catch (e) { console.warn('Error loading notice board:', e.message); }
+}
+
+let cachedMemberListForUI = [];
+
+async function loadMemberListWithOnlineStatus() {
+  try {
+    const members = await api('/api/members');
+    cachedMemberListForUI = members || [];
+    renderMemberListUI(cachedMemberListForUI);
+  } catch (e) { console.warn('Error loading member list:', e.message); }
+}
+
+function renderMemberListUI(members) {
+  const container = document.getElementById('memListContainer');
+  if (!container) return;
+
+  if (!members || members.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3)">No registered members found.</div>';
+    return;
+  }
+
+  container.innerHTML = members.map(m => {
+    const isOnline = Boolean(m.is_online);
+    const onlineBadge = isOnline
+      ? '<span style="color:#10b981;font-weight:700;font-size:11px">● Online</span>'
+      : '<span style="color:var(--text3);font-size:11px">○ Offline</span>';
+    const monthStatus = m.payment_status === 'APPROVED' || m.payment_status === 'PAID'
+      ? '<span class="badge badge-active">Paid</span>'
+      : '<span class="badge badge-pending">Pending</span>';
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:700;font-size:13px">${esc(m.name)} <span style="font-size:11px;color:var(--text3)">(${m.member_id})</span></div>
+          <div style="font-size:11px;color:var(--text3)">Status: ${m.status || 'ACTIVE'} · ${onlineBadge}</div>
+        </div>
+        <div>${monthStatus}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateOnlineBadgeInUI(member_id, is_online) {
+  const m = cachedMemberListForUI.find(x => String(x.id) === String(member_id));
+  if (m) {
+    m.is_online = is_online;
+    renderMemberListUI(cachedMemberListForUI);
+  }
+}
+
+// Proof Upload for Schedule Item Modal Handlers
+let selectedScheduleProofBase64 = null;
+
+function openScheduleProofModal(schedId, schedNum, amount, due) {
+  document.getElementById('spSchedId').value = schedId;
+  document.getElementById('spSchedTitle').textContent = `#${schedNum} — Due Amount: ₹${parseFloat(amount).toLocaleString('en-IN')} (Due: ${due})`;
+  document.getElementById('spMemberCode').textContent = currentUser ? currentUser.member_id : '—';
+  document.getElementById('spTxRef').value = '';
+  document.getElementById('spFile').value = '';
+  document.getElementById('spPreview').style.display = 'none';
+  selectedScheduleProofBase64 = null;
+  document.getElementById('scheduleProofModal').classList.remove('hidden');
+}
+
+function previewScheduleProof(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedScheduleProofBase64 = e.target.result;
+    const img = document.getElementById('spPreview');
+    img.src = selectedScheduleProofBase64;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitScheduleProof() {
+  const schedId = document.getElementById('spSchedId').value;
+  const transaction_reference = document.getElementById('spTxRef').value.trim();
+
+  if (!transaction_reference) {
+    showToast('Transaction / Reference ID is required.', 'error');
+    return;
+  }
+
+  try {
+    await api(`/api/schedules/${schedId}/proof`, {
+      method: 'POST',
+      body: JSON.stringify({
+        member_id: currentUser.id,
+        transaction_reference,
+        image_data: selectedScheduleProofBase64
+      })
+    });
+    showToast('Payment proof submitted successfully!', 'success');
+    document.getElementById('scheduleProofModal').classList.add('hidden');
+    loadMemberFundCardAndSchedule();
+    loadMemberNoticeBoard();
   } catch (e) { showToast(e.message, 'error'); }
 }
 

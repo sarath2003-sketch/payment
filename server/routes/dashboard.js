@@ -76,18 +76,19 @@ router.get('/summary', authenticateToken, async (req, res) => {
     `, [currentMonth]);
     const monthlyOutgoing = parseFloat(outgoingRes.rows[0]?.total || 0);
 
-    // Recent transactions
-    const recentResult = await pool.query(`
-      SELECT t.id, t.transaction_date, m.name, t.transaction_type, t.amount, t.description
-      FROM transactions t
-      JOIN members m ON t.member_id = m.id
-      ORDER BY t.id DESC
-      LIMIT 10
-    `);
+    // Members who paid this month
+    const paidThisMonthRes = await pool.query(`
+      SELECT COUNT(DISTINCT member_id) as total FROM payment_proofs 
+      WHERE status = 'APPROVED' AND (strftime('%Y-%m', payment_date) = $1 OR strftime('%Y-%m', created_at) = $1)
+    `, [currentMonth]);
+    const paidThisMonth = parseInt(paidThisMonthRes.rows[0]?.total || 0, 10);
+    const pendingMembersCount = Math.max(0, activeMembers - paidThisMonth);
 
     res.json({
       total_members: totalMembers,
       active_members: activeMembers,
+      paid_this_month: paidThisMonth,
+      pending_members: pendingMembersCount,
       total_collected: grandTotalCollected,
       total_distributed: totalDistributed,
       total_interest_earned: totalInterestEarned,

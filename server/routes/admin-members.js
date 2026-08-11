@@ -171,8 +171,8 @@ router.get('/', async (req, res) => {
     const queryParams = [...params, limitNum, offset];
     const dataSql = `
       SELECT id, member_id, name, email, phone, upi_id, profile_photo, balance, status, 
-             activation_status, payment_status, group_category, is_duplicate, 
-             duplicate_reason, duplicate_of_id, duplicate_reviewed, deleted_at, created_at
+             activation_status, payment_status, group_category, is_online, last_active_at,
+             is_duplicate, duplicate_reason, duplicate_of_id, duplicate_reviewed, deleted_at, created_at
       FROM members
       ${whereClause}
       ORDER BY ${sortField} ${sortOrder} NULLS LAST
