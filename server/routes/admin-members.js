@@ -22,25 +22,29 @@ async function logAudit(req, action, entityType, entityId, details) {
   }
 }
 
-// Helper to generate next sequential Member ID starting at 101
+// Helper to generate next sequential Member ID starting at SF001
 async function getNextMemberId(clientOrPool) {
   try {
     const res = await clientOrPool.query(`
       SELECT member_id FROM members 
       WHERE deleted_at IS NULL
-      ORDER BY id DESC
     `);
     
-    let maxNum = 100;
+    let maxNum = 0;
     for (const row of res.rows || []) {
-      const num = parseInt(row.member_id, 10);
-      if (!isNaN(num) && num >= 100 && num < 10000 && num > maxNum) {
-        maxNum = num;
+      if (!row.member_id) continue;
+      const match = String(row.member_id).match(/(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
       }
     }
-    return String(maxNum + 1);
+    const nextNum = maxNum + 1;
+    return `SF${String(nextNum).padStart(3, '0')}`;
   } catch (e) {
-    return '101';
+    return 'SF001';
   }
 }
 
@@ -316,10 +320,15 @@ router.post('/', async (req, res) => {
       duplicateReason = `Matching existing member ${dupCheck.rows[0].member_id} (${dupCheck.rows[0].name})`;
     }
 
-    // Auto-generate next Member ID starting at 101
+    // Auto-generate next Member ID in SF001 format
     const nextMemberId = await getNextMemberId(client);
 
-    const defaultPwd = password || '123456';
+    // Auto-generate simple password if blank (e.g. 1235)
+    let defaultPwd = (password || '').trim();
+    if (!defaultPwd) {
+      defaultPwd = String(Math.floor(1000 + Math.random() * 9000));
+    }
+
     const passwordHash = await bcrypt.hash(defaultPwd, 10);
     const mainStatus = (activation_status === 'INACTIVE' || activation_status === 'REJECTED') ? 'INACTIVE' : 'ACTIVE';
 
@@ -351,7 +360,11 @@ router.post('/', async (req, res) => {
 
     await logAudit(req, 'ADD_MEMBER', 'MEMBER', newMember.id, { member_id: newMember.member_id, name: newMember.name, phone });
 
-    res.status(201).json({ message: 'Member added successfully!', member: newMember });
+    res.status(201).json({
+      message: 'Member Created Successfully',
+      member: newMember,
+      raw_password: defaultPwd
+    });
   } catch (err) {
     if (client) await client.query('ROLLBACK');
     console.error('Error adding member:', err);
@@ -439,6 +452,37 @@ router.patch('/:id/activation', async (req, res) => {
     res.json({ message: `Member status updated to ${activation_status}`, member: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update activation status' });
+  }
+});
+
+/**
+ * PATCH /api/admin/members/:id/payment-status
+ * Change payment status (PAID, UNPAID)
+ */
+router.patch('/:id/payment-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_status } = req.body;
+
+    if (!['PAID', 'UNPAID'].includes(payment_status)) {
+      return res.status(400).json({ error: 'Invalid payment status. Must be PAID or UNPAID.' });
+    }
+
+    const result = await pool.query(
+      `UPDATE members 
+       SET payment_status = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING id, member_id, name, payment_status, status`,
+      [payment_status, id]
+    );
+
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Member not found' });
+
+    await logAudit(req, 'CHANGE_PAYMENT_STATUS', 'MEMBER', id, { new_status: payment_status });
+
+    res.json({ message: `Member payment status updated to ${payment_status}`, member: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update payment status' });
   }
 });
 

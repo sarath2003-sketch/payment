@@ -1110,66 +1110,32 @@
         <button class="auth-tab" onclick="setLang('ta')" id="langBtnTa">தமிழ்</button>
       </div>
     </div>
-    <!-- Tabs -->
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')" data-i18n="login">Login</button>
-      <button class="auth-tab" id="registerTab" onclick="switchAuthTab('register')" data-i18n="register">Register</button>
+    <!-- Member Portal Info Header -->
+    <div style="font-size:12px;color:var(--gold);text-align:center;margin-bottom:14px;background:rgba(245,200,66,0.08);padding:8px 12px;border-radius:8px;border:1px solid var(--border)">
+      🔒 Member Accounts are created by Admin.<br>Login using your assigned <strong>Member ID (SF001+)</strong> and <strong>Password</strong>.
     </div>
     <div id="authAlert"></div>
     <!-- Login Form -->
     <div id="loginForm">
       <div class="form-group">
-        <label data-i18n="memberId">Member ID / Phone / Email</label>
-        <input type="text" id="loginId" placeholder="Enter your Member ID..." autocomplete="username">
+        <label data-i18n="memberId">Member ID (e.g. SF001, SF002) / Mobile / Email</label>
+        <input type="text" id="loginId" placeholder="Enter your Member ID (e.g. SF001)..." autocomplete="username">
       </div>
       <div class="form-group">
         <label data-i18n="password">Password</label>
         <input type="password" id="loginPassword" placeholder="Enter password..." autocomplete="current-password">
       </div>
       <button class="btn-primary" id="loginBtn" onclick="doLogin()">
-        <span data-i18n="loginBtn">Login to Portal</span>
+        <span data-i18n="loginBtn">Login to Member Portal</span>
       </button>
       <div class="auth-link">
         <a onclick="showForgotPassword()" data-i18n="forgotPassword">Forgot Password?</a>
       </div>
-      <div class="auth-link" style="margin-top:12px">
-        <a href="/admin" style="color:var(--text3);text-decoration:none">🔐 Admin Portal Login</a>
+      <div class="auth-link" style="margin-top:12px;display:flex;gap:12px;justify-content:center;align-items:center">
+        <a href="/public-dashboard" style="color:var(--gold);text-decoration:none;font-weight:600">🌐 Public Fund Dashboard</a>
+        <span style="color:var(--text3)">|</span>
+        <a href="/admin" style="color:var(--text3);text-decoration:none">🔐 Admin Login</a>
       </div>
-    </div>
-    <!-- Register Form -->
-    <div id="registerForm" class="hidden">
-      <div style="font-size:12px;color:var(--gold);margin-bottom:10px;text-align:center">✨ Automatic Member ID (101, 102...) will be assigned upon registration</div>
-      <div class="form-group">
-        <label data-i18n="fullName">Full Name *</label>
-        <input type="text" id="regName" placeholder="Your full name...">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Email *</label>
-          <input type="email" id="regEmail" placeholder="email@example.com">
-        </div>
-        <div class="form-group">
-          <label data-i18n="phone">Phone (10-digit) *</label>
-          <input type="tel" id="regPhone" placeholder="10-digit number">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>UPI ID (Optional)</label>
-        <input type="text" id="regUpi" placeholder="name@upi">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label data-i18n="password">Password *</label>
-          <input type="password" id="regPassword" placeholder="Min 6 chars">
-        </div>
-        <div class="form-group">
-          <label data-i18n="confirmPassword">Confirm Password *</label>
-          <input type="password" id="regConfirm" placeholder="Repeat password">
-        </div>
-      </div>
-      <button class="btn-primary" id="registerBtn" onclick="doRegister()">
-        <span data-i18n="registerBtn">Create Account</span>
-      </button>
     </div>
     <!-- Forgot Password Form -->
     <div id="forgotForm" class="hidden">

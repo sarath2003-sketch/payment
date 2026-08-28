@@ -1,3 +1,4 @@
+
 const express = require('express');
 const pool = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
@@ -83,6 +84,11 @@ router.get('/summary', authenticateToken, async (req, res) => {
     `, [currentMonth]);
     const paidThisMonth = parseInt(paidThisMonthRes.rows[0]?.total || 0, 10);
     const pendingMembersCount = Math.max(0, activeMembers - paidThisMonth);
+
+    // Recent transactions
+    const recentResult = await pool.query(
+      'SELECT t.*, m.name as member_name, m.member_id as member_code FROM transactions t JOIN members m ON t.member_id = m.id ORDER BY t.created_at DESC LIMIT 10'
+    );
 
     res.json({
       total_members: totalMembers,

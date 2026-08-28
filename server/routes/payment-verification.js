@@ -43,20 +43,32 @@ router.post('/upload-proof', authenticateToken, async (req, res) => {
     }
 
     const timestamp = Date.now();
-    const fileName = `proof_${member_id}_${timestamp}_${proofFile.name}`;
+    const fileName = `proof_${member_id}_${timestamp}_${path.basename(proofFile.name)}`;
     const filePath = path.join(uploadDir, fileName);
+    const webPath = `/uploads/${fileName}`;
 
     await proofFile.mv(filePath);
 
     const proof = await pool.query(
       `INSERT INTO payment_proofs (member_id, amount, transaction_reference, payment_date, proof_file_path, proof_file_name, status) 
        VALUES ($1, $2, $3, $4, $5, $6, 'PENDING') RETURNING *`,
-      [member_id, amount, transaction_reference || null, payment_date, filePath, fileName]
+      [member_id, amount, transaction_reference || null, payment_date, webPath, fileName]
     );
+
+    const newProof = proof.rows[0];
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payment:new-proof', { proof: newProof });
+      io.emit('notification:broadcast', {
+        title: '💳 New Payment Proof Uploaded',
+        body: `Payment proof submitted for Member ID ${member_id} (Amount: ₹${amount})`
+      });
+    }
 
     res.json({
       message: 'Payment proof uploaded successfully',
-      proof_id: proof.rows[0].id,
+      proof_id: newProof.id,
       status: 'PENDING',
       note: 'Your payment proof has been submitted for admin verification.'
     });
@@ -155,9 +167,9 @@ router.post('/verify-proof/:proof_id', authenticateToken, async (req, res) => {
     );
 
     if (verified) {
-      // Update member balance
+      // Update member balance and payment_status
       await client.query(
-        'UPDATE members SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        "UPDATE members SET balance = balance + $1, payment_status = 'PAID', updated_at = CURRENT_TIMESTAMP WHERE id = $2",
         [amount, member_id]
       );
 
@@ -188,6 +200,13 @@ router.post('/verify-proof/:proof_id', authenticateToken, async (req, res) => {
     }
 
     await client.query('COMMIT');
+
+    // Socket.IO real-time notification
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payment:approved', { proof_id: req.params.proof_id, member_id, amount, status: newStatus });
+      io.emit('member:balance-updated', { member_id, amount, payment_status: verified ? 'PAID' : 'UNPAID' });
+    }
 
     res.json({
       message: verified ? 'Payment approved successfully' : 'Payment rejected',
@@ -224,12 +243,12 @@ router.put('/:id/approve', authenticateToken, requireAdmin, async (req, res) => 
 
     await client.query(`
       UPDATE payment_proofs 
-      SET status = $1, admin_notes = $2, verified_by = $3, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      SET status = $1, rejection_reason = $2, verified_by = $3, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
       WHERE id = $4
     `, [newStatus, notes, adminId, proofId]);
 
     if (verified) {
-      await client.query("UPDATE members SET payment_status = 'PAID', updated_at = CURRENT_TIMESTAMP WHERE id = $1", [proof.member_id]);
+      await client.query("UPDATE members SET balance = balance + $1, payment_status = 'PAID', updated_at = CURRENT_TIMESTAMP WHERE id = $2", [proof.amount, proof.member_id]);
       await client.query(`
         INSERT INTO transactions (member_id, transaction_date, transaction_time, month, transaction_type, amount, description, reference_type, reference_id, status)
         VALUES ($1, CURRENT_DATE, '12:00:00', $2, 'PAYMENT', $3, $4, 'PAYMENT_PROOF', $5, 'COMPLETED')
@@ -237,6 +256,13 @@ router.put('/:id/approve', authenticateToken, requireAdmin, async (req, res) => 
     }
 
     await client.query('COMMIT');
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payment:approved', { proof_id: proofId, member_id: proof.member_id, amount: proof.amount, status: newStatus });
+      io.emit('member:balance-updated', { member_id: proof.member_id, amount: proof.amount, payment_status: verified ? 'PAID' : 'UNPAID' });
+    }
+
     res.json({ success: true, message: `Payment ${newStatus.toLowerCase()} successfully`, status: newStatus });
   } catch (err) {
     await client.query('ROLLBACK');

@@ -39,6 +39,7 @@ const groupsRoutes = require('./server/routes/groups');
 const nomineesRoutes = require('./server/routes/nominees');
 const schedulesRoutes = require('./server/routes/schedules');
 const noticesRoutes = require('./server/routes/notices');
+const publicDashboardRoutes = require('./server/routes/public-dashboard');
 const { endAuction } = require('./server/routes/auction');
 
 const app = express();
@@ -470,6 +471,9 @@ app.use('/seettu', seettuRoutes);
 app.use('/api/seed-fund', seedFundRoutes);
 app.use('/seed-fund', seedFundRoutes);
 
+app.use('/api/public-dashboard', publicDashboardRoutes);
+app.use('/api/public-fund-details', publicDashboardRoutes);
+
 app.use('/api/schedules', schedulesRoutes);
 app.use('/schedules', schedulesRoutes);
 
@@ -559,6 +563,15 @@ app.get('/admin', (req, res) => {
 });
 app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+app.get('/public-dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
+});
+app.get('/public-fund-details', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
+});
+app.get('/public-dashboard.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
 });
 app.get('/member', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

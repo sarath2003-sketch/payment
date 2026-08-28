@@ -808,7 +808,9 @@
       </div>
       <button class="btn-primary" style="width:100%" id="adminLoginBtn" onclick="doAdminLogin()">🔐 Login to Admin
         Panel</button>
-      <div style="margin-top:16px;text-align:center">
+      <div style="margin-top:16px;text-align:center;display:flex;gap:12px;justify-content:center;align-items:center">
+        <a href="/public-dashboard" style="color:var(--gold);font-size:13px;text-decoration:none;font-weight:600">🌐 Public Fund Details</a>
+        <span style="color:var(--text-muted)">|</span>
         <a href="/" style="color:var(--text-muted);font-size:13px;text-decoration:none">← Member Portal</a>
       </div>
     </div>
@@ -829,6 +831,7 @@
         <div class="nav-group-label">Main</div>
         <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span
             class="nav-icon">📊</span> Dashboard</button>
+        <a href="/public-dashboard" target="_blank" class="nav-item" style="text-decoration:none;color:var(--text);display:flex;align-items:center"><span class="nav-icon">🌐</span> Public Dashboard</a>
 
         <div class="nav-group-label">Member Management</div>
         <button class="nav-item" onclick="showPage('members')" id="nav-members"><span class="nav-icon">👥</span> All
@@ -986,20 +989,16 @@
                 <thead>
                   <tr>
                     <th>Member ID</th>
-                    <th>Photo</th>
                     <th>Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>UPI ID</th>
-                    <th>Reg Date</th>
-                    <th>Payment</th>
-                    <th>Activation</th>
+                    <th>Mobile</th>
+                    <th>Active Status</th>
+                    <th>Payment Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="membersTableBody">
                   <tr>
-                    <td colspan="10" style="text-align:center;padding:30px">Loading members...</td>
+                    <td colspan="6" style="text-align:center;padding:30px">Loading members...</td>
                   </tr>
                 </tbody>
               </table>
@@ -1420,40 +1419,76 @@
 
   <!-- ADD/EDIT MEMBER MODAL -->
   <div id="memberModal" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-title" id="memberModalTitle">Add Member</div>
+    <div class="modal" style="max-width:440px">
+      <div class="modal-title" id="memberModalTitle">Add New Member</div>
       <div id="memberModalAlert"></div>
-      <div class="form-group"><label>Full Name *</label><input type="text" id="mName" placeholder="Full name"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Phone (10-digit) *</label><input type="tel" id="mPhone"
-            placeholder="Phone number"></div>
-        <div class="form-group"><label>UPI ID</label><input type="text" id="mUpi" placeholder="name@upi"></div>
+      <div class="form-group">
+        <label>Member Name *</label>
+        <input type="text" id="mName" placeholder="Enter member full name">
       </div>
-      <div class="form-group"><label>Email (Optional)</label><input type="email" id="mEmail" placeholder="Email address (Auto-generated if blank)"></div>
-      <div class="form-group"><label>📷 Profile Photo URL / Path (Optional)</label><input type="text" id="mPhoto" placeholder="/uploads/profile_101.png or image URL"></div>
-      <div class="form-group"><label>🔑 Login Password (Optional - Default: 123456)</label><input type="text" id="mPassword" placeholder="Set custom login password for member (e.g. 123456)"></div>
+      <div class="form-group">
+        <label>Mobile Number (10-digit) *</label>
+        <input type="tel" id="mPhone" placeholder="Enter 10-digit mobile number" maxlength="10">
+      </div>
+      <div class="form-group">
+        <label>🔑 Password (Optional — Auto-generated if blank)</label>
+        <input type="text" id="mPassword" placeholder="Set custom password (e.g. 1235)">
+      </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Activation Status</label>
+          <label>Active Status</label>
           <select id="mActivation">
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="PENDING">PENDING</option>
+            <option value="ACTIVE" selected>ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
-            <option value="REJECTED">REJECTED</option>
           </select>
         </div>
         <div class="form-group">
           <label>Payment Status</label>
           <select id="mPaymentStatus">
-            <option value="UNPAID">UNPAID</option>
+            <option value="UNPAID" selected>UNPAID</option>
             <option value="PAID">PAID</option>
           </select>
         </div>
       </div>
-      <div class="form-group"><label>Group / Category</label><input type="text" id="mGroup" value="General"></div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('memberModal')">Cancel</button>
-        <button class="btn-primary" onclick="saveMemberForm()">Save Member</button>
+        <button class="btn-primary" onclick="saveMemberForm()">Submit / Add Member</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBER CREATED SUCCESS CREDENTIALS MODAL -->
+  <div id="memberSuccessModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:440px;text-align:center">
+      <div style="font-size:48px;margin-bottom:8px">🎉</div>
+      <div class="modal-title" style="color:var(--gold);font-size:22px;margin-bottom:4px">Member Created Successfully!</div>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px">The member account has been created and saved to database.</p>
+      
+      <div style="background:var(--bg-surface);border:1px solid var(--border-accent);border-radius:14px;padding:16px;margin-bottom:16px;text-align:left">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">GENERATED MEMBER CREDENTIALS</div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div style="background:var(--bg-card);padding:10px;border-radius:8px;border:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text-muted)">Member ID</div>
+            <strong style="font-size:20px;color:var(--primary)" id="succMemberId">SF001</strong>
+          </div>
+          <div style="background:var(--bg-card);padding:10px;border-radius:8px;border:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text-muted)">Login Password</div>
+            <strong style="font-size:20px;color:var(--gold)" id="succPassword">1235</strong>
+          </div>
+        </div>
+
+        <div style="font-size:13px;color:var(--text);margin-top:12px;display:flex;flex-direction:column;gap:4px">
+          <div>Member Name: <strong id="succName">—</strong></div>
+          <div>Mobile Number: <strong id="succPhone">—</strong></div>
+          <div>Active Status: <strong id="succActivation" style="color:var(--green)">ACTIVE</strong></div>
+          <div>Payment Status: <strong id="succPayment" style="color:var(--orange)">UNPAID</strong></div>
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:10px">
+        <button class="btn-secondary" style="flex:1" onclick="copyMemberCredentials()">📋 Copy Credentials</button>
+        <button class="btn-primary" style="flex:1" onclick="closeModal('memberSuccessModal')">Done</button>
       </div>
     </div>
   </div>
@@ -2021,44 +2056,89 @@
     }
 
     // ============================================================
-    // PROOF VERIFICATION HANDLERS
+    // PROOF VERIFICATION HANDLERS (Unified Monthly + Schedule Proofs)
     // ============================================================
-    async function loadPendingScheduleProofs() {
+    async function loadPendingProofs() {
       try {
-        const data = await api('/api/schedules/pending-proofs');
-        const proofs = data.pending_proofs || [];
         const tbody = document.getElementById('proofsTableBody');
         if (!tbody) return;
 
-        if (proofs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No pending schedule payment proofs awaiting verification.</td></tr>';
+        // Fetch general payment proofs and schedule payment proofs in parallel
+        const [genRes, schedRes] = await Promise.allSettled([
+          api('/api/payment-verification/pending-proofs'),
+          api('/api/schedules/pending-proofs')
+        ]);
+
+        let generalProofs = (genRes.status === 'fulfilled' && Array.isArray(genRes.value)) ? genRes.value : [];
+        let scheduleProofs = (schedRes.status === 'fulfilled' && schedRes.value && Array.isArray(schedRes.value.pending_proofs)) ? schedRes.value.pending_proofs : [];
+
+        const combined = [
+          ...generalProofs.map(p => ({ ...p, is_schedule: false, display_type: 'Monthly Payment' })),
+          ...scheduleProofs.map(p => ({ ...p, is_schedule: true, display_type: `Schedule #${p.schedule_number}` }))
+        ];
+
+        combined.sort((a, b) => new Date(b.created_at || Date.now()) - new Date(a.created_at || Date.now()));
+
+        if (combined.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">✨ No pending payment proofs awaiting verification. All caught up!</td></tr>';
           return;
         }
 
-        tbody.innerHTML = proofs.map(p => `
+        tbody.innerHTML = combined.map(p => `
           <tr>
-            <td><strong>#${p.schedule_number}</strong></td>
-            <td><strong>${esc(p.member_name)}</strong> (${p.member_code})</td>
-            <td style="color:var(--green);font-weight:800">₹${parseFloat(p.amount_due).toLocaleString('en-IN')}</td>
-            <td>${p.due_date}</td>
-            <td><strong>${p.transaction_reference || 'N/A'}</strong></td>
             <td>
-              ${p.proof_file_path ? `<a href="${p.proof_file_path}" target="_blank" style="color:var(--primary);text-decoration:underline">📷 View Proof Screenshot</a>` : 'No Image'}
+              <span class="badge ${p.is_schedule ? 'badge-info' : 'badge-gold'}" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700">
+                ${p.display_type}
+              </span>
+            </td>
+            <td><strong>${esc(p.member_name || p.name || 'Member')}</strong> <span style="color:var(--primary);font-weight:700">(${p.member_code || p.member_id || ''})</span></td>
+            <td style="color:var(--green);font-weight:800;font-size:15px">₹${parseFloat(p.amount || p.amount_due || 0).toLocaleString('en-IN')}</td>
+            <td>${p.payment_date || p.due_date || 'N/A'}</td>
+            <td><code>${esc(p.transaction_reference || 'N/A')}</code></td>
+            <td>
+              ${p.proof_file_path ? `<a href="${p.proof_file_path}" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline">📷 View Screenshot</a>` : '<span style="color:var(--text-muted)">No Image</span>'}
             </td>
             <td>
-              <button class="btn-success btn-sm" onclick="verifyScheduleProof(${p.id}, 'PAID')">✅ Approve</button>
-              <button class="btn-danger btn-sm" onclick="verifyScheduleProof(${p.id}, 'REJECTED')">❌ Reject</button>
+              ${p.is_schedule ? `
+                <button class="btn-success btn-sm" onclick="verifyScheduleProof(${p.id}, 'PAID')">✅ Approve</button>
+                <button class="btn-danger btn-sm" onclick="verifyScheduleProof(${p.id}, 'REJECTED')">❌ Reject</button>
+              ` : `
+                <button class="btn-success btn-sm" onclick="verifyGeneralProof(${p.id}, true)">✅ Approve</button>
+                <button class="btn-danger btn-sm" onclick="verifyGeneralProof(${p.id}, false)">❌ Reject</button>
+              `}
             </td>
           </tr>
         `).join('');
       } catch (e) { showToast('Failed to load pending proofs: ' + e.message, 'error'); }
     }
 
+    async function loadPendingScheduleProofs() {
+      return loadPendingProofs();
+    }
+
+    async function verifyGeneralProof(proofId, verified) {
+      let rejection_reason = null;
+      if (!verified) {
+        rejection_reason = prompt('Enter rejection reason for member:');
+        if (rejection_reason === null) return; // user cancelled prompt
+      }
+
+      try {
+        const res = await api(`/api/payment-verification/verify-proof/${proofId}`, {
+          method: 'POST',
+          body: JSON.stringify({ verified, rejection_reason })
+        });
+        showToast(res.message || (verified ? 'Payment approved and ₹500 credited to member!' : 'Payment rejected'), verified ? 'success' : 'info');
+        loadPendingProofs();
+        loadDashboardStats();
+      } catch (e) { showToast('Verification error: ' + e.message, 'error'); }
+    }
+
     async function verifyScheduleProof(schedId, status) {
       let rejection_reason = null;
       if (status === 'REJECTED') {
         rejection_reason = prompt('Enter rejection reason for member:');
-        if (!rejection_reason) return;
+        if (rejection_reason === null) return;
       }
 
       try {
@@ -2067,7 +2147,8 @@
           body: JSON.stringify({ status, rejection_reason })
         });
         showToast(`Schedule payment verified as ${status}!`, 'success');
-        loadPendingScheduleProofs();
+        loadPendingProofs();
+        loadDashboardStats();
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -2438,12 +2519,30 @@
       exportTransactionsCSV();
     }
 
+    let adminSocket = null;
+    function initAdminSocket() {
+      if (typeof io !== 'undefined' && adminToken && !adminSocket) {
+        try {
+          adminSocket = io({ auth: { token: adminToken } });
+          adminSocket.on('payment:new-proof', (data) => {
+            showToast('💳 New Payment Proof Uploaded by Member!', 'info');
+            loadPendingProofs();
+            loadDashboard();
+          });
+          adminSocket.on('notification:broadcast', (data) => {
+            if (data && data.title) showToast(`${data.title}: ${data.body || ''}`, 'info');
+          });
+        } catch (e) { console.warn('Admin socket init warning:', e.message); }
+      }
+    }
+
     async function initAdminApp() {
       document.getElementById('adminLoginScreen').style.display = 'none';
       document.getElementById('adminApp').classList.remove('hidden');
       const savedTheme = localStorage.getItem('adminTheme') || 'dark';
       document.getElementById('themeSelect').value = savedTheme;
       changeTheme(savedTheme);
+      initAdminSocket();
       loadDashboard();
     }
 
@@ -2493,40 +2592,48 @@
       const pay = document.getElementById('filterPaymentStatus').value;
       const sort = document.getElementById('sortMemberBy').value;
 
+    let currentCreatedCredentialsText = '';
+
+    async function loadMembers() {
+      const search = document.getElementById('memberSearch').value;
+      const act = document.getElementById('filterActivationStatus').value;
+      const pay = document.getElementById('filterPaymentStatus').value;
+      const sort = document.getElementById('sortMemberBy').value;
+
       try {
         const d = await api(`/api/admin/members?search=${encodeURIComponent(search)}&activation_status=${act}&payment_status=${pay}&sort_by=${sort}`);
         const tbody = document.getElementById('membersTableBody');
         if (!d.members || !d.members.length) {
-          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px">No members found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No members found.</td></tr>';
           return;
         }
 
         tbody.innerHTML = d.members.map(m => {
-          const avatar = m.profile_photo 
-            ? `<img src="${m.profile_photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover" alt="Photo">`
-            : `<div style="width:36px;height:36px;border-radius:50%;background:rgba(245,200,66,0.15);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">${m.name ? m.name.charAt(0).toUpperCase() : '?'}</div>`;
-
-          const regDate = m.created_at ? new Date(m.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
           const payStatus = m.payment_status || 'UNPAID';
-          const actStatus = m.activation_status || 'PENDING';
+          const actStatus = m.activation_status || 'ACTIVE';
+
+          const actBadgeClass = actStatus === 'ACTIVE' ? 'badge-active' : 'badge-rejected';
+          const payBadgeClass = payStatus === 'PAID' ? 'badge-active' : 'badge-pending';
+
+          const nextActStatus = actStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+          const nextPayStatus = payStatus === 'PAID' ? 'UNPAID' : 'PAID';
 
           return `
             <tr>
-              <td><strong style="color:var(--primary)">${m.member_id}</strong></td>
-              <td>${avatar}</td>
+              <td><strong style="color:var(--primary);font-size:15px">${m.member_id}</strong></td>
               <td><strong>${esc(m.name)}</strong> ${m.is_duplicate ? '<span class="badge badge-duplicate">DUPLICATE</span>' : ''}</td>
               <td>${esc(m.phone)}</td>
-              <td>${esc(m.email || '—')}</td>
-              <td>${esc(m.upi_id || '—')}</td>
-              <td style="font-size:12px;color:var(--text-muted)">${regDate}</td>
-              <td><span class="badge badge-${payStatus.toLowerCase()}">${payStatus}</span></td>
-              <td><span class="badge badge-${actStatus.toLowerCase()}">${actStatus}</span></td>
-              <td style="display:flex;gap:4px">
+              <td>
+                <span class="badge ${actBadgeClass}" style="margin-right:6px">${actStatus}</span>
+                <button class="btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="toggleActivation(${m.id}, '${nextActStatus}')">Set ${nextActStatus}</button>
+              </td>
+              <td>
+                <span class="badge ${payBadgeClass}" style="margin-right:6px">${payStatus}</span>
+                <button class="btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="togglePaymentStatus(${m.id}, '${nextPayStatus}')">Set ${nextPayStatus}</button>
+              </td>
+              <td style="display:flex;gap:6px">
                 <button class="btn-secondary btn-sm" onclick="showEditMemberModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">✏️ Edit</button>
-                ${actStatus === 'ACTIVE'
-                  ? `<button class="btn-danger btn-sm" onclick="toggleActivation(${m.id}, 'INACTIVE')">Deactivate</button>`
-                  : `<button class="btn-success btn-sm" onclick="toggleActivation(${m.id}, 'ACTIVE')">Activate</button>`}
-                <button class="btn-danger btn-sm" onclick="confirmDeleteMember(${m.id}, '${esc(m.name)}')">🗑</button>
+                <button class="btn-danger btn-sm" onclick="confirmDeleteMember(${m.id}, '${esc(m.name)}')">🗑 Delete</button>
               </td>
             </tr>
           `;
@@ -2534,7 +2641,7 @@
       } catch (e) {
         showToast(e.message || 'Failed to load members', 'error');
         const tbody = document.getElementById('membersTableBody');
-        if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--red)">Failed to load members: ${esc(e.message)}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--red)">Failed to load members: ${esc(e.message)}</td></tr>`;
       }
     }
 
@@ -2543,13 +2650,9 @@
       document.getElementById('memberModalTitle').textContent = 'Add New Member';
       document.getElementById('mName').value = '';
       document.getElementById('mPhone').value = '';
-      document.getElementById('mUpi').value = '';
-      document.getElementById('mEmail').value = '';
-      if (document.getElementById('mPhoto')) document.getElementById('mPhoto').value = '';
-      document.getElementById('mPassword').value = '123456';
+      document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = 'ACTIVE';
       document.getElementById('mPaymentStatus').value = 'UNPAID';
-      document.getElementById('mGroup').value = 'General';
       document.getElementById('memberModal').classList.remove('hidden');
     }
 
@@ -2558,53 +2661,90 @@
       document.getElementById('memberModalTitle').textContent = `Edit Member — ${m.member_id}`;
       document.getElementById('mName').value = m.name || '';
       document.getElementById('mPhone').value = m.phone || '';
-      document.getElementById('mUpi').value = m.upi_id || '';
-      document.getElementById('mEmail').value = m.email || '';
-      if (document.getElementById('mPhoto')) document.getElementById('mPhoto').value = m.profile_photo || '';
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
       document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
-      document.getElementById('mGroup').value = m.group_category || 'General';
       document.getElementById('memberModal').classList.remove('hidden');
     }
 
     async function saveMemberForm() {
       const name = document.getElementById('mName').value.trim();
       const phone = document.getElementById('mPhone').value.trim();
-      const upi_id = document.getElementById('mUpi').value.trim();
-      const email = document.getElementById('mEmail').value.trim();
-      const profile_photo = document.getElementById('mPhoto') ? document.getElementById('mPhoto').value.trim() : '';
       const password = document.getElementById('mPassword').value.trim();
       const activation_status = document.getElementById('mActivation').value;
       const payment_status = document.getElementById('mPaymentStatus').value;
-      const group_category = document.getElementById('mGroup').value.trim();
 
-      if (!name || !phone) { showToast('Name and Phone are required', 'error'); return; }
+      if (!name || !phone) {
+        showToast('Member Name and Mobile Number are required', 'error');
+        return;
+      }
+
+      if (phone.replace(/\D/g, '').length < 10) {
+        showToast('Please enter a valid 10-digit mobile number', 'error');
+        return;
+      }
 
       try {
         if (currentEditingMemberId) {
           await api(`/api/admin/members/${currentEditingMemberId}`, {
             method: 'PUT',
-            body: JSON.stringify({ name, phone, upi_id, email, profile_photo, password, activation_status, payment_status, group_category })
+            body: JSON.stringify({ name, phone, password, activation_status, payment_status })
           });
-          showToast('Member updated successfully', 'success');
+          showToast('Member details updated successfully!', 'success');
+          closeModal('memberModal');
         } else {
-          await api('/api/admin/members', {
+          const res = await api('/api/admin/members', {
             method: 'POST',
-            body: JSON.stringify({ name, phone, upi_id, email, profile_photo, password: password || '123456', activation_status, payment_status, group_category })
+            body: JSON.stringify({ name, phone, password, activation_status, payment_status })
           });
-          showToast('New member added with auto ID & Password!', 'success');
+
+          closeModal('memberModal');
+
+          if (res && res.member) {
+            const m = res.member;
+            const pwd = res.raw_password || password || '1235';
+
+            document.getElementById('succName').textContent = m.name;
+            document.getElementById('succMemberId').textContent = m.member_id;
+            document.getElementById('succPassword').textContent = pwd;
+            document.getElementById('succPhone').textContent = m.phone;
+            document.getElementById('succActivation').textContent = m.activation_status || 'ACTIVE';
+            document.getElementById('succPayment').textContent = m.payment_status || 'UNPAID';
+
+            currentCreatedCredentialsText = `Member Name: ${m.name}\nMember ID: ${m.member_id}\nPassword: ${pwd}\nMobile: ${m.phone}`;
+
+            document.getElementById('memberSuccessModal').classList.remove('hidden');
+          } else {
+            showToast('Member Created Successfully!', 'success');
+          }
         }
-        closeModal('memberModal');
         loadMembers();
         loadDashboard();
       } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    function copyMemberCredentials() {
+      if (!currentCreatedCredentialsText) return;
+      navigator.clipboard.writeText(currentCreatedCredentialsText).then(() => {
+        showToast('Member credentials copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy. Please manually select text.', 'info');
+      });
     }
 
     async function toggleActivation(id, newStatus) {
       try {
         await api(`/api/admin/members/${id}/activation`, { method: 'PATCH', body: JSON.stringify({ activation_status: newStatus }) });
         showToast(`Member status updated to ${newStatus}`, 'success');
+        loadMembers();
+        loadDashboard();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function togglePaymentStatus(id, newStatus) {
+      try {
+        await api(`/api/admin/members/${id}/payment-status`, { method: 'PATCH', body: JSON.stringify({ payment_status: newStatus }) });
+        showToast(`Payment status updated to ${newStatus}`, 'success');
         loadMembers();
         loadDashboard();
       } catch (e) { showToast(e.message, 'error'); }

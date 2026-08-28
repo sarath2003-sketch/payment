@@ -63,6 +63,7 @@ router.post('/upload', authenticateToken, async (req, res) => {
     const ext = path.extname(proofFile.name);
     const fileName = `proof_${memberId}_${timestamp}_${randomStr}${ext}`;
     const filePath = path.join(uploadDir, fileName);
+    const webPath = `/uploads/${fileName}`;
 
     // Save file
     await proofFile.mv(filePath);
@@ -74,10 +75,19 @@ router.post('/upload', authenticateToken, async (req, res) => {
         proof_file_path, proof_file_name, status
       ) VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
       RETURNING id, member_id, amount, transaction_reference, payment_date, status, created_at`,
-      [memberId, amountNum, transaction_reference, payment_date, filePath, fileName]
+      [memberId, amountNum, transaction_reference, payment_date, webPath, fileName]
     );
 
     const proof = result.rows[0];
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payment:new-proof', { proof });
+      io.emit('notification:broadcast', {
+        title: '💳 New Payment Proof Uploaded',
+        body: `Payment proof submitted for Member ID ${memberId} (Amount: ₹${amountNum})`
+      });
+    }
 
     res.json({
       message: 'Payment proof uploaded successfully',

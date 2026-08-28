@@ -203,8 +203,8 @@ router.post(['/login', '/login/'], async (req, res) => {
 
     const member = result.rows[0];
 
-    if (member.status !== 'ACTIVE') {
-      return res.status(401).json({ error: 'Your account is currently inactive. Please contact support.' });
+    if (member.status !== 'ACTIVE' || member.activation_status === 'INACTIVE' || member.activation_status === 'REJECTED') {
+      return res.status(403).json({ error: 'Your account is INACTIVE. Please contact admin.' });
     }
 
     const passwordMatch = await bcrypt.compare(password, member.password_hash);
