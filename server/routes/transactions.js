@@ -225,7 +225,7 @@ router.get('/monthly-history/:memberId', authenticateToken, async (req, res) => 
     // Fetch payments & activity amounts grouped by month
     const result = await pool.query(`
       SELECT 
-        COALESCE(p.payment_month, strftime('%Y-%m', t.transaction_date), TO_CHAR(t.transaction_date, 'YYYY-MM')) AS month,
+        COALESCE(p.payment_month, TO_CHAR(t.transaction_date, 'YYYY-MM')) AS month,
         COALESCE(SUM(CASE WHEN t.transaction_type = 'DEBIT' THEN t.amount END), 0) AS activity_amount,
         COALESCE(SUM(CASE WHEN p.status = 'APPROVED' THEN p.amount END), 0) AS payment_amount,
         MAX(p.created_at) AS payment_date,

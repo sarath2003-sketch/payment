@@ -10,7 +10,7 @@ const router = express.Router();
  */
 router.get('/member/:memberId', authenticateToken, async (req, res) => {
   try {
-    const { memberId } = req.params;
+    const memberId = req.admin?.type === 'member' ? req.admin.id : req.params.memberId;
     const result = await pool.query('SELECT * FROM nominees WHERE member_id = $1 ORDER BY id DESC LIMIT 1', [memberId]);
     res.json({ nominee: result.rows[0] || null });
   } catch (err) {

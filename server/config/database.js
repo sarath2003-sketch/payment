@@ -569,14 +569,18 @@ function execSQLiteQuery(sqlText, params = []) {
       return '?';
     });
 
-    // Convert TO_CHAR(payment_date, 'YYYY-MM') -> strftime('%Y-%m', payment_date)
+    // Convert date formatting and PostgreSQL casts for SQLite.
     sql = sql.replace(/TO_CHAR\(([^,]+),\s*'YYYY-MM'\)/gi, "strftime('%Y-%m', $1)");
+    sql = sql.replace(/([\w.]+)::text\b/gi, 'CAST($1 AS TEXT)');
 
     // Clean Postgres-specific clauses for SQLite
     sql = sql.replace(/FOR UPDATE/gi, '');
-    sql = sql.replace(/ON CONFLICT\s*\([^)]*\)\s*DO NOTHING/gi, 'OR IGNORE');
+    if (/ON CONFLICT(?:\s*\([^)]*\))?\s*DO NOTHING/i.test(sql)) {
+      sql = sql.replace(/INSERT\s+INTO/i, 'INSERT OR IGNORE INTO');
+      sql = sql.replace(/ON CONFLICT(?:\s*\([^)]*\))?\s*DO NOTHING/gi, '');
+    }
     sql = sql.replace(/NULLS LAST/gi, '');
-    sql = sql.replace(/regexp_replace\(member_id,\s*'\\D',\s*'',\s*'g'\)/gi, 'member_id');
+    sql = sql.replace(/regexp_replace\(member_id,\s*'\\D',\s*'',\s*'g'\)/gi, 'CAST(member_id AS INTEGER)');
     sql = sql.replace(/=\s*true\b/gi, '= 1').replace(/=\s*false\b/gi, '= 0');
 
     const isSelect = /^\s*(SELECT|PRAGMA|EXPLAIN)/i.test(sql);

@@ -66,21 +66,21 @@ router.get('/summary', authenticateToken, async (req, res) => {
     const incomeRes = await pool.query(`
       SELECT COALESCE(SUM(amount), 0) as total FROM transactions 
       WHERE (transaction_type = 'MEMBER_CONTRIBUTION' OR transaction_type = 'REPAYMENT' OR transaction_type = 'PAYMENT')
-        AND strftime('%Y-%m', transaction_date) = $1
+        AND TO_CHAR(transaction_date, 'YYYY-MM') = $1
     `, [currentMonth]);
     const monthlyIncome = parseFloat(incomeRes.rows[0]?.total || 0);
 
     const outgoingRes = await pool.query(`
       SELECT COALESCE(SUM(amount), 0) as total FROM transactions 
       WHERE (transaction_type = 'FUND_DISTRIBUTION' OR transaction_type = 'WITHDRAWAL')
-        AND strftime('%Y-%m', transaction_date) = $1
+        AND TO_CHAR(transaction_date, 'YYYY-MM') = $1
     `, [currentMonth]);
     const monthlyOutgoing = parseFloat(outgoingRes.rows[0]?.total || 0);
 
     // Members who paid this month
     const paidThisMonthRes = await pool.query(`
       SELECT COUNT(DISTINCT member_id) as total FROM payment_proofs 
-      WHERE status = 'APPROVED' AND (strftime('%Y-%m', payment_date) = $1 OR strftime('%Y-%m', created_at) = $1)
+      WHERE status = 'APPROVED' AND (TO_CHAR(payment_date, 'YYYY-MM') = $1 OR TO_CHAR(created_at, 'YYYY-MM') = $1)
     `, [currentMonth]);
     const paidThisMonth = parseInt(paidThisMonthRes.rows[0]?.total || 0, 10);
     const pendingMembersCount = Math.max(0, activeMembers - paidThisMonth);

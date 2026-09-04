@@ -492,9 +492,6 @@ app.use('/nominees', nomineesRoutes);
 app.use('/api/payment-verification', paymentVerificationRoutes);
 app.use('/payment-verification', paymentVerificationRoutes);
 
-app.use('/api/payment-verification', paymentVerificationRoutes);
-app.use('/payment-verification', paymentVerificationRoutes);
-
 app.use('/api/monthly-payments', monthlyPaymentsRoutes);
 app.use('/monthly-payments', monthlyPaymentsRoutes);
 
@@ -503,12 +500,6 @@ app.use('/api/auction', auctionRoutes);
 app.use('/auction', auctionRoutes);
 app.use('/api/live-activities', auctionRoutes);
 app.use('/live-activities', auctionRoutes);
-
-app.use('/api/members', memberAuthRoutes);
-app.use('/members', memberAuthRoutes);
-
-app.use('/api/payments', paymentVerificationRoutes);
-app.use('/payments', paymentVerificationRoutes);
 
 app.use('/api/chat', chatRoutes);
 app.use('/chat', chatRoutes);

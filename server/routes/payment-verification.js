@@ -16,9 +16,10 @@ router.post('/upload-proof', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const { member_id, payment_date, amount, transaction_reference } = req.body;
+    const { payment_date, amount, transaction_reference } = req.body;
+    const memberId = req.admin?.type === 'member' ? req.admin.id : req.body.member_id;
 
-    if (!member_id || !payment_date || !amount) {
+    if (!memberId || !payment_date || !amount) {
       return res.status(400).json({ error: 'member_id, payment_date, and amount are required' });
     }
 
@@ -43,7 +44,7 @@ router.post('/upload-proof', authenticateToken, async (req, res) => {
     }
 
     const timestamp = Date.now();
-    const fileName = `proof_${member_id}_${timestamp}_${path.basename(proofFile.name)}`;
+    const fileName = `proof_${memberId}_${timestamp}_${path.basename(proofFile.name)}`;
     const filePath = path.join(uploadDir, fileName);
     const webPath = `/uploads/${fileName}`;
 
@@ -52,7 +53,7 @@ router.post('/upload-proof', authenticateToken, async (req, res) => {
     const proof = await pool.query(
       `INSERT INTO payment_proofs (member_id, amount, transaction_reference, payment_date, proof_file_path, proof_file_name, status) 
        VALUES ($1, $2, $3, $4, $5, $6, 'PENDING') RETURNING *`,
-      [member_id, amount, transaction_reference || null, payment_date, webPath, fileName]
+      [memberId, amount, transaction_reference || null, payment_date, webPath, fileName]
     );
 
     const newProof = proof.rows[0];
@@ -62,7 +63,7 @@ router.post('/upload-proof', authenticateToken, async (req, res) => {
       io.emit('payment:new-proof', { proof: newProof });
       io.emit('notification:broadcast', {
         title: '💳 New Payment Proof Uploaded',
-        body: `Payment proof submitted for Member ID ${member_id} (Amount: ₹${amount})`
+        body: `Payment proof submitted for Member ID ${memberId} (Amount: ₹${amount})`
       });
     }
 
@@ -82,12 +83,13 @@ router.post('/upload-proof', authenticateToken, async (req, res) => {
 // Get payment proofs for a member
 router.get('/proofs/:member_id', authenticateToken, async (req, res) => {
   try {
+    const memberId = req.admin?.type === 'member' ? req.admin.id : req.params.member_id;
     const result = await pool.query(
       `SELECT id, member_id, amount, transaction_reference, payment_date, status, rejection_reason, verified_by, verified_at, created_at
        FROM payment_proofs 
        WHERE member_id = $1 
        ORDER BY created_at DESC`,
-      [req.params.member_id]
+      [memberId]
     );
 
     res.json(result.rows);

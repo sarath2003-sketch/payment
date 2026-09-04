@@ -7,7 +7,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "db:init": "psql -U postgres -f server/database/schema.sql",
-    "test": "jest"
+    "test": "node --test"
   },
   "keywords": [
     "chit-fund",

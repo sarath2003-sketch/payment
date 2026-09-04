@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -35,7 +35,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create member
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { member_id, name, email, phone, status } = req.body;
 
@@ -55,7 +55,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Update member
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { name, email, phone, status } = req.body;
     const result = await pool.query(
@@ -73,7 +73,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // Delete member
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const result = await pool.query('DELETE FROM members WHERE id = $1 RETURNING id', [req.params.id]);
     if (result.rows.length === 0) {

@@ -4,6 +4,39 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
+// GET /api/auction — Auction list used by the member history view.
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const requestedStatus = String(req.query.status || '').toUpperCase();
+    const status = ['SCHEDULED', 'WAITING', 'LIVE', 'PAUSED', 'ENDED', 'CANCELLED'].includes(requestedStatus)
+      ? requestedStatus
+      : null;
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 10));
+    const params = [];
+    let whereClause = '';
+
+    if (status) {
+      params.push(status);
+      whereClause = 'WHERE a.status = $1';
+    }
+
+    params.push(limit);
+    const result = await pool.query(`
+      SELECT a.*, w.name AS winner_name, w.member_id AS winner_code
+      FROM auctions a
+      LEFT JOIN members w ON a.winner_id = w.id
+      ${whereClause}
+      ORDER BY a.created_at DESC
+      LIMIT $${params.length}
+    `, params);
+
+    res.json({ auctions: result.rows });
+  } catch (err) {
+    console.error('Error fetching auctions:', err);
+    res.status(500).json({ error: 'Failed to fetch auctions' });
+  }
+});
+
 // ============================================================
 // HELPER: Broadcast to all Socket.IO clients in auction room
 // ============================================================
