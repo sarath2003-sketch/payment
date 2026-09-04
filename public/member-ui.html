@@ -47,57 +47,162 @@
     ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 2px; }
     /* ====== HIDDEN ====== */
     .hidden { display: none !important; }
-    /* ====== AUTH SCREENS ====== */
+    /* ====== HOLOGRAPHIC TILT AUTH SCREEN STYLES ====== */
+    @property --a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+    @property --b { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+    
+    .theme-neon    { --c1:#ff2770; --c2:#45f3ff; --c3:#8a5cff; }
+    .theme-aurora  { --c1:#8a5cff; --c2:#3ad6ff; --c3:#ff6ad5; }
+    .theme-sunset  { --c1:#ff6a3d; --c2:#ffd166; --c3:#ff3d77; }
+    .theme-emerald { --c1:#22e3a3; --c2:#7dff9b; --c3:#33c0ff; }
+    .theme-royal   { --c1:#c9a227; --c2:#9b5cff; --c3:#ffd479; }
+    .theme-mono    { --c1:#e8e8ef; --c2:#9aa3b2; --c3:#c7cdd9; }
+
     #authScreen {
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 20px;
-      background: radial-gradient(ellipse at top, #2d1a00 0%, #0d0800 60%);
+      background: radial-gradient(70% 60% at 50% 12%, #1a1005 0%, #08070d 70%), #08070d;
       position: relative;
       overflow: hidden;
+      perspective: 1500px;
     }
-    #authScreen::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(245,200,66,0.03) 60deg, transparent 120deg);
-      animation: rotate 20s linear infinite;
-    }
-    @keyframes rotate { to { transform: rotate(360deg); } }
-    .auth-card {
-      background: linear-gradient(145deg, var(--surface), var(--dark3));
-      border: 1px solid var(--border2);
-      border-radius: 24px;
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 440px;
-      box-shadow: var(--shadow), var(--shadow-gold);
+    
+    .holo-card {
+      --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 50%;
       position: relative;
-      z-index: 1;
-      animation: slideUp 0.5s ease;
+      width: min(450px, 94vw);
+      border-radius: 24px;
+      transform-style: preserve-3d;
+      transform: rotateX(var(--rx)) rotateY(var(--ry));
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      outline: none;
     }
-    @keyframes slideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+
+    .holo-layer { position: absolute; inset: 0; border-radius: 24px; pointer-events: none; }
+
+    .aurora {
+      transform: translateZ(-45px);
+      overflow: hidden;
+      filter: blur(36px) saturate(135%);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .blob { position: absolute; width: 65%; height: 80%; border-radius: 50%; mix-blend-mode: screen; will-change: transform; pointer-events: none; }
+    .blob-a { background: radial-gradient(circle, var(--c1, #f5c842) 0%, transparent 62%); top: -10%; left: 0%; animation: drift-a 11s ease-in-out infinite; }
+    .blob-b { background: radial-gradient(circle, var(--c2, #45f3ff) 0%, transparent 62%); top: 10%; left: 45%; animation: drift-b 13s ease-in-out infinite; }
+    .blob-c { background: radial-gradient(circle, var(--c3, #ff2770) 0%, transparent 62%); top: 35%; left: 18%; animation: drift-c 15s ease-in-out infinite; }
+    @keyframes drift-a { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30%,25%) scale(1.2)} }
+    @keyframes drift-b { 0%,100%{transform:translate(0,0) scale(1.1)} 50%{transform:translate(-28%,20%) scale(0.9)} }
+    @keyframes drift-c { 0%,100%{transform:translate(0,0) scale(0.95)} 50%{transform:translate(25%,-22%) scale(1.15)} }
+
+    .rings {
+      transform: translateZ(-50px);
+      background:
+        repeating-conic-gradient(from var(--a), var(--c1, #f5c842) 0% 3%, transparent 3% 25%),
+        repeating-conic-gradient(from calc(var(--a) * -1 + 28deg), var(--c2, #45f3ff) 0% 3%, transparent 3% 25%);
+      filter: blur(7px);
+      opacity: 0.18;
+      animation: spin-rings 14s linear infinite;
+      -webkit-mask: radial-gradient(circle at 50% 50%, transparent 28%, #000 78%);
+              mask: radial-gradient(circle at 50% 50%, transparent 28%, #000 78%);
+      pointer-events: none;
+    }
+    @keyframes spin-rings { to { --a: 360deg; } }
+
+    .panel {
+      transform: translateZ(0);
+      background: rgba(14, 13, 20, 0.90);
+      backdrop-filter: blur(16px) saturate(125%);
+      -webkit-backdrop-filter: blur(16px) saturate(125%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        inset 0 -24px 50px rgba(0, 0, 0, 0.5),
+        0 40px 80px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+    }
+
+    .beam {
+      transform: translateZ(2px);
+      padding: 1.6px;
+      pointer-events: none;
+      background: conic-gradient(
+        from var(--b),
+        transparent 0deg,
+        var(--c2, #45f3ff) 50deg,
+        var(--c1, #f5c842) 110deg,
+        transparent 200deg,
+        transparent 360deg
+      );
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+              mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c2, #45f3ff) 60%, transparent));
+      animation: spin-beam 4s linear infinite;
+      z-index: 3;
+    }
+    @keyframes spin-beam { to { --b: 360deg; } }
+
+    .sheen {
+      transform: translateZ(1px);
+      pointer-events: none;
+      background: radial-gradient(380px circle at var(--mx) var(--my), rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 35%, transparent 60%);
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+
+    .reveal { transform: translateZ(30px); z-index: 2; padding: 32px 28px; position: relative; pointer-events: auto; }
+
+    .theme-picker {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      z-index: 10;
+    }
+    .theme-picker button {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--sw1), var(--sw2));
+      transition: transform 0.2s;
+    }
+    .theme-picker button:hover, .theme-picker button.active {
+      transform: scale(1.2);
+      border-color: #fff;
+    }
+
+    .auth-card {
+      background: transparent;
+      border: none;
+      padding: 0;
+      width: 100%;
+      box-shadow: none;
+      position: relative;
+    }
     .auth-logo {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 28px;
-      gap: 12px;
+      margin-bottom: 24px;
+      gap: 10px;
     }
-    .auth-logo img { width: 90px; height: 90px; object-fit: contain; border-radius: 50%; border: 2px solid var(--border2); }
-    .auth-logo .org-name { font-size: 18px; font-weight: 700; color: var(--gold); text-align: center; line-height: 1.3; }
-    .auth-logo .org-name-ta { font-size: 14px; color: var(--text2); text-align: center; }
+    .auth-logo img { width: 80px; height: 80px; object-fit: contain; border-radius: 50%; border: 2px solid var(--border2); }
+    .auth-logo .org-name { font-size: 19px; font-weight: 700; color: var(--gold); text-align: center; line-height: 1.3; }
+    .auth-logo .org-name-ta { font-size: 13px; color: var(--text2); text-align: center; }
     .auth-tabs {
       display: flex;
-      background: var(--dark2);
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       padding: 4px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       gap: 4px;
     }
     .auth-tab {
@@ -902,10 +1007,65 @@
       .timer-display { font-size: 52px; }
       .stat-value { font-size: 20px; }
     }
-    @media (min-width: 600px) {
-      .bottom-nav { max-width: 600px; left: 50%; transform: translateX(-50%); border-radius: 20px 20px 0 0; border: 1px solid var(--border); border-bottom: none; }
-      .app-header { max-width: 600px; margin: 0 auto; border-radius: 0 0 16px 16px; }
+    /* ====== PROFILE PHOTO ====== */
+    .profile-photo-wrap {
+      position: relative; width: 84px; height: 84px; margin: 0 auto 14px; cursor: pointer;
     }
+    .profile-photo-wrap img, .profile-photo-wrap .profile-avatar {
+      width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
+      border: 3px solid var(--border2);
+    }
+    .photo-upload-overlay {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s; font-size: 20px; cursor: pointer;
+    }
+    .profile-photo-wrap:hover .photo-upload-overlay { opacity: 1; }
+    /* ====== LIVE ACTIVITY FEED ====== */
+    .activity-feed { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+    .feed-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-radius: 10px;
+      background: var(--dark2); border: 1px solid var(--border); transition: all 0.3s;
+    }
+    .feed-item.latest {
+      border-color: var(--gold); background: rgba(245,200,66,0.07);
+      animation: feedHighlight 0.6s ease;
+    }
+    @keyframes feedHighlight { 0% { transform: scale(1.03); box-shadow: 0 0 16px rgba(245,200,66,0.3); } 100% { transform: scale(1); box-shadow: none; } }
+    .feed-item .fi-left { display: flex; align-items: center; gap: 10px; }
+    .feed-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-dark), var(--gold)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--dark); flex-shrink: 0; overflow: hidden; }
+    .feed-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .fi-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .fi-id { font-size: 11px; color: var(--text3); }
+    .fi-amount { font-size: 15px; font-weight: 800; color: var(--gold); }
+    /* ====== LIVE BADGE ====== */
+    .badge-live-pulse {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(239,68,68,0.15); color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.4); border-radius: 20px;
+      padding: 3px 10px; font-size: 12px; font-weight: 700;
+      animation: pulseBadge 1.5s ease-in-out infinite;
+    }
+    .badge-live-pulse::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #ef4444; display: block; animation: pulseBadge 1s ease-in-out infinite; }
+    /* ====== MONTHLY HISTORY TABLE ====== */
+    .monthly-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .monthly-table th { padding: 10px 12px; background: var(--dark3); color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+    .monthly-table td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+    .monthly-table tr:last-child td { border-bottom: none; }
+    .monthly-table tr:hover td { background: rgba(245,200,66,0.03); }
+    /* ====== RETRY BUTTON ====== */
+    .retry-btn { margin-top: 10px; padding: 8px 20px; background: var(--surface2); border: 1px solid var(--border2); color: var(--gold); border-radius: 20px; font-size: 13px; cursor: pointer; transition: var(--transition); }
+    .retry-btn:hover { background: rgba(245,200,66,0.1); }
+    /* ====== CHAT ROOM CARD STATUS ====== */
+    .room-status-approved { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); color: #22c55e; }
+    .room-status-active { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); color: #3b82f6; }
+    /* ====== TABS FOR PROFILE ====== */
+    .profile-tabs { display: flex; gap: 4px; background: var(--dark2); border-radius: 12px; padding: 4px; margin-bottom: 16px; overflow-x: auto; }
+    .profile-tab { flex: 1; min-width: 70px; padding: 8px 10px; background: transparent; border: none; color: var(--text3); font-size: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: var(--transition); white-space: nowrap; }
+    .profile-tab.active { background: var(--surface2); color: var(--gold); border: 1px solid var(--border); }
+    .profile-tab-panel { display: none; }
+    .profile-tab-panel.active { display: block; }
   </style>
 </head>
 <body>
@@ -926,12 +1086,23 @@
 
 <!-- AUTH SCREEN -->
 <div id="authScreen">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <img id="authLogoImg" src="/assets/logo.png" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%23f5c842%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22>PF</text></svg>'" alt="Logo">
-      <div class="org-name" id="authOrgName">PF Chit Fund Club</div>
-      <div class="org-name-ta" id="authOrgNameTa">புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்</div>
+  <div class="holo-card theme-neon" id="holoCard" tabindex="-1">
+    <div class="holo-layer aurora" aria-hidden="true">
+      <span class="blob blob-a"></span>
+      <span class="blob blob-b"></span>
+      <span class="blob blob-c"></span>
     </div>
+    <div class="holo-layer rings" aria-hidden="true"></div>
+    <div class="holo-layer panel"></div>
+    <div class="holo-layer beam" aria-hidden="true"></div>
+    <div class="holo-layer sheen" aria-hidden="true"></div>
+    <div class="holo-layer reveal">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <img id="authLogoImg" src="/assets/logo.png" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%23f5c842%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22>PF</text></svg>'" alt="Logo">
+          <div class="org-name" id="authOrgName">PF Chit Fund Club</div>
+          <div class="org-name-ta" id="authOrgNameTa">புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்</div>
+        </div>
     <!-- Language -->
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
       <div class="auth-tabs" style="max-width:120px;margin-bottom:0">
@@ -939,7 +1110,11 @@
         <button class="auth-tab" onclick="setLang('ta')" id="langBtnTa">தமிழ்</button>
       </div>
     </div>
-    <!-- Tabs -->
+    <!-- Member Portal Info Header -->
+    <div style="font-size:12px;color:var(--gold);text-align:center;margin-bottom:14px;background:rgba(245,200,66,0.08);padding:8px 12px;border-radius:8px;border:1px solid var(--border)">
+      🔒 Login using your assigned <strong>Member ID (SF001+)</strong> and <strong>Password</strong> — or <strong>Register</strong> below for a new account.
+    </div>
+    <!-- Login / Register Tabs -->
     <div class="auth-tabs">
       <button class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')" data-i18n="login">Login</button>
       <button class="auth-tab" id="registerTab" onclick="switchAuthTab('register')" data-i18n="register">Register</button>
@@ -948,21 +1123,23 @@
     <!-- Login Form -->
     <div id="loginForm">
       <div class="form-group">
-        <label data-i18n="memberId">Member ID / Phone / Email</label>
-        <input type="text" id="loginId" placeholder="Enter your Member ID..." autocomplete="username">
+        <label data-i18n="memberId">Member ID (e.g. SF001, SF002) / Mobile / Email</label>
+        <input type="text" id="loginId" placeholder="Enter your Member ID (e.g. SF001)..." autocomplete="username">
       </div>
       <div class="form-group">
         <label data-i18n="password">Password</label>
         <input type="password" id="loginPassword" placeholder="Enter password..." autocomplete="current-password">
       </div>
       <button class="btn-primary" id="loginBtn" onclick="doLogin()">
-        <span data-i18n="loginBtn">Login to Portal</span>
+        <span data-i18n="loginBtn">Login to Member Portal</span>
       </button>
       <div class="auth-link">
         <a onclick="showForgotPassword()" data-i18n="forgotPassword">Forgot Password?</a>
       </div>
-      <div class="auth-link" style="margin-top:12px">
-        <a href="/admin" style="color:var(--text3);text-decoration:none">🔐 Admin Portal Login</a>
+      <div class="auth-link" style="margin-top:12px;display:flex;gap:12px;justify-content:center;align-items:center">
+        <a href="/public-dashboard" style="color:var(--gold);text-decoration:none;font-weight:600">🌐 Public Fund Dashboard</a>
+        <span style="color:var(--text3)">|</span>
+        <a href="/admin" style="color:var(--text3);text-decoration:none">🔐 Admin Login</a>
       </div>
     </div>
     <!-- Register Form -->
@@ -1030,6 +1207,18 @@
       <button class="btn-primary" onclick="doResetPassword()" data-i18n="resetPassword">Reset Password</button>
     </div>
   </div>
+</div>
+</div>
+
+<!-- Holographic Theme Picker -->
+<div class="theme-picker" role="group" aria-label="Theme">
+  <button data-theme="theme-neon" class="active" style="--sw1:#ff2770;--sw2:#45f3ff" title="Neon"></button>
+  <button data-theme="theme-aurora" style="--sw1:#8a5cff;--sw2:#3ad6ff" title="Aurora"></button>
+  <button data-theme="theme-sunset" style="--sw1:#ff6a3d;--sw2:#ffd166" title="Sunset"></button>
+  <button data-theme="theme-emerald" style="--sw1:#22e3a3;--sw2:#7dff9b" title="Emerald"></button>
+  <button data-theme="theme-royal" style="--sw1:#c9a227;--sw2:#9b5cff" title="Royal Gold"></button>
+  <button data-theme="theme-mono" style="--sw1:#e8e8ef;--sw2:#9aa3b2" title="Platinum"></button>
+</div>
 </div>
 
 <!-- Registration Success Modal -->
@@ -1139,24 +1328,80 @@
         <div class="profile-id" id="dashMemberId">ID: —</div>
         <div class="profile-status" data-i18n="activeStatus">Active Member</div>
       </div>
-      <div class="stats-grid">
+
+      <!-- MEMBER DASHBOARD TOTAL SUMMARY -->
+      <div class="stats-grid" id="memDashboardSummary">
         <div class="stat-card">
-          <div class="stat-label" data-i18n="totalPaid">Total Paid</div>
-          <div class="stat-value green" id="dashTotalPaid">₹0</div>
+          <div class="stat-label">TOTAL AMOUNT</div>
+          <div class="stat-value green" id="memSumTotalAmount">₹0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="balance">Balance</div>
-          <div class="stat-value" id="dashBalance">₹0</div>
+          <div class="stat-label">TOTAL MEMBERS</div>
+          <div class="stat-value" id="memSumTotalMembers">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="pendingReq">Pending Requests</div>
-          <div class="stat-value" id="dashPending" style="color:var(--orange)">0</div>
+          <div class="stat-label">ACTIVE MEMBERS</div>
+          <div class="stat-value green" id="memSumActiveMembers">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label" data-i18n="thisMonth">This Month</div>
-          <div class="stat-value" id="dashThisMonth" style="color:var(--text)">—</div>
+          <div class="stat-label">PAID THIS MONTH</div>
+          <div class="stat-value green" id="memSumPaidMonth">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">PENDING</div>
+          <div class="stat-value orange" id="memSumPending">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">AVAILABLE AMOUNT</div>
+          <div class="stat-value gold" id="memSumAvailable">₹0</div>
         </div>
       </div>
+
+      <!-- FUND TAKEN / AMOUNT RECEIVED CARD -->
+      <div class="card card-gold" id="memFundCard">
+        <div class="card-title">💰 Fund Details & Assigned Loan</div>
+        <div id="memFundCardContent">
+          <div style="text-align:center;padding:14px;color:var(--text3)">Loading your fund information...</div>
+        </div>
+      </div>
+
+      <!-- MONTH-BY-MONTH PAYMENT SCHEDULE -->
+      <div class="card" id="memScheduleSection">
+        <div class="card-title">📅 Month-by-Month Payment Schedule</div>
+        <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:10px">
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <thead style="background:var(--surface);position:sticky;top:0">
+              <tr style="text-align:left;color:var(--text3)">
+                <th style="padding:8px">#</th>
+                <th style="padding:8px">Due Date</th>
+                <th style="padding:8px">Amount</th>
+                <th style="padding:8px">Status</th>
+                <th style="padding:8px">Action</th>
+              </tr>
+            </thead>
+            <tbody id="memScheduleTableBody">
+              <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">Loading schedule...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NOTICE BOARD SECTION -->
+      <div class="card" id="memNoticeSection">
+        <div class="card-title">📢 Notice Board</div>
+        <div id="memNoticeContainer">
+          <div style="text-align:center;padding:14px;color:var(--text3)">Loading notices...</div>
+        </div>
+      </div>
+
+      <!-- MEMBER LIST WITH ONLINE STATUS -->
+      <div class="card" id="memListSection">
+        <div class="card-title">👥 Member List & Online Status</div>
+        <div id="memListContainer" style="max-height:300px;overflow-y:auto">
+          <div style="text-align:center;padding:14px;color:var(--text3)">Loading member list...</div>
+        </div>
+      </div>
+
       <!-- Auction status card -->
       <div class="card card-gold" id="dashAuctionCard">
         <div class="card-title">⚡ <span data-i18n="liveAuction">Live Auction</span></div>
@@ -1326,11 +1571,85 @@
         <button class="icon-btn" onclick="showPage('dashboard')">←</button>
         <h2 style="font-size:20px;font-weight:700;color:var(--gold)" data-i18n="settings">Settings</h2>
       </div>
-      <!-- Profile section -->
-      <div class="card" style="text-align:center;margin-bottom:16px">
-        <div class="profile-avatar" id="settingsAvatar" style="width:56px;height:56px;font-size:22px;margin:0 auto 12px">?</div>
-        <div style="font-size:16px;font-weight:700;color:var(--text)" id="settingsName">—</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:4px" id="settingsMemberId">—</div>
+      <!-- Profile section with photo upload -->
+      <div class="card" style="margin-bottom:16px">
+        <!-- Photo + name -->
+        <div style="text-align:center;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:16px">
+          <div class="profile-photo-wrap" onclick="document.getElementById('profilePhotoInput').click()" title="Tap to change photo">
+            <img id="settingsPhotoImg" src="" alt="" style="display:none;width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid var(--border2)">
+            <div class="profile-avatar" id="settingsAvatar" style="width:84px;height:84px;font-size:28px;margin:0">?</div>
+            <div class="photo-upload-overlay">📷</div>
+          </div>
+          <input type="file" id="profilePhotoInput" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none" onchange="uploadProfilePhoto(this)">
+          <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:2px" id="settingsName">—</div>
+          <div style="font-size:13px;color:var(--text3)" id="settingsMemberId">—</div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap">
+            <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="document.getElementById('profilePhotoInput').click()">📷 Change Photo</button>
+            <button class="btn-secondary" style="padding:6px 14px;font-size:12px;color:var(--red)" onclick="removeProfilePhoto()">🗑 Remove</button>
+          </div>
+        </div>
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px" id="profileStatsRow">
+          <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:10px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Total Paid</div>
+            <div style="font-size:16px;font-weight:800;color:var(--green)" id="profileTotalPaid">₹0</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:10px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Balance</div>
+            <div style="font-size:16px;font-weight:800;color:var(--gold)" id="profileBalance">₹0</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:10px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Pending</div>
+            <div style="font-size:16px;font-weight:800;color:var(--orange)" id="profilePending">0</div>
+          </div>
+        </div>
+        <!-- Tabbed sections -->
+        <div class="profile-tabs">
+          <button class="profile-tab active" id="ptab-overview" onclick="showProfileTab('overview')">📊 Overview</button>
+          <button class="profile-tab" id="ptab-payments" onclick="showProfileTab('payments')">💳 Payments</button>
+          <button class="profile-tab" id="ptab-monthly" onclick="showProfileTab('monthly')">📅 Monthly</button>
+          <button class="profile-tab" id="ptab-activity" onclick="showProfileTab('activity')">⚡ Activity</button>
+        </div>
+        <!-- Overview tab -->
+        <div class="profile-tab-panel active" id="ptab-panel-overview">
+          <div style="display:grid;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--dark3);border-radius:10px">
+              <span style="font-size:13px;color:var(--text3)">📧 Email</span>
+              <span style="font-size:13px;color:var(--text);font-weight:600" id="profileEmail">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--dark3);border-radius:10px">
+              <span style="font-size:13px;color:var(--text3)">📱 Phone</span>
+              <span style="font-size:13px;color:var(--text);font-weight:600" id="profilePhone">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--dark3);border-radius:10px">
+              <span style="font-size:13px;color:var(--text3)">💳 UPI ID</span>
+              <span style="font-size:13px;color:var(--text);font-weight:600" id="profileUpi">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--dark3);border-radius:10px">
+              <span style="font-size:13px;color:var(--text3)">📅 This Month Status</span>
+              <span id="profileMonthStatus" class="badge badge-pending" style="font-size:12px">—</span>
+            </div>
+          </div>
+          <button class="btn-secondary" style="width:100%;margin-top:12px;padding:10px" onclick="showEditProfileModal()">✏️ Edit Profile</button>
+        </div>
+        <!-- Payments tab -->
+        <div class="profile-tab-panel" id="ptab-panel-payments">
+          <div id="profilePaymentsList">
+            <div class="loading-state" style="padding:20px"><div class="big-spinner"></div></div>
+          </div>
+        </div>
+        <!-- Monthly history tab -->
+        <div class="profile-tab-panel" id="ptab-panel-monthly">
+          <div id="profileMonthlyList">
+            <div class="loading-state" style="padding:20px"><div class="big-spinner"></div></div>
+          </div>
+        </div>
+        <!-- Activity tab -->
+        <div class="profile-tab-panel" id="ptab-panel-activity">
+          <div id="profileActivityList">
+            <div class="loading-state" style="padding:20px"><div class="big-spinner"></div></div>
+          </div>
+        </div>
       </div>
       <!-- Language -->
       <div class="setting-group">
@@ -1388,6 +1707,52 @@
       <button class="btn-danger" style="width:100%;padding:14px;font-size:16px" onclick="doLogout()">
         🚪 <span data-i18n="logout">Logout</span>
       </button>
+    <!-- SEED FUND & NOMINEE PAGE -->
+    <div id="seedFundPage" class="page">
+      <div class="card card-gold">
+        <div class="card-title">🌿 My Seed Fund Loans & Repayments</div>
+        <div id="memSeedFundSummary" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;margin-bottom:14px">
+          <div style="background:var(--dark2);padding:10px;border-radius:10px;border:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text3)">Total Borrowed</div>
+            <div style="font-size:18px;font-weight:800;color:var(--gold)" id="memTotalBorrowed">₹0</div>
+          </div>
+          <div style="background:var(--dark2);padding:10px;border-radius:10px;border:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text3)">Remaining Balance</div>
+            <div style="font-size:18px;font-weight:800;color:var(--red)" id="memRemainingDue">₹0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 Active Loans</div>
+        <div id="memActiveLoansContainer" style="max-height:220px;overflow-y:auto">
+          <div style="text-align:center;padding:20px;color:var(--text3)">Loading your seed fund loans...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👨‍👩‍👧 Nominee Information</div>
+        <div id="nomineeAlert"></div>
+        <div class="form-group">
+          <label>Nominee Full Name *</label>
+          <input type="text" id="nomName" placeholder="Enter nominee name">
+        </div>
+        <div class="form-group">
+          <label>Relationship *</label>
+          <input type="text" id="nomRelation" placeholder="e.g. Spouse, Father, Mother, Son">
+        </div>
+        <div class="form-group">
+          <label>Contact Phone Number</label>
+          <input type="tel" id="nomPhone" placeholder="10-digit phone number">
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <input type="text" id="nomAddress" placeholder="Nominee address">
+        </div>
+        <button class="btn-primary" style="width:100%" onclick="saveMemberNominee()">
+          💾 Save Nominee Information
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1413,11 +1778,38 @@
       <span class="nav-icon">💬</span>
       <span class="nav-label">Chat Rooms</span>
     </button>
+    <button class="nav-item" id="navSeedFund" onclick="showPage('seed-fund')">
+      <span class="nav-icon">🌿</span>
+      <span class="nav-label">Seed Fund</span>
+    </button>
     <button class="nav-item" id="navSettings" onclick="showPage('settings')">
       <span class="nav-icon">⚙️</span>
       <span class="nav-label" data-i18n="settings">Settings</span>
     </button>
   </nav>
+<!-- SCHEDULE PROOF UPLOAD MODAL LINKED TO MEMBER ID & SCHEDULE ID -->
+<div id="scheduleProofModal" class="modal-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:500px">
+    <div class="modal-title">📤 Upload Payment Proof</div>
+    <input type="hidden" id="spSchedId">
+    <div style="background:var(--surface);padding:12px;border-radius:10px;margin-bottom:14px">
+      <div style="font-size:12px;color:var(--text3)">Schedule Item: <span style="font-weight:700;color:var(--gold)" id="spSchedTitle">#1 — Due: ₹500</span></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Member ID: <span style="font-weight:700" id="spMemberCode">—</span></div>
+    </div>
+    <div class="form-group">
+      <label>Transaction / Reference ID *</label>
+      <input type="text" id="spTxRef" placeholder="e.g. UPI/123456789 or Bank Ref">
+    </div>
+    <div class="form-group">
+      <label>📷 Payment Screenshot / Receipt</label>
+      <input type="file" id="spFile" accept="image/*" onchange="previewScheduleProof(event)">
+      <img id="spPreview" style="max-height:150px;display:none;margin-top:8px;border-radius:8px;border:1px solid var(--border)">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('scheduleProofModal').classList.add('hidden')">Cancel</button>
+      <button class="btn-primary" onclick="submitScheduleProof()">Upload Proof</button>
+    </div>
+  </div>
 </div>
 
 <!-- Change Password Modal -->
@@ -1721,6 +2113,49 @@ async function loadSettings() {
 }
 
 // ============================================================
+// Holographic Tilt Card Mechanics
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const card = document.getElementById('holoCard');
+  if (card) {
+    let raf = null;
+    function onMove(e) {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top) / r.height;
+      const ry = (px - 0.5) * 2 * 6;
+      const rx = (0.5 - py) * 2 * 6;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        card.style.setProperty('--rx', rx.toFixed(2) + 'deg');
+        card.style.setProperty('--ry', ry.toFixed(2) + 'deg');
+        card.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      });
+    }
+    function reset() {
+      card.style.setProperty('--rx', '0deg');
+      card.style.setProperty('--ry', '0deg');
+      card.style.setProperty('--mx', '50%');
+      card.style.setProperty('--my', '50%');
+    }
+    if (window.matchMedia('(pointer: fine)').matches) {
+      card.addEventListener('pointermove', onMove);
+      card.addEventListener('pointerleave', reset);
+    }
+    reset();
+
+    // Theme Switcher
+    const themeBtns = document.querySelectorAll('.theme-picker button');
+    themeBtns.forEach(b => b.addEventListener('click', () => {
+      card.className = 'holo-card ' + b.dataset.theme;
+      themeBtns.forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    }));
+  }
+});
+
+// ============================================================
 // Auth Functions
 // ============================================================
 function switchAuthTab(tab) {
@@ -1848,6 +2283,17 @@ function doLogout() {
   switchAuthTab('login');
 }
 
+function initSocket() {
+  if (typeof io !== 'undefined' && authToken && !socket) {
+    try {
+      socket = io({ auth: { token: authToken } });
+      socket.on('member:status-change', ({ member_id, is_online }) => {
+        updateOnlineBadgeInUI(member_id, is_online);
+      });
+    } catch (e) { console.warn('Socket init warning:', e.message); }
+  }
+}
+
 // ============================================================
 // App Init
 // ============================================================
@@ -1861,19 +2307,22 @@ async function initApp() {
     updateHeaderUI();
     updateDashboard(profile);
   } catch (e) { console.error('Profile error:', e); }
-  // Load notifications
+  // Load dashboard metrics & features
+  loadMemberDashboardMetrics();
+  loadMemberFundCardAndSchedule();
+  loadMemberNoticeBoard();
+  loadMemberListWithOnlineStatus();
+
   loadNotifications();
-  // Load payment history
   loadPaymentHistory();
-  // Load auction
   loadAuction();
-  // Init socket
   initSocket();
-  // Payment month options
   populateMonthOptions();
-  // Sound/notif toggles
+
   document.getElementById('soundToggle').classList.toggle('on', soundEnabled);
   document.getElementById('notifToggle').classList.toggle('on', notifEnabled);
+  // Start notification polling
+  startNotificationPolling();
 }
 function updateHeaderUI() {
   if (!currentUser) return;
@@ -1882,20 +2331,35 @@ function updateHeaderUI() {
   const name = currentUser.name || '';
   const initial = name.charAt(0).toUpperCase() || 'M';
 
-  const avatarHTML = currentUser.profile_photo 
-    ? `<img src="${currentUser.profile_photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Profile Photo">`
-    : initial;
+  // Update all avatar elements across the UI
+  function setAvatar(avatarEl, photoImgEl) {
+    if (!avatarEl) return;
+    if (currentUser.profile_photo) {
+      avatarEl.style.display = 'none';
+      if (photoImgEl) { photoImgEl.src = currentUser.profile_photo; photoImgEl.style.display = 'block'; }
+      else { avatarEl.innerHTML = `<img src="${currentUser.profile_photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">`; avatarEl.style.display = ''; }
+    } else {
+      if (photoImgEl) photoImgEl.style.display = 'none';
+      avatarEl.style.display = '';
+      avatarEl.innerHTML = initial;
+    }
+  }
 
-  const dashAvatarEl = document.getElementById('dashAvatar');
-  if (dashAvatarEl) dashAvatarEl.innerHTML = avatarHTML;
-
-  const settingsAvatarEl = document.getElementById('settingsAvatar');
-  if (settingsAvatarEl) settingsAvatarEl.innerHTML = avatarHTML;
+  setAvatar(document.getElementById('dashAvatar'), null);
+  setAvatar(document.getElementById('settingsAvatar'), document.getElementById('settingsPhotoImg'));
 
   document.getElementById('dashName').textContent = name;
   document.getElementById('dashMemberId').textContent = `Member ID: ${mId}`;
   document.getElementById('settingsName').textContent = name;
   document.getElementById('settingsMemberId').textContent = `Member ID: ${mId}`;
+
+  // Profile detail fields
+  const emailEl = document.getElementById('profileEmail');
+  const phoneEl = document.getElementById('profilePhone');
+  const upiEl   = document.getElementById('profileUpi');
+  if (emailEl) emailEl.textContent = currentUser.email || '—';
+  if (phoneEl) phoneEl.textContent = currentUser.phone || '—';
+  if (upiEl)   upiEl.textContent   = currentUser.upi_id || 'Not set';
 
   // Populate settings form fields
   if (document.getElementById('setProfileName')) document.getElementById('setProfileName').value = name;
@@ -1914,13 +2378,29 @@ function updateDashboard(profile) {
   if (thisMonth === 'APPROVED') { el.textContent = '✅ Paid'; el.style.color = 'var(--green)'; }
   else if (thisMonth === 'PENDING') { el.textContent = '⏳ Pending'; el.style.color = 'var(--orange)'; }
   else { el.textContent = '❌ Unpaid'; el.style.color = 'var(--red)'; }
+
+  // Update profile section stats
+  const ppEl = document.getElementById('profileTotalPaid');
+  const pbEl = document.getElementById('profileBalance');
+  const ppnEl = document.getElementById('profilePending');
+  if (ppEl)  ppEl.textContent  = `₹${parseFloat(profile.total_paid || 0).toLocaleString('en-IN')}`;
+  if (pbEl)  pbEl.textContent  = `₹${balance.toLocaleString('en-IN')}`;
+  if (ppnEl) ppnEl.textContent = profile.pending_count || 0;
+
+  // Month status badge
+  const msEl = document.getElementById('profileMonthStatus');
+  if (msEl) {
+    if (thisMonth === 'APPROVED') { msEl.textContent = '✅ Paid'; msEl.className = 'badge badge-active'; }
+    else if (thisMonth === 'PENDING') { msEl.textContent = '⏳ Pending'; msEl.className = 'badge badge-pending'; }
+    else { msEl.textContent = '❌ Unpaid'; msEl.className = 'badge badge-rejected'; }
+  }
 }
 
 // ============================================================
 // Page Navigation
 // ============================================================
-const pageMap = { dashboard: 'dashPage', payment: 'paymentPage', history: 'historyPage', auction: 'auctionPage', 'chat-rooms': 'chatRoomsPage', 'chat-room-detail': 'chatRoomDetailPage', settings: 'settingsPage' };
-const navMap = { dashboard: 'navDash', payment: 'navPayment', history: 'navHistory', auction: 'navAuction', 'chat-rooms': 'navGroupChat', settings: 'navSettings' };
+const pageMap = { dashboard: 'dashPage', payment: 'paymentPage', history: 'historyPage', auction: 'auctionPage', 'chat-rooms': 'chatRoomsPage', 'chat-room-detail': 'chatRoomDetailPage', 'seed-fund': 'seedFundPage', settings: 'settingsPage' };
+const navMap = { dashboard: 'navDash', payment: 'navPayment', history: 'navHistory', auction: 'navAuction', 'chat-rooms': 'navGroupChat', 'seed-fund': 'navSeedFund', settings: 'navSettings' };
 function showPage(name) {
   Object.values(pageMap).forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
   Object.values(navMap).forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
@@ -1931,7 +2411,293 @@ function showPage(name) {
   if (name === 'auction') loadAuction();
   if (name === 'chat-rooms') loadChatGroups();
   if (name === 'payment') loadSettings();
+  if (name === 'seed-fund') loadMemberSeedFund();
+  if (name === 'settings') loadProfilePage();
   window.scrollTo(0, 0);
+}
+
+// ============================================================
+// Member Seed Fund & Nominee Handlers
+// ============================================================
+async function loadMemberSeedFund() {
+  if (!currentUser) return;
+  try {
+    const data = await api('/api/seed-fund/distributions');
+    const distributions = data.distributions || [];
+    const container = document.getElementById('memActiveLoansContainer');
+
+    let totalBorrowed = 0;
+    let totalRemaining = 0;
+
+    distributions.forEach(d => {
+      totalBorrowed += parseFloat(d.principal_amount || 0);
+      totalRemaining += parseFloat(d.remaining_amount || 0);
+    });
+
+    if (document.getElementById('memTotalBorrowed')) document.getElementById('memTotalBorrowed').textContent = `₹${totalBorrowed.toLocaleString('en-IN')}`;
+    if (document.getElementById('memRemainingDue')) document.getElementById('memRemainingDue').textContent = `₹${totalRemaining.toLocaleString('en-IN')}`;
+
+    if (!container) return;
+    if (distributions.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">No active seed fund loans found.</div>';
+    } else {
+      container.innerHTML = distributions.map(d => `
+        <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong style="color:var(--gold)">Loan #${d.id} — ${d.group_name || 'General'}</strong>
+            <span class="badge ${parseFloat(d.remaining_amount) <= 0 ? 'badge-active' : 'badge-pending'}">${d.payment_status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div>Principal: ₹${parseFloat(d.principal_amount).toLocaleString('en-IN')}</div>
+            <div>Interest (${d.interest_percentage}%): ₹${parseFloat(d.interest_amount).toLocaleString('en-IN')}</div>
+            <div>Total Payable: ₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</div>
+            <div>Paid: ₹${parseFloat(d.total_repaid || 0).toLocaleString('en-IN')}</div>
+          </div>
+          <div style="font-size:12px;color:var(--red);font-weight:700;margin-top:6px">Remaining Due: ₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')} (Due Date: ${d.due_date})</div>
+        </div>
+      `).join('');
+    }
+
+    // Load Nominee details
+    const nomRes = await api(`/api/nominees/member/${currentUser.id}`);
+    if (nomRes.nominee) {
+      if (document.getElementById('nomName')) document.getElementById('nomName').value = nomRes.nominee.nominee_name || '';
+      if (document.getElementById('nomRelation')) document.getElementById('nomRelation').value = nomRes.nominee.relationship || '';
+      if (document.getElementById('nomPhone')) document.getElementById('nomPhone').value = nomRes.nominee.contact_phone || '';
+      if (document.getElementById('nomAddress')) document.getElementById('nomAddress').value = nomRes.nominee.address || '';
+    }
+  } catch (e) { console.warn('Could not load member seed fund info:', e.message); }
+}
+
+async function saveMemberNominee() {
+  if (!currentUser) return;
+  const nominee_name = document.getElementById('nomName').value.trim();
+  const relationship = document.getElementById('nomRelation').value.trim();
+  const contact_phone = document.getElementById('nomPhone').value.trim();
+  const address = document.getElementById('nomAddress').value.trim();
+
+  if (!nominee_name || !relationship) {
+    showToast('Nominee Name and Relationship are required.', 'error');
+    return;
+  }
+
+  try {
+    await api('/api/nominees', {
+      method: 'POST',
+      body: JSON.stringify({ member_id: currentUser.id, nominee_name, relationship, contact_phone, address })
+    });
+    showToast('Nominee details saved successfully!', 'success');
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+// ============================================================
+// Member Dashboard Total Summary, Schedules, Notices & Online Status
+// ============================================================
+async function loadMemberDashboardMetrics() {
+  try {
+    const summary = await api('/api/dashboard/summary');
+    if (document.getElementById('memSumTotalAmount')) document.getElementById('memSumTotalAmount').textContent = `₹${parseFloat(summary.total_collected || 0).toLocaleString('en-IN')}`;
+    if (document.getElementById('memSumTotalMembers')) document.getElementById('memSumTotalMembers').textContent = summary.total_members || 0;
+    if (document.getElementById('memSumActiveMembers')) document.getElementById('memSumActiveMembers').textContent = summary.active_members || 0;
+    if (document.getElementById('memSumPaidMonth')) document.getElementById('memSumPaidMonth').textContent = summary.paid_this_month || 0;
+    if (document.getElementById('memSumPending')) document.getElementById('memSumPending').textContent = summary.pending_members || 0;
+    if (document.getElementById('memSumAvailable')) document.getElementById('memSumAvailable').textContent = `₹${parseFloat(summary.available_balance || 0).toLocaleString('en-IN')}`;
+  } catch (e) { console.warn('Dashboard summary error:', e.message); }
+}
+
+async function loadMemberFundCardAndSchedule() {
+  if (!currentUser) return;
+  try {
+    const distData = await api('/api/seed-fund/distributions');
+    const distributions = distData.distributions || [];
+    const fundContainer = document.getElementById('memFundCardContent');
+
+    if (!distributions || distributions.length === 0) {
+      if (fundContainer) fundContainer.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3)">No active fund/loan assigned yet. Contact Admin for distribution.</div>';
+      document.getElementById('memScheduleTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No payment schedule available.</td></tr>';
+      return;
+    }
+
+    const d = distributions[0]; // Active distribution
+    if (fundContainer) {
+      fundContainer.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+          <div><strong>Member Name:</strong> ${esc(currentUser.name)}</div>
+          <div><strong>Member ID:</strong> ${currentUser.member_id}</div>
+          <div><strong>Amount Received:</strong> <span style="color:var(--gold);font-weight:800">₹${parseFloat(d.principal_amount).toLocaleString('en-IN')}</span></div>
+          <div><strong>Interest Rate:</strong> ${d.interest_percentage}%</div>
+          <div><strong>Interest Amount:</strong> ₹${parseFloat(d.interest_amount).toLocaleString('en-IN')}</div>
+          <div><strong>Monthly Amount:</strong> <span style="color:var(--green);font-weight:800">₹${parseFloat(d.monthly_amount || (d.total_payable / (d.number_of_months || 12))).toLocaleString('en-IN')}</span></div>
+          <div><strong>Number of Months:</strong> ${d.number_of_months || 12} Months</div>
+          <div><strong>Total Payable:</strong> <span style="color:var(--green);font-weight:800">₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</span></div>
+          <div><strong>Next Payment Date:</strong> <span style="color:var(--gold);font-weight:700">${d.next_payment_date || d.due_date}</span></div>
+          <div><strong>Status:</strong> <span class="badge ${d.payment_status === 'PAID' ? 'badge-active' : 'badge-pending'}">${d.payment_status}</span></div>
+        </div>
+      `;
+    }
+
+    // Load month-by-month schedule
+    const schedData = await api(`/api/schedules/distribution/${d.id}`);
+    const schedules = schedData.schedules || [];
+    const tbody = document.getElementById('memScheduleTableBody');
+
+    if (!schedules || schedules.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">No schedule items generated.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = schedules.map(s => {
+      let badgeHtml = '<span class="badge badge-pending">Pending</span>';
+      if (s.status === 'WAITING_VERIFICATION') badgeHtml = '<span class="badge badge-pending">Waiting Verif</span>';
+      else if (s.status === 'PAID') badgeHtml = '<span class="badge badge-active">PAID</span>';
+      else if (s.status === 'REJECTED') badgeHtml = '<span class="badge badge-rejected">REJECTED</span>';
+
+      let actionHtml = '—';
+      if (s.status === 'PENDING' || s.status === 'REJECTED') {
+        actionHtml = `<button class="btn-primary" style="padding:2px 8px;font-size:11px" onclick="openScheduleProofModal(${s.id}, ${s.schedule_number}, ${s.amount_due}, '${s.due_date}')">📤 Upload Proof</button>`;
+      } else if (s.status === 'WAITING_VERIFICATION') {
+        actionHtml = '<span style="font-size:11px;color:var(--orange)">⏳ Verification Pending</span>';
+      } else if (s.status === 'PAID') {
+        actionHtml = `<span style="font-size:11px;color:var(--green)">Paid on ${s.paid_date || '—'}</span>`;
+      }
+
+      return `
+        <tr>
+          <td style="padding:8px"><strong>#${s.schedule_number}</strong></td>
+          <td style="padding:8px">${s.due_date}</td>
+          <td style="padding:8px;font-weight:700;color:var(--green)">₹${parseFloat(s.amount_due).toLocaleString('en-IN')}</td>
+          <td style="padding:8px">${badgeHtml}</td>
+          <td style="padding:8px">${actionHtml}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (e) { console.warn('Error loading schedule:', e.message); }
+}
+
+async function loadMemberNoticeBoard() {
+  try {
+    const data = await api('/api/notices');
+    const notices = data.notices || [];
+    const container = document.getElementById('memNoticeContainer');
+    if (!container) return;
+
+    if (!notices || notices.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3)">No active notices at this time.</div>';
+      return;
+    }
+
+    container.innerHTML = notices.map(n => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <strong style="color:var(--gold);font-size:13px">${esc(n.title)}</strong>
+          <span class="badge ${n.status === 'PAID' ? 'badge-active' : 'badge-pending'}">${n.status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${esc(n.description)}</div>
+        ${n.amount_due ? `<div style="font-size:12px;font-weight:700;color:var(--green)">Amount Due: ₹${parseFloat(n.amount_due).toLocaleString('en-IN')} ${n.due_date ? `· Due Date: ${n.due_date}` : ''}</div>` : ''}
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Notice Date: ${n.notice_date || n.created_at?.substring(0,10)}</div>
+      </div>
+    `).join('');
+  } catch (e) { console.warn('Error loading notice board:', e.message); }
+}
+
+let cachedMemberListForUI = [];
+
+async function loadMemberListWithOnlineStatus() {
+  try {
+    const members = await api('/api/members');
+    cachedMemberListForUI = members || [];
+    renderMemberListUI(cachedMemberListForUI);
+  } catch (e) { console.warn('Error loading member list:', e.message); }
+}
+
+function renderMemberListUI(members) {
+  const container = document.getElementById('memListContainer');
+  if (!container) return;
+
+  if (!members || members.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3)">No registered members found.</div>';
+    return;
+  }
+
+  container.innerHTML = members.map(m => {
+    const isOnline = Boolean(m.is_online);
+    const onlineBadge = isOnline
+      ? '<span style="color:#10b981;font-weight:700;font-size:11px">● Online</span>'
+      : '<span style="color:var(--text3);font-size:11px">○ Offline</span>';
+    const monthStatus = m.payment_status === 'APPROVED' || m.payment_status === 'PAID'
+      ? '<span class="badge badge-active">Paid</span>'
+      : '<span class="badge badge-pending">Pending</span>';
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:700;font-size:13px">${esc(m.name)} <span style="font-size:11px;color:var(--text3)">(${m.member_id})</span></div>
+          <div style="font-size:11px;color:var(--text3)">Status: ${m.status || 'ACTIVE'} · ${onlineBadge}</div>
+        </div>
+        <div>${monthStatus}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateOnlineBadgeInUI(member_id, is_online) {
+  const m = cachedMemberListForUI.find(x => String(x.id) === String(member_id));
+  if (m) {
+    m.is_online = is_online;
+    renderMemberListUI(cachedMemberListForUI);
+  }
+}
+
+// Proof Upload for Schedule Item Modal Handlers
+let selectedScheduleProofBase64 = null;
+
+function openScheduleProofModal(schedId, schedNum, amount, due) {
+  document.getElementById('spSchedId').value = schedId;
+  document.getElementById('spSchedTitle').textContent = `#${schedNum} — Due Amount: ₹${parseFloat(amount).toLocaleString('en-IN')} (Due: ${due})`;
+  document.getElementById('spMemberCode').textContent = currentUser ? currentUser.member_id : '—';
+  document.getElementById('spTxRef').value = '';
+  document.getElementById('spFile').value = '';
+  document.getElementById('spPreview').style.display = 'none';
+  selectedScheduleProofBase64 = null;
+  document.getElementById('scheduleProofModal').classList.remove('hidden');
+}
+
+function previewScheduleProof(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedScheduleProofBase64 = e.target.result;
+    const img = document.getElementById('spPreview');
+    img.src = selectedScheduleProofBase64;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitScheduleProof() {
+  const schedId = document.getElementById('spSchedId').value;
+  const transaction_reference = document.getElementById('spTxRef').value.trim();
+
+  if (!transaction_reference) {
+    showToast('Transaction / Reference ID is required.', 'error');
+    return;
+  }
+
+  try {
+    await api(`/api/schedules/${schedId}/proof`, {
+      method: 'POST',
+      body: JSON.stringify({
+        member_id: currentUser.id,
+        transaction_reference,
+        image_data: selectedScheduleProofBase64
+      })
+    });
+    showToast('Payment proof submitted successfully!', 'success');
+    document.getElementById('scheduleProofModal').classList.add('hidden');
+    loadMemberFundCardAndSchedule();
+    loadMemberNoticeBoard();
+  } catch (e) { showToast(e.message, 'error'); }
 }
 
 // ============================================================
@@ -2172,7 +2938,7 @@ function renderAuction() {
   }
 
   const highestBid = parseFloat(auction.current_highest_bid || auction.starting_amount || 0);
-  const increment = parseFloat(auction.bid_increment || 500);
+  const increment = parseFloat(auction.bid_increment || 100);
   const nextBid = auction.current_highest_bid ? highestBid + increment : highestBid;
 
   const chatSection = `
@@ -2203,16 +2969,22 @@ function renderAuction() {
     container.innerHTML = `
       <div class="auction-header">
         <img src="${appSettings.logo_path || '/assets/logo.png'}" onerror="this.style.display='none'" alt="Logo">
-        <div>
+        <div style="flex:1">
           <div class="a-title">${escHtml(auction.title)}</div>
-          <div class="a-sub"><span class="badge badge-${statusMap[auction.status]}">${statusLabel[auction.status]}</span></div>
+          <div class="a-sub" style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            ${auction.status === 'LIVE'
+              ? '<span class="badge-live-pulse">LIVE</span>'
+              : `<span class="badge badge-${statusMap[auction.status]}">${statusLabel[auction.status]}</span>`
+            }
+            <span style="font-size:11px;color:var(--text3)">Increment: <strong style="color:var(--gold)">₹${increment.toLocaleString('en-IN')}</strong></span>
+          </div>
         </div>
       </div>
       <div class="auction-body">
         <!-- Timer -->
         <div class="timer-card">
           <div class="timer-status">
-            <span class="badge badge-${statusMap[auction.status]}">${statusLabel[auction.status]}</span>
+            ${auction.status === 'PAUSED' ? `<span class="badge badge-${statusMap[auction.status]}">⏸ ${statusLabel[auction.status]}</span>` : ''}
           </div>
           <div class="timer-display" id="auctionTimer">00:00</div>
           <div class="timer-label" data-i18n="timeRemaining">TIME REMAINING</div>
@@ -2227,12 +2999,26 @@ function renderAuction() {
             </div>
             <div class="bid-increment-info">
               ${t('increment')}<strong>₹${increment.toLocaleString('en-IN')}</strong>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Next bid: <span style="color:var(--gold);font-weight:700">₹${nextBid.toLocaleString('en-IN')}</span></div>
             </div>
           </div>
           <button class="bid-btn" id="bidBtn" onclick="placeBid(${nextBid})" ${auction.status !== 'LIVE' ? 'disabled' : ''}>
             ⚡ ${t('placeBid')} — ₹${nextBid.toLocaleString('en-IN')}
           </button>
           ${auction.status === 'PAUSED' ? `<div style="text-align:center;color:var(--orange);margin-top:10px;font-size:13px">⏸ ${t('paused')}</div>` : ''}
+        </div>
+        <!-- Live Activity Feed -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title" style="display:flex;align-items:center;gap:8px">
+            📊 Live Activity
+            ${auction.status === 'LIVE' ? '<span class="badge-live-pulse" style="font-size:10px;padding:2px 7px">LIVE</span>' : ''}
+          </div>
+          <div class="activity-feed" id="liveBidFeed">
+            <div class="empty-state" style="padding:16px">
+              <div class="e-icon" style="font-size:28px">⚡</div>
+              <h3 style="font-size:13px">Waiting for first bid...</h3>
+            </div>
+          </div>
         </div>
         <!-- Chat -->
         ${chatSection}
@@ -2244,6 +3030,11 @@ function renderAuction() {
     startAuctionTimer(auction);
     // Load chat
     loadChatHistory(auction.id);
+    // Populate feed from bid history
+    loadBidHistory(auction.id).then(() => {
+      const bids = (window._lastBids || []).slice(0, 10);
+      bids.forEach(b => addBidToFeed({ amount: b.amount, name: b.member_name, code: b.member_code }));
+    });
   } else {
     // SCHEDULED / WAITING
     container.innerHTML = `
@@ -2374,15 +3165,29 @@ function updateTimerDisplay() {
 async function placeBid(amount) {
   if (!currentAuction) return;
   const btn = document.getElementById('bidBtn');
-  if (btn) btn.disabled = true;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Placing...'; }
   try {
-    await api(`/api/auction/${currentAuction.id}/bid`, { method: 'POST', body: JSON.stringify({ amount }) });
-    showToast(t('bidPlaced'), 'success');
+    // Use the concurrency-safe /amount endpoint (₹100 rule + optimistic locking)
+    await api(`/api/auction/${currentAuction.id}/amount`, {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    });
     if (soundEnabled) playBidSound();
+    showToast(`✅ Bid of ₹${amount.toLocaleString('en-IN')} placed!`, 'success');
   } catch (e) {
-    showToast(e.message || t('bidFailed'), 'error');
+    if (e.message && e.message.includes('409')) {
+      showToast('⚠️ Amount was just updated by someone else. Refreshing...', 'warning');
+      setTimeout(() => loadAuction(), 800);
+    } else {
+      showToast(e.message || t('bidFailed'), 'error');
+    }
   } finally {
     if (btn) btn.disabled = false;
+    // Re-render bid button after attempt
+    if (currentAuction) {
+      const nextBid = parseFloat(currentAuction.current_highest_bid || currentAuction.starting_amount) + parseFloat(currentAuction.bid_increment || 100);
+      if (btn) btn.innerHTML = `⚡ ${t('placeBid')} — ₹${nextBid.toLocaleString('en-IN')}`;
+    }
   }
 }
 
@@ -2394,6 +3199,7 @@ async function loadBidHistory(auctionId) {
 }
 
 function renderBidHistory(bids) {
+  window._lastBids = bids; // Cache for feed population
   const el = document.getElementById('bidHistoryList');
   if (!el) return;
   if (!bids.length) { el.innerHTML = `<div class="empty-state"><div class="e-icon">📊</div><h3>${t('noData')}</h3></div>`; return; }
@@ -2409,6 +3215,94 @@ function renderBidHistory(bids) {
       </div>
     </div>
   `).join('');
+}
+
+// Helper — update all bid-related UI elements atomically
+function updateAuctionBidUI(newBid, bidderName, bidderCode) {
+  if (!currentAuction) return;
+  const bid = parseFloat(newBid);
+  const increment = parseFloat(currentAuction.bid_increment || 100);
+  const nextBid = bid + increment;
+
+  // Store in state
+  currentAuction.current_highest_bid = bid;
+  currentAuction.highest_bidder_name = bidderName;
+  currentAuction.highest_bidder_code = bidderCode;
+
+  // Update amount display with flash animation
+  const bidDisplay = document.getElementById('currentBidDisplay');
+  const bidderEl = document.getElementById('currentBidder');
+  if (bidDisplay) {
+    bidDisplay.textContent = `₹${bid.toLocaleString('en-IN')}`;
+    bidDisplay.style.transition = 'transform 0.2s, color 0.3s';
+    bidDisplay.style.transform = 'scale(1.12)';
+    bidDisplay.style.color = 'var(--green)';
+    setTimeout(() => {
+      if (bidDisplay) { bidDisplay.style.transform = 'scale(1)'; bidDisplay.style.color = 'var(--gold)'; }
+    }, 500);
+  }
+  if (bidderEl) bidderEl.textContent = bidderName ? `${bidderName}${bidderCode ? ' ('+bidderCode+')' : ''}` : '—';
+
+  // Update bid button
+  const bidBtn = document.getElementById('bidBtn');
+  if (bidBtn && !bidBtn.disabled) {
+    bidBtn.onclick = () => placeBid(nextBid);
+    bidBtn.innerHTML = `⚡ ${t('placeBid')} — ₹${nextBid.toLocaleString('en-IN')}`;
+  }
+
+  // Update dashboard card
+  updateDashboardAuctionCard(currentAuction);
+}
+
+// Helper — prepend a highlighted feed entry to the live activity feed
+function addBidToFeed(entry) {
+  const feedEl = document.getElementById('liveBidFeed');
+  if (!feedEl) return; // Feed section only exists in LIVE view
+
+  const initial = (entry.name || '?').charAt(0).toUpperCase();
+  const avatarInner = entry.photo
+    ? `<img src="${entry.photo}" alt="" onerror="this.parentElement.textContent='${initial}'">`
+    : initial;
+
+  const item = document.createElement('div');
+  item.className = 'feed-item latest';
+  item.innerHTML = `
+    <div class="fi-left">
+      <div class="feed-avatar">${avatarInner}</div>
+      <div>
+        <div class="fi-name">${esc(entry.name || 'Member')}</div>
+        <div class="fi-id">${entry.code ? 'ID: ' + entry.code : ''}</div>
+      </div>
+    </div>
+    <div class="fi-amount">₹${parseFloat(entry.amount).toLocaleString('en-IN')}</div>
+  `;
+
+  // Prepend (newest first)
+  feedEl.insertBefore(item, feedEl.firstChild);
+
+  // Remove 'latest' highlight after animation
+  setTimeout(() => item.classList.remove('latest'), 700);
+
+  // Keep max 20 items in feed
+  while (feedEl.children.length > 20) feedEl.removeChild(feedEl.lastChild);
+}
+
+// ============================================================
+// Notification Polling (every 60 seconds)
+// ============================================================
+let notifPollInterval = null;
+function startNotificationPolling() {
+  if (notifPollInterval) clearInterval(notifPollInterval);
+  notifPollInterval = setInterval(() => {
+    // Silent refresh of badge only
+    api('/api/notifications/unread-count').then(d => {
+      const badge = document.getElementById('notifBadge');
+      if (badge) {
+        badge.textContent = d.count || 0;
+        badge.classList.toggle('hidden', !d.count);
+      }
+    }).catch(() => {});
+  }, 60000);
 }
 
 // ============================================================
@@ -2576,25 +3470,28 @@ function initSocket() {
     if (statusEl) { statusEl.textContent = 'Disconnected'; statusEl.style.color = 'var(--red)'; }
   });
 
-  // Bid update
+  // Bid update (from /bid endpoint)
   socket.on('auction:new-bid', (data) => {
-    const bidDisplay = document.getElementById('currentBidDisplay');
-    const bidder = document.getElementById('currentBidder');
-    if (bidDisplay) bidDisplay.textContent = `₹${parseFloat(data.highest_bid).toLocaleString('en-IN')}`;
-    if (bidder) bidder.textContent = `${data.highest_bidder} (${data.highest_bidder_code})`;
-    // Update bid button
-    if (currentAuction) {
-      currentAuction.current_highest_bid = data.highest_bid;
-      currentAuction.highest_bidder_name = data.highest_bidder;
-      currentAuction.highest_bidder_code = data.highest_bidder_code;
-      const nextBid = parseFloat(data.highest_bid) + parseFloat(currentAuction.bid_increment);
-      const bidBtn = document.getElementById('bidBtn');
-      if (bidBtn) { bidBtn.onclick = () => placeBid(nextBid); bidBtn.innerHTML = `⚡ ${t('placeBid')} — ₹${nextBid.toLocaleString('en-IN')}`; }
-    }
-    // Refresh bid history
+    updateAuctionBidUI(data.highest_bid || data.amount, data.highest_bidder || data.member_name, data.highest_bidder_code || data.member_code);
+    addBidToFeed({ amount: data.amount || data.highest_bid, name: data.member_name || data.highest_bidder, code: data.member_code || data.highest_bidder_code, photo: data.profile_photo });
     if (currentAuction?.id) loadBidHistory(currentAuction.id);
     if (soundEnabled) playBidSound();
-    showToast(`💰 ${data.member_name} bid ₹${parseFloat(data.amount).toLocaleString('en-IN')}`, 'info', 3000);
+    showToast(`💰 ${data.member_name || data.highest_bidder} bid ₹${parseFloat(data.amount || data.highest_bid).toLocaleString('en-IN')}`, 'info', 3000);
+  });
+
+  // Bid update (from /amount endpoint — concurrency-safe)
+  socket.on('auction:bid-update', (data) => {
+    updateAuctionBidUI(data.amount, data.highest_bidder_name, data.highest_bidder_code);
+    addBidToFeed({ amount: data.amount, name: data.highest_bidder_name, code: data.highest_bidder_code, photo: data.profile_photo });
+    if (soundEnabled) playBidSound();
+    showToast(`💰 ${data.highest_bidder_name || 'Member'} — ₹${parseFloat(data.amount).toLocaleString('en-IN')}`, 'info', 3000);
+  });
+
+  // bid-placed is an alias used by the auction room
+  socket.on('bid-placed', (data) => {
+    updateAuctionBidUI(data.amount, data.highest_bidder_name, data.highest_bidder_code);
+    addBidToFeed({ amount: data.amount, name: data.highest_bidder_name, code: data.highest_bidder_code, photo: data.profile_photo });
+    if (soundEnabled) playBidSound();
   });
 
   // Timer tick from server
@@ -2733,71 +3630,119 @@ function setupGroupSocketListeners() {
       leaveCurrentChatRoomView();
     }
   });
+
+  // Real-time room list refresh — when admin approves a room, all members see it immediately
+  socket.on('group:list-updated', () => {
+    // Only refresh if user is on the chat-rooms page
+    const chatPage = document.getElementById('chatRoomsPage');
+    if (chatPage && chatPage.classList.contains('active')) {
+      loadChatGroups();
+    }
+  });
+
+  socket.on('group:request-approved', (data) => {
+    if (data.group) {
+      showToast(`✅ Chat room "${data.group.group_name}" has been approved and is now live!`, 'success');
+      loadChatGroups();
+    }
+  });
 }
 
-// Fetch all chat groups
+// Fetch all chat groups — with proper LOADING / SUCCESS / EMPTY / ERROR / RETRY states
 async function loadChatGroups() {
   const container = document.getElementById('chatGroupsGrid');
   const reqContainer = document.getElementById('userGroupRequestsContainer');
+
+  // LOADING STATE — with timeout protection
+  container.innerHTML = `<div class="loading-state" style="padding:30px">
+    <div class="big-spinner"></div>
+    <span style="color:var(--text3);font-size:13px">Loading chat rooms...</span>
+  </div>`;
+
+  // Timeout guard — never allow infinite spinner (max 10s)
+  const timeoutId = setTimeout(() => {
+    if (container.querySelector('.big-spinner')) {
+      container.innerHTML = `<div class="empty-state">
+        <div class="e-icon">⏱️</div>
+        <h3 style="color:var(--text2)">Loading took too long</h3>
+        <p style="font-size:13px">Please check your connection.</p>
+        <button class="retry-btn" onclick="loadChatGroups()">🔄 Retry</button>
+      </div>`;
+    }
+  }, 10000);
+
   try {
     const data = await api('/api/chat-groups');
+    clearTimeout(timeoutId);
 
-    // Render user pending requests
+    // Render pending requests
     if (data.pending_requests && data.pending_requests.length > 0) {
       reqContainer.innerHTML = `
-        <div style="margin-bottom:16px;padding:12px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:12px">
-          <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px">⏳ Your Pending Group Requests</div>
+        <div style="margin-bottom:14px;padding:12px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:12px">
+          <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:6px">⏳ Your Pending Group Requests</div>
           ${data.pending_requests.map(r => `
-            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:4px">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:4px;padding:4px 0">
               <span><strong>${esc(r.group_name)}</strong></span>
-              <span class="badge badge-${r.status.toLowerCase()}">${r.status === 'PENDING' ? 'Pending Admin Approval' : r.status}</span>
+              <span class="badge badge-${r.status === 'PENDING' ? 'pending' : r.status === 'APPROVED' ? 'active' : 'rejected'}">${r.status === 'PENDING' ? '⏳ Awaiting Approval' : r.status}</span>
             </div>
           `).join('')}
-        </div>
-      `;
+        </div>`;
     } else {
       reqContainer.innerHTML = '';
     }
 
-    if (!data.groups || data.groups.length === 0) {
-      container.innerHTML = `
-        <div class="card" style="text-align:center;padding:30px">
-          <div style="font-size:36px;margin-bottom:10px">💬</div>
-          <h3 style="color:var(--gold);margin-bottom:6px">No Active Chat Rooms</h3>
-          <p style="color:var(--text3);font-size:13px">Click "+ Create Group" above to request a new chat room!</p>
-        </div>
-      `;
+    const groups = data.groups || data.rooms || [];
+
+    // EMPTY STATE
+    if (groups.length === 0) {
+      container.innerHTML = `<div class="card" style="text-align:center;padding:36px">
+        <div style="font-size:44px;margin-bottom:12px">💬</div>
+        <h3 style="color:var(--gold);margin-bottom:6px;font-size:16px">No Active Chat Rooms</h3>
+        <p style="color:var(--text3);font-size:13px;margin-bottom:16px">No approved rooms available yet.<br>Request a new room or wait for Admin approval.</p>
+        <button class="btn-secondary" style="padding:8px 20px;font-size:13px" onclick="showCreateGroupModal()">+ Request a Chat Room</button>
+      </div>`;
       return;
     }
 
-    container.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:14px">
-        ${data.groups.map(g => {
-          return `
-            <div class="card" style="padding:16px;display:flex;flex-direction:column;justify-content:space-between">
-              <div>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                  <h3 style="font-size:16px;font-weight:800;color:var(--text)">${esc(g.group_name)}</h3>
-                  <span class="badge badge-active">● Active Room</span>
-                </div>
-                <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Group Admin: <strong>${esc(g.owner_name || 'Admin')}</strong> (${g.owner_member_id || ''})</div>
-                <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px">👥 ${g.total_member_count} Members in Room</div>
-                <div style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:12px">🎙️ ${g.speaker_count} / 12 Speakers Active</div>
-              </div>
-              <div>
-                ${g.is_member ? `
-                  <button class="btn-primary" style="width:100%;padding:10px" onclick="openChatRoom(${g.id})">💬 Enter Chat Room</button>
-                ` : `
-                  <button class="btn-primary" style="width:100%;padding:10px" onclick="joinChatGroup(${g.id})">👉 Join Chat Room</button>
-                `}
-              </div>
+    // SUCCESS STATE
+    container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:14px">
+      ${groups.map(g => {
+        const statusLabel = g.status === 'ACTIVE' ? '🟢 Active' : g.status === 'APPROVED' ? '✅ Approved' : g.status === 'FULL' ? '🔴 Full' : g.status;
+        const statusColor = g.status === 'ACTIVE' ? 'var(--green)' : g.status === 'APPROVED' ? 'var(--blue)' : 'var(--orange)';
+        const memberCount = parseInt(g.total_member_count || 0);
+        const speakerCount = parseInt(g.speaker_count || 0);
+        return `<div class="card" style="padding:16px;display:flex;flex-direction:column;justify-content:space-between;gap:12px">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <h3 style="font-size:16px;font-weight:800;color:var(--text)">${esc(g.group_name)}</h3>
+              <span style="font-size:11px;font-weight:700;color:${statusColor};background:rgba(0,0,0,0.2);padding:3px 8px;border-radius:8px;border:1px solid ${statusColor}33">${statusLabel}</span>
             </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+            <div style="font-size:12px;color:var(--text3);margin-bottom:6px">👑 Admin: <strong style="color:var(--text2)">${esc(g.owner_name || 'Admin')}</strong>${g.owner_member_id ? ` (${g.owner_member_id})` : ''}</div>
+            <div style="display:flex;gap:12px;font-size:12px;color:var(--text2)">
+              <span>👥 <strong>${memberCount}</strong> Members</span>
+              <span>🎙️ <strong>${speakerCount}</strong>/12 Speakers</span>
+            </div>
+          </div>
+          <div>
+            ${g.is_member
+              ? `<button class="btn-primary" style="width:100%;padding:10px;font-size:14px" onclick="openChatRoom(${g.id})">💬 Enter Chat Room</button>`
+              : `<button class="btn-primary" style="width:100%;padding:10px;font-size:14px" onclick="joinChatGroup(${g.id})">👉 Join Chat Room</button>`
+            }
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
   } catch(e) {
-    container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">${e.message}</div>`;
+    clearTimeout(timeoutId);
+    console.error('loadChatGroups error:', e);
+    // ERROR STATE — never show raw error to user
+    container.innerHTML = `<div class="empty-state">
+      <div class="e-icon">⚠️</div>
+      <h3 style="color:var(--text2)">Unable to load chat rooms</h3>
+      <p style="font-size:13px;color:var(--text3)">A connection error occurred. Please try again.</p>
+      <button class="retry-btn" onclick="loadChatGroups()">🔄 Retry</button>
+    </div>`;
   }
 }
 
@@ -3187,6 +4132,185 @@ async function doSaveProfile() {
     updateHeaderUI();
   } catch(e) {
     if (alertEl) alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
+  }
+}
+
+// ============================================================
+// Profile Photo Upload / Remove
+// ============================================================
+async function uploadProfilePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Image too large. Max 5MB.', 'error'); return; }
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) { showToast('Only JPG, PNG, WebP images allowed.', 'error'); return; }
+
+  showToast('Uploading photo...', 'info');
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  try {
+    const response = await fetch(`${BASE}/api/member-auth/photo`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` },
+      body: formData
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || result.error || 'Upload failed');
+
+    currentUser = { ...currentUser, profile_photo: result.profile_photo };
+    updateHeaderUI();
+    showToast('✅ Profile photo updated!', 'success');
+    // Reset file input
+    input.value = '';
+  } catch (e) {
+    showToast(e.message || 'Photo upload failed', 'error');
+    input.value = '';
+  }
+}
+
+async function removeProfilePhoto() {
+  if (!currentUser?.profile_photo) return;
+  try {
+    await api('/api/member-auth/photo', { method: 'DELETE' });
+    currentUser = { ...currentUser, profile_photo: null };
+    updateHeaderUI();
+    showToast('Profile photo removed.', 'info');
+  } catch(e) {
+    showToast(e.message || 'Failed to remove photo', 'error');
+  }
+}
+
+// ============================================================
+// Profile Page — Tabs + Data Loading
+// ============================================================
+function showProfileTab(tab) {
+  ['overview', 'payments', 'monthly', 'activity'].forEach(t => {
+    const btn = document.getElementById(`ptab-${t}`);
+    const panel = document.getElementById(`ptab-panel-${t}`);
+    if (btn) btn.classList.remove('active');
+    if (panel) panel.classList.remove('active');
+  });
+  document.getElementById(`ptab-${tab}`)?.classList.add('active');
+  document.getElementById(`ptab-panel-${tab}`)?.classList.add('active');
+
+  // Lazy-load data on first tab switch
+  if (tab === 'payments') loadProfilePayments();
+  if (tab === 'monthly') loadProfileMonthly();
+  if (tab === 'activity') loadProfileActivity();
+}
+
+async function loadProfilePage() {
+  // Refresh profile data from server on every settings open
+  try {
+    const profile = await api('/api/member-auth/profile');
+    currentUser = { ...currentUser, ...profile };
+    updateHeaderUI();
+    updateDashboard(profile);
+  } catch (e) { console.warn('Profile refresh warning:', e.message); }
+  // Reset to overview tab
+  showProfileTab('overview');
+}
+
+async function loadProfilePayments() {
+  const el = document.getElementById('profilePaymentsList');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-state" style="padding:16px"><div class="big-spinner"></div></div>';
+  try {
+    const data = await api('/api/payment-verification/proofs/' + currentUser.id);
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="e-icon">📭</div><h3>No payment records</h3></div>';
+      return;
+    }
+    const badgeMap = { PENDING: 'pending', APPROVED: 'active', REJECTED: 'rejected' };
+    el.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+      <table class="monthly-table">
+        <thead><tr><th>Month</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          ${data.map(p => `<tr>
+            <td style="font-weight:600">${p.payment_month || formatDate(p.payment_date)}</td>
+            <td style="color:var(--gold);font-weight:700">₹${parseFloat(p.amount).toLocaleString('en-IN')}</td>
+            <td><span class="badge badge-${badgeMap[p.status] || 'pending'}">${p.status}</span></td>
+            <td style="font-size:11px;color:var(--text3)">${formatDate(p.created_at)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="e-icon">⚠️</div><h3>Failed to load</h3><button class="retry-btn" onclick="loadProfilePayments()">🔄 Retry</button></div>`;
+  }
+}
+
+async function loadProfileMonthly() {
+  const el = document.getElementById('profileMonthlyList');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-state" style="padding:16px"><div class="big-spinner"></div></div>';
+  try {
+    // Fetch the payment history — group by month
+    const data = await api('/api/payment-verification/proofs/' + currentUser.id);
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="e-icon">📅</div><h3>No monthly records</h3></div>';
+      return;
+    }
+
+    // Build monthly summary
+    const byMonth = {};
+    data.forEach(p => {
+      const m = p.payment_month || (p.payment_date ? p.payment_date.substring(0, 7) : 'Unknown');
+      if (!byMonth[m]) byMonth[m] = { month: m, paid: 0, pending: 0, rejected: 0, total: 0 };
+      if (p.status === 'APPROVED') byMonth[m].paid += parseFloat(p.amount || 0);
+      else if (p.status === 'PENDING') byMonth[m].pending += parseFloat(p.amount || 0);
+      else if (p.status === 'REJECTED') byMonth[m].rejected += parseFloat(p.amount || 0);
+      byMonth[m].total += parseFloat(p.amount || 0);
+    });
+
+    const months = Object.values(byMonth).sort((a, b) => b.month.localeCompare(a.month));
+
+    el.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+      <table class="monthly-table">
+        <thead><tr><th>Month</th><th>Paid</th><th>Pending</th><th>Status</th></tr></thead>
+        <tbody>
+          ${months.map(m => `<tr>
+            <td style="font-weight:700">${m.month}</td>
+            <td style="color:var(--green);font-weight:700">${m.paid > 0 ? '₹'+m.paid.toLocaleString('en-IN') : '—'}</td>
+            <td style="color:var(--orange)">${m.pending > 0 ? '₹'+m.pending.toLocaleString('en-IN') : '—'}</td>
+            <td>${m.paid > 0 ? '<span class="badge badge-active">✅ Paid</span>' : m.pending > 0 ? '<span class="badge badge-pending">⏳ Pending</span>' : '<span class="badge badge-rejected">❌</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="e-icon">⚠️</div><h3>Failed to load</h3><button class="retry-btn" onclick="loadProfileMonthly()">🔄 Retry</button></div>`;
+  }
+}
+
+async function loadProfileActivity() {
+  const el = document.getElementById('profileActivityList');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-state" style="padding:16px"><div class="big-spinner"></div></div>';
+  try {
+    // Fetch ended auctions this member participated in
+    const data = await api('/api/auction?status=ENDED&limit=10');
+    const auctions = data.auctions || data.data || data || [];
+    if (!auctions.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="e-icon">⚡</div><h3>No auction history</h3></div>';
+      return;
+    }
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">
+      ${auctions.slice(0, 10).map(a => {
+        const isWinner = a.winner_id === currentUser.id || a.winner_code === currentUser.member_id;
+        return `<div style="padding:10px 12px;background:var(--dark3);border-radius:10px;border:1px solid ${isWinner ? 'var(--gold)' : 'var(--border)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(a.title)}</div>
+            <span class="badge badge-${a.status === 'ENDED' ? 'active' : 'pending'}">${a.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">${formatDate(a.ended_at || a.auction_date)} ${isWinner ? '🏆 <span style="color:var(--gold);font-weight:700">Winner!</span>' : ''}</div>
+          ${a.final_amount ? `<div style="font-size:13px;font-weight:700;color:var(--gold);margin-top:2px">Final: ₹${parseFloat(a.final_amount).toLocaleString('en-IN')}</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="e-icon">⚡</div><h3>No auction history</h3></div>';
   }
 }
 
