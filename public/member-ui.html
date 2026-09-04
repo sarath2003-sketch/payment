@@ -2186,7 +2186,13 @@ async function doLogin() {
     localStorage.setItem('memberToken', authToken);
     currentUser = data;
     await initApp();
-  } catch (e) { showAuthAlert(e.message || t('loginFailed')); }
+  } catch (e) {
+    let msg = e.message;
+    if ((msg === 'Failed to fetch' || msg?.includes('NetworkError')) && window.location.protocol === 'file:') {
+      msg = '⚠️ Cannot connect to backend server from a local file. Please open via your live Railway URL or start the server.';
+    }
+    showAuthAlert(msg || t('loginFailed'));
+  }
   finally { btn.disabled = false; btn.innerHTML = `<span data-i18n="loginBtn">${t('loginBtn')}</span>`; }
 }
 let pendingRegData = null;
@@ -2198,19 +2204,20 @@ async function doRegister() {
   const phone = document.getElementById('regPhone').value.trim();
   const upi_id = document.getElementById('regUpi').value.trim();
   const password = document.getElementById('regPassword').value;
-  const confirmPassword = document.getElementById('regConfirm').value;
+  const confirm = document.getElementById('regConfirm').value;
 
-  if (!name || !phone || !password) { showAuthAlert('Name, phone and password are required'); return; }
-  if (password !== confirmPassword) { showAuthAlert('Passwords do not match'); return; }
+  if (!name || !phone || !password) { showAuthAlert('Name, Phone and Password are required'); return; }
+  if (password.length < 6) { showAuthAlert('Password must be at least 6 characters'); return; }
+  if (password !== confirm) { showAuthAlert('Passwords do not match'); return; }
+  if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) { showAuthAlert('Enter a valid 10-digit phone number'); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div>';
   try {
-    const data = await api('/api/member-auth/register', { 
-      method: 'POST', 
-      body: JSON.stringify({ name, email, phone, upi_id, password, confirmPassword }) 
+    const data = await api('/api/member-auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, phone, upi_id, password })
     });
-
     pendingRegData = data;
     document.getElementById('resMemberId').textContent = data.member_id || '101';
     document.getElementById('resName').textContent = data.name || name;
@@ -2221,7 +2228,11 @@ async function doRegister() {
     document.getElementById('regSuccessModal').classList.remove('hidden');
     showToast(t('regSuccess'), 'success');
   } catch (e) { 
-    showAuthAlert(e.message || t('regFailed')); 
+    let msg = e.message;
+    if ((msg === 'Failed to fetch' || msg?.includes('NetworkError')) && window.location.protocol === 'file:') {
+      msg = '⚠️ Cannot connect to backend server from a local file. Please open via your live Railway URL or start the server.';
+    }
+    showAuthAlert(msg || t('regFailed')); 
   } finally { 
     btn.disabled = false; 
     btn.innerHTML = `<span>${t('registerBtn')}</span>`; 

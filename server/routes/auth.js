@@ -15,10 +15,10 @@ router.post('/login', async (req, res) => {
     }
 
     // For development/demo: simple authentication against environment variables
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    const adminUsername = (process.env.ADMIN_USERNAME || 'admin').toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
 
-    if (username === adminUsername && password === adminPassword) {
+    if (username && username.trim().toLowerCase() === adminUsername && password === adminPassword) {
       const token = jwt.sign(
         { id: 1, username: username, type: 'admin' },
         process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',

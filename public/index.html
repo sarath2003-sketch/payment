@@ -1099,7 +1099,7 @@
     <div class="holo-layer reveal">
       <div class="auth-card">
         <div class="auth-logo">
-          <img id="authLogoImg" src="/assets/logo.png" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%23f5c842%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22>PF</text></svg>'" alt="Logo">
+          <img id="authLogoImg" src="assets/logo.svg" alt="Logo">
           <div class="org-name" id="authOrgName">PF Chit Fund Club</div>
           <div class="org-name-ta" id="authOrgNameTa">புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்</div>
         </div>
@@ -1304,7 +1304,7 @@
 <div id="mainApp" class="hidden">
   <!-- Header -->
   <header class="app-header">
-    <img class="header-logo" id="headerLogo" src="/assets/logo.png" onerror="this.style.display='none'" alt="Logo">
+    <img class="header-logo" id="headerLogo" src="assets/logo.svg" onerror="this.style.display='none'" alt="Logo">
     <div class="header-title">
       <div class="org-name" id="headerOrgName">PF Chit Fund Club</div>
       <div class="member-id" id="headerMemberId">Member ID: —</div>
@@ -1433,7 +1433,7 @@
         <div style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:20px" id="paymentInstructions">Scan the QR code to pay via UPI</div>
         <!-- QR Code -->
         <div class="qr-container" id="qrContainer">
-          <img id="qrCodeImg" src="/assets/qr.png" onerror="this.style.display='none'; if(!document.getElementById('qrFallbackMsg')){ const p=document.createElement('p'); p.id='qrFallbackMsg'; p.style='color:#333;font-size:13px;padding:10px'; p.innerHTML='QR Code Not Available.<br>Contact Admin to pay via UPI.'; this.parentElement.appendChild(p); }" alt="Payment QR">
+            <img id="qrCodeImg" src="assets/qr_1786253841385.png" onerror="this.style.display='none'; if(!document.getElementById('qrFallbackMsg')){ const p=document.createElement('p'); p.id='qrFallbackMsg'; p.style='color:#333;font-size:13px;padding:10px'; p.innerHTML='QR Code Not Available.<br>Contact Admin to pay via UPI.'; this.parentElement.appendChild(p); }" alt="Payment QR">
           <div class="qr-upi" id="paymentUpiDisplay">UPI ID: 9025893352@idfcfirst</div>
           <div style="font-size:11px;color:#666;margin-top:4px" id="paymentUpiNameDisplay">IDFC First Bank · Sarathkumar Pandiyaraja</div>
         </div>
@@ -2186,7 +2186,13 @@ async function doLogin() {
     localStorage.setItem('memberToken', authToken);
     currentUser = data;
     await initApp();
-  } catch (e) { showAuthAlert(e.message || t('loginFailed')); }
+  } catch (e) {
+    let msg = e.message;
+    if ((msg === 'Failed to fetch' || msg?.includes('NetworkError')) && window.location.protocol === 'file:') {
+      msg = '⚠️ Cannot connect to backend server from a local file. Please open via your live Railway URL or start the server.';
+    }
+    showAuthAlert(msg || t('loginFailed'));
+  }
   finally { btn.disabled = false; btn.innerHTML = `<span data-i18n="loginBtn">${t('loginBtn')}</span>`; }
 }
 let pendingRegData = null;
@@ -2198,19 +2204,20 @@ async function doRegister() {
   const phone = document.getElementById('regPhone').value.trim();
   const upi_id = document.getElementById('regUpi').value.trim();
   const password = document.getElementById('regPassword').value;
-  const confirmPassword = document.getElementById('regConfirm').value;
+  const confirm = document.getElementById('regConfirm').value;
 
-  if (!name || !phone || !password) { showAuthAlert('Name, phone and password are required'); return; }
-  if (password !== confirmPassword) { showAuthAlert('Passwords do not match'); return; }
+  if (!name || !phone || !password) { showAuthAlert('Name, Phone and Password are required'); return; }
+  if (password.length < 6) { showAuthAlert('Password must be at least 6 characters'); return; }
+  if (password !== confirm) { showAuthAlert('Passwords do not match'); return; }
+  if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) { showAuthAlert('Enter a valid 10-digit phone number'); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div>';
   try {
-    const data = await api('/api/member-auth/register', { 
-      method: 'POST', 
-      body: JSON.stringify({ name, email, phone, upi_id, password, confirmPassword }) 
+    const data = await api('/api/member-auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, phone, upi_id, password })
     });
-
     pendingRegData = data;
     document.getElementById('resMemberId').textContent = data.member_id || '101';
     document.getElementById('resName').textContent = data.name || name;
@@ -2221,7 +2228,11 @@ async function doRegister() {
     document.getElementById('regSuccessModal').classList.remove('hidden');
     showToast(t('regSuccess'), 'success');
   } catch (e) { 
-    showAuthAlert(e.message || t('regFailed')); 
+    let msg = e.message;
+    if ((msg === 'Failed to fetch' || msg?.includes('NetworkError')) && window.location.protocol === 'file:') {
+      msg = '⚠️ Cannot connect to backend server from a local file. Please open via your live Railway URL or start the server.';
+    }
+    showAuthAlert(msg || t('regFailed')); 
   } finally { 
     btn.disabled = false; 
     btn.innerHTML = `<span>${t('registerBtn')}</span>`; 
@@ -2772,7 +2783,7 @@ async function loadSettings() {
 
     const qrImg = document.getElementById('qrCodeImg');
     if (qrImg) {
-      const qrSrc = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
+      const qrSrc = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : 'assets/qr_1786253841385.png');
       qrImg.src = qrSrc;
       qrImg.style.display = 'block';
     }
@@ -4374,7 +4385,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Apply saved language
   setLang(currentLang);
   // Load public settings first
-  await loadSettings();
+  if (window.location.protocol !== 'file:') await loadSettings();
   // Check if already logged in
   if (authToken) {
     try {
