@@ -434,6 +434,11 @@ router.put('/:id', async (req, res) => {
 
     await logAudit(req, 'EDIT_MEMBER', 'MEMBER', id, { old: existing, updated: updateRes.rows[0] });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('member:profile-updated', updateRes.rows[0]);
+    }
+
     res.json({ message: 'Member updated successfully', member: updateRes.rows[0] });
   } catch (err) {
     console.error('Error updating member:', err);
