@@ -1435,6 +1435,7 @@
         <span class="badge-count hidden" id="notifBadge">0</span>
       </button>
       <button class="icon-btn" onclick="showPage('settings')" title="Settings">⚙️</button>
+      <button class="icon-btn" onclick="doLogout()" title="Logout" style="font-size:15px" aria-label="Logout">🚪</button>
     </div>
   </header>
 
@@ -2250,6 +2251,14 @@ function showToast(msg, type = 'info', duration = 4000) {
 // API Helper (Auto-detect base URL for file:// and http://)
 // ============================================================
 const BASE = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:5000' : '';
+
+function resolveMediaUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return url;
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  return `${BASE}${cleanUrl}`;
+}
+
 async function api(endpoint, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
@@ -2268,10 +2277,11 @@ async function loadSettings() {
     appSettings = await api('/api/settings/public');
     // Update logo
     if (appSettings.logo_path) {
+      const logoUrl = resolveMediaUrl(appSettings.logo_path);
       const aLogo = document.getElementById('authLogoImg');
-      if (aLogo) aLogo.src = appSettings.logo_path;
+      if (aLogo) aLogo.src = logoUrl;
       const hLogo = document.getElementById('headerLogo');
-      if (hLogo) hLogo.src = appSettings.logo_path;
+      if (hLogo) hLogo.src = logoUrl;
     }
     // Update org name
     if (appSettings.org_name) {
@@ -2297,7 +2307,8 @@ async function loadSettings() {
     // QR
     const qrImg = document.getElementById('qrCodeImg');
     if (qrImg) {
-      const qrSrc = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
+      const rawQr = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
+      const qrSrc = resolveMediaUrl(rawQr);
       qrImg.src = qrSrc;
       qrImg.style.display = 'block';
       const fb = document.getElementById('qrFallbackMsg');
@@ -2507,6 +2518,15 @@ function initSocket() {
       socket.on('member:status-change', ({ member_id, is_online }) => {
         updateOnlineBadgeInUI(member_id, is_online);
       });
+      socket.on('member:profile-updated', (data) => {
+        if (currentUser && (data.member_id === currentUser.id || data.id === currentUser.id || data.member_id === currentUser.member_id)) {
+          currentUser = { ...currentUser, ...data };
+          updateHeaderUI();
+        }
+      });
+      socket.on('settings:updated', () => {
+        loadSettings();
+      });
     } catch (e) { console.warn('Socket init warning:', e.message); }
   }
 }
@@ -2551,10 +2571,21 @@ function updateHeaderUI() {
   // Update all avatar elements across the UI
   function setAvatar(avatarEl, photoImgEl) {
     if (!avatarEl) return;
-    if (currentUser.profile_photo) {
+    if (currentUser && currentUser.profile_photo) {
+      const pUrl = resolveMediaUrl(currentUser.profile_photo);
       avatarEl.style.display = 'none';
-      if (photoImgEl) { photoImgEl.src = currentUser.profile_photo; photoImgEl.style.display = 'block'; }
-      else { avatarEl.innerHTML = `<img src="${currentUser.profile_photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">`; avatarEl.style.display = ''; }
+      if (photoImgEl) {
+        photoImgEl.src = pUrl;
+        photoImgEl.style.display = 'block';
+        photoImgEl.onerror = function() {
+          this.style.display = 'none';
+          avatarEl.style.display = '';
+          avatarEl.innerHTML = initial;
+        };
+      } else {
+        avatarEl.innerHTML = `<img src="${pUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="" onerror="this.parentElement.innerHTML='${initial}'">`;
+        avatarEl.style.display = '';
+      }
     } else {
       if (photoImgEl) photoImgEl.style.display = 'none';
       avatarEl.style.display = '';
@@ -2565,10 +2596,14 @@ function updateHeaderUI() {
   setAvatar(document.getElementById('dashAvatar'), null);
   setAvatar(document.getElementById('settingsAvatar'), document.getElementById('settingsPhotoImg'));
 
-  document.getElementById('dashName').textContent = name;
-  document.getElementById('dashMemberId').textContent = `Member ID: ${mId}`;
-  document.getElementById('settingsName').textContent = name;
-  document.getElementById('settingsMemberId').textContent = `Member ID: ${mId}`;
+  const dName = document.getElementById('dashName');
+  if (dName) dName.textContent = name;
+  const dMid = document.getElementById('dashMemberId');
+  if (dMid) dMid.textContent = `Member ID: ${mId}`;
+  const sName = document.getElementById('settingsName');
+  if (sName) sName.textContent = name;
+  const sMid = document.getElementById('settingsMemberId');
+  if (sMid) sMid.textContent = `Member ID: ${mId}`;
 
   // Profile detail fields
   const emailEl = document.getElementById('profileEmail');
@@ -2680,15 +2715,21 @@ function renderProfileCompletion() {
 }
 
 function updateDashboard(profile) {
+  if (!profile) return;
   const balance = parseFloat(profile.balance || 0);
-  document.getElementById('dashBalance').textContent = `₹${balance.toLocaleString('en-IN')}`;
-  document.getElementById('dashTotalPaid').textContent = `₹${parseFloat(profile.total_paid || 0).toLocaleString('en-IN')}`;
-  document.getElementById('dashPending').textContent = profile.pending_count || 0;
+  const dashBalance = document.getElementById('dashBalance');
+  if (dashBalance) dashBalance.textContent = `₹${balance.toLocaleString('en-IN')}`;
+  const dashTotalPaid = document.getElementById('dashTotalPaid');
+  if (dashTotalPaid) dashTotalPaid.textContent = `₹${parseFloat(profile.total_paid || 0).toLocaleString('en-IN')}`;
+  const dashPending = document.getElementById('dashPending');
+  if (dashPending) dashPending.textContent = profile.pending_count || 0;
   const thisMonth = profile.current_month_payment_status;
   const el = document.getElementById('dashThisMonth');
-  if (thisMonth === 'APPROVED') { el.textContent = '✅ Paid'; el.style.color = 'var(--green)'; }
-  else if (thisMonth === 'PENDING') { el.textContent = '⏳ Pending'; el.style.color = 'var(--orange)'; }
-  else { el.textContent = '❌ Unpaid'; el.style.color = 'var(--red)'; }
+  if (el) {
+    if (thisMonth === 'APPROVED') { el.textContent = '✅ Paid'; el.style.color = 'var(--green)'; }
+    else if (thisMonth === 'PENDING') { el.textContent = '⏳ Pending'; el.style.color = 'var(--orange)'; }
+    else { el.textContent = '❌ Unpaid'; el.style.color = 'var(--red)'; }
+  }
 
   // Update profile section stats
   const ppEl = document.getElementById('profileTotalPaid');
@@ -3083,7 +3124,8 @@ async function loadSettings() {
 
     const qrImg = document.getElementById('qrCodeImg');
     if (qrImg) {
-      const qrSrc = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
+      const rawQr = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
+      const qrSrc = resolveMediaUrl(rawQr);
       qrImg.src = qrSrc;
       qrImg.style.display = 'block';
       const fb = document.getElementById('qrFallbackMsg');
@@ -4390,15 +4432,20 @@ async function uploadMemberPhoto(event) {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const res = await api('/api/member-auth/profile-photo', {
+        const res = await api('/api/member-auth/photo', {
           method: 'POST',
           body: JSON.stringify({ image_data: e.target.result })
         });
         showToast(res.message || 'Profile photo uploaded successfully!', 'success');
-        if (currentUser) currentUser.profile_photo = res.profile_photo;
+        if (currentUser) {
+          currentUser = { ...currentUser, profile_photo: res.profile_photo };
+          try { localStorage.setItem('memberUser', JSON.stringify(currentUser)); } catch(_) {}
+        }
         updateHeaderUI();
         const prev = document.getElementById('epPhotoPreview');
-        if (prev) prev.innerHTML = `<img src="${res.profile_photo}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid var(--gold)">`;
+        if (prev && res.profile_photo) {
+          prev.innerHTML = `<img src="${resolveMediaUrl(res.profile_photo)}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid var(--gold)">`;
+        }
       } catch(err) {
         if (alertEl) alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${err.message}</div>`;
       }
@@ -4416,7 +4463,7 @@ function showEditProfileModal() {
   document.getElementById('epUpi').value = target.upi_id || '';
   const prev = document.getElementById('epPhotoPreview');
   if (prev && target.profile_photo) {
-    prev.innerHTML = `<img src="${target.profile_photo}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid var(--gold)">`;
+    prev.innerHTML = `<img src="${resolveMediaUrl(target.profile_photo)}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid var(--gold)">`;
   } else if (prev) {
     prev.innerHTML = '';
   }
@@ -4445,6 +4492,7 @@ async function doSaveProfile() {
     } else {
       currentUser = { ...currentUser, name, email, upi_id: upi };
     }
+    try { localStorage.setItem('memberUser', JSON.stringify(currentUser)); } catch(_) {}
     updateHeaderUI();
     if (upi) {
       showToast('🎉 Profile updated! Profile is now 100% complete!', 'success', 5000);
@@ -4480,6 +4528,7 @@ async function uploadProfilePhoto(input) {
     if (!response.ok) throw new Error(result.message || result.error || 'Upload failed');
 
     currentUser = { ...currentUser, profile_photo: result.profile_photo };
+    try { localStorage.setItem('memberUser', JSON.stringify(currentUser)); } catch(_) {}
     updateHeaderUI();
     showToast('✅ Profile photo updated!', 'success');
     // Reset file input
@@ -4495,6 +4544,7 @@ async function removeProfilePhoto() {
   try {
     await api('/api/member-auth/photo', { method: 'DELETE' });
     currentUser = { ...currentUser, profile_photo: null };
+    try { localStorage.setItem('memberUser', JSON.stringify(currentUser)); } catch(_) {}
     updateHeaderUI();
     showToast('Profile photo removed.', 'info');
   } catch(e) {

@@ -67,6 +67,8 @@ router.put('/', authenticateToken, requireAdmin, async (req, res) => {
         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP
       `, [key, String(updates[key])]);
     }
+    const io = req.app.get('io');
+    if (io) io.emit('settings:updated', updates);
     res.json({ message: 'Settings updated successfully' });
   } catch (err) {
     console.error('Error updating settings:', err);
@@ -120,6 +122,9 @@ router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
       VALUES ('admin', $1, 'Admin', 'UPLOAD_PAYMENT_QR', 'settings', $2)
     `, [req.admin.id, `Uploaded new Payment QR Scanner image: ${qrUrl}`]);
 
+    const io = req.app.get('io');
+    if (io) io.emit('settings:updated', { qr_path: qrUrl, qr_version: version, qr_path_versioned: `${qrUrl}?v=${version}` });
+
     res.json({ message: 'QR Code uploaded successfully!', qr_path: qrUrl, qr_version: version, qr_path_versioned: `${qrUrl}?v=${version}` });
   } catch (err) {
     console.error('Error uploading QR code:', err);
@@ -158,6 +163,9 @@ router.post('/logo', authenticateToken, requireAdmin, async (req, res) => {
        ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
       [logoUrl]
     );
+
+    const io = req.app.get('io');
+    if (io) io.emit('settings:updated', { logo_path: logoUrl });
 
     res.json({ message: 'Logo uploaded successfully', logo_path: logoUrl });
   } catch (err) {

@@ -148,4 +148,138 @@ router.get(['/summary', '/'], async (req, res) => {
   }
 });
 
+/**
+ * PUBLIC REAL-TIME LIVE ACTIVITY & TRANSACTIONS FEED
+ * GET /api/public-dashboard/live-feed
+ * Shows:
+ * 1. Who paid amount (e.g., ₹500 for the month, Date, Time, Member Name, Member ID, Status: PAID)
+ * 2. Who took amount (Seed Fund Distributions/Loans, Date, Time, Member Name, Member ID, Status: DISTRIBUTED)
+ */
+router.get('/live-feed', async (req, res) => {
+  try {
+    // 1. Fetch recent approved payments (who paid)
+    const paymentsRes = await pool.query(`
+      SELECT 
+        p.id,
+        'PAYMENT' AS type,
+        m.id AS member_db_id,
+        COALESCE(m.member_id, CAST(m.id AS TEXT)) AS member_code,
+        m.name AS member_name,
+        m.profile_photo,
+        p.amount,
+        p.payment_month,
+        p.payment_date,
+        p.transaction_reference,
+        'PAID' AS status,
+        COALESCE(p.verified_at, p.created_at) AS sort_timestamp,
+        p.created_at
+      FROM payment_proofs p
+      JOIN members m ON p.member_id = m.id
+      WHERE p.status = 'APPROVED'
+      ORDER BY COALESCE(p.verified_at, p.created_at) DESC
+      LIMIT 60
+    `);
+
+    // 2. Fetch seed fund distributions (who received/took amount)
+    const distributionsRes = await pool.query(`
+      SELECT 
+        d.id,
+        'DISTRIBUTION' AS type,
+        m.id AS member_db_id,
+        COALESCE(m.member_id, CAST(m.id AS TEXT)) AS member_code,
+        m.name AS member_name,
+        m.profile_photo,
+        d.principal_amount AS amount,
+        NULL AS payment_month,
+        d.distribution_date AS payment_date,
+        NULL AS transaction_reference,
+        'DISTRIBUTED' AS status,
+        COALESCE(d.distribution_date, d.created_at) AS sort_timestamp,
+        d.created_at
+      FROM seed_fund_distributions d
+      JOIN members m ON d.member_id = m.id
+      ORDER BY d.created_at DESC
+      LIMIT 40
+    `);
+
+    // Merge and standardize entries
+    const items = [];
+
+    for (const row of paymentsRes.rows) {
+      const dt = new Date(row.sort_timestamp || row.created_at || Date.now());
+      const dateStr = dt.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+      const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      let monthLabel = row.payment_month || '';
+      if (row.payment_month && row.payment_month.includes('-')) {
+        const [yr, mo] = row.payment_month.split('-');
+        const monthDate = new Date(parseInt(yr), parseInt(mo) - 1, 1);
+        monthLabel = monthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+      }
+
+      items.push({
+        id: `pay_${row.id}`,
+        type: 'PAYMENT',
+        action: 'PAID',
+        member_name: row.member_name || 'Member',
+        member_code: row.member_code || '—',
+        profile_photo: row.profile_photo || null,
+        amount: parseFloat(row.amount || 500),
+        month: row.payment_month || '',
+        month_label: monthLabel,
+        date: dateStr,
+        time: timeStr,
+        timestamp: dt.toISOString(),
+        status: 'PAID',
+        status_tamil: 'செலுத்தப்பட்டது (PAID)',
+        title: `₹${parseFloat(row.amount || 500).toLocaleString('en-IN')} Paid${monthLabel ? ` for ${monthLabel}` : ''}`,
+        title_tamil: `${monthLabel ? `${monthLabel} மாத தவணை ` : ''}₹${parseFloat(row.amount || 500).toLocaleString('en-IN')} செலுத்தப்பட்டது`
+      });
+    }
+
+    for (const row of distributionsRes.rows) {
+      const dt = new Date(row.sort_timestamp || row.created_at || Date.now());
+      const dateStr = dt.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+      const timeStr = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      items.push({
+        id: `dist_${row.id}`,
+        type: 'DISTRIBUTION',
+        action: 'TAKEN',
+        member_name: row.member_name || 'Member',
+        member_code: row.member_code || '—',
+        profile_photo: row.profile_photo || null,
+        amount: parseFloat(row.amount || 0),
+        month: null,
+        month_label: null,
+        date: dateStr,
+        time: timeStr,
+        timestamp: dt.toISOString(),
+        status: 'DISTRIBUTED',
+        status_tamil: 'பெறப்பட்டது (RECEIVED)',
+        title: `₹${parseFloat(row.amount || 0).toLocaleString('en-IN')} Seed Fund Loan Given`,
+        title_tamil: `₹${parseFloat(row.amount || 0).toLocaleString('en-IN')} சீட்டு நிதி கடன் வழங்கப்பட்டது`
+      });
+    }
+
+    // Sort combined feed by timestamp descending
+    items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({
+      success: true,
+      server_time: new Date().toISOString(),
+      counts: {
+        total_items: items.length,
+        payments_count: paymentsRes.rows.length,
+        distributions_count: distributionsRes.rows.length
+      },
+      feed: items
+    });
+  } catch (error) {
+    console.error('Live Feed API Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load live feed' });
+  }
+});
+
 module.exports = router;
+

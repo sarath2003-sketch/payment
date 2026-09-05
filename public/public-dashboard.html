@@ -10,6 +10,7 @@
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   
   <style>
     :root {
@@ -545,6 +546,218 @@
 
     footer strong { color: var(--gold); }
 
+    /* ====== LIVE TICKER BAR ====== */
+    .live-ticker-container {
+      background: linear-gradient(90deg, rgba(30, 21, 0, 0.95), rgba(40, 29, 0, 0.95));
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .ticker-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--green-light);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulseGreen 1.4s infinite;
+    }
+    .ticker-content {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      white-space: nowrap;
+      font-size: 13px;
+      color: var(--text2);
+      scrollbar-width: none;
+    }
+    .ticker-content::-webkit-scrollbar { display: none; }
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ticker-item strong { color: var(--gold); }
+    .ticker-item .tag-paid { color: var(--green-light); font-weight: 700; }
+    .ticker-item .tag-taken { color: var(--gold-light); font-weight: 700; }
+
+    /* ====== LIVE TRANSACTIONS FEED ====== */
+    .live-feed-section {
+      background: linear-gradient(135deg, rgba(26, 18, 0, 0.9), rgba(35, 26, 0, 0.85));
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow);
+    }
+    .feed-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .feed-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feed-desc {
+      font-size: 12.5px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+    .feed-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-chip {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 7px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .filter-chip:hover { border-color: var(--gold); color: var(--white); }
+    .filter-chip.active {
+      background: var(--gold);
+      color: var(--dark);
+      border-color: var(--gold);
+      font-weight: 700;
+    }
+    .feed-table-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      background: var(--dark2);
+    }
+    .feed-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .feed-table th {
+      background: var(--surface2);
+      padding: 12px 16px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .feed-table td {
+      padding: 13px 16px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .feed-table tr:last-child td { border-bottom: none; }
+    .feed-table tr:hover td { background: rgba(245, 200, 66, 0.05); }
+
+    .member-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .m-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--dark3);
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--gold);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .m-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .m-code-badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 6px;
+      background: rgba(245, 200, 66, 0.12);
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid rgba(245, 200, 66, 0.3);
+      margin-left: 6px;
+    }
+    .badge-paid {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: var(--green-light);
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .badge-taken {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(245, 200, 66, 0.15);
+      border: 1px solid rgba(245, 200, 66, 0.4);
+      color: var(--gold-light);
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .amount-paid {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--green);
+    }
+    .amount-taken {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--gold);
+    }
+    .feed-empty {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--text3);
+      font-size: 14px;
+    }
+
     /* ====== RESPONSIVE MEDIA QUERIES ====== */
     @media (max-width: 768px) {
       .dashboard-container { padding: 16px 12px 40px; }
@@ -553,6 +766,7 @@
       .card-value { font-size: 26px; }
       .svg-chart-container { height: 180px; gap: 12px; }
       .progress-card-grid { grid-template-columns: 1fr; }
+      .feed-header-row { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -591,6 +805,16 @@
       </a>
     </div>
   </header>
+
+  <!-- LIVE TICKER BAR -->
+  <div class="live-ticker-container" id="liveTickerBar">
+    <div class="ticker-badge">
+      <span class="pulse-dot"></span> <span id="txtTickerBadge">LIVE ACTIVITY</span>
+    </div>
+    <div class="ticker-content" id="tickerItemsContainer">
+      <span class="ticker-item">Loading live transactions feed...</span>
+    </div>
+  </div>
 
   <!-- SECTION TITLE -->
   <div class="section-header">
@@ -848,6 +1072,53 @@
     </table>
   </div>
 
+  <!-- REAL-TIME MEMBER TRANSACTIONS FEED -->
+  <section class="live-feed-section" id="liveFeedSection">
+    <div class="feed-header-row">
+      <div>
+        <div class="feed-title">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 10px #22c55e;animation:pulseGreen 1.4s infinite"></span>
+          <span id="txtLiveFeedTitle">Live Member Transactions & Contribution Feed</span>
+        </div>
+        <div class="feed-desc" id="txtLiveFeedDesc">
+          Real-time record of verified payments (₹500 PAID) & Seed Fund loans given to members. Reflects live when verified by Admin.
+        </div>
+      </div>
+      <div class="feed-filters">
+        <button class="filter-chip active" data-filter="ALL" onclick="setFeedFilter('ALL', this)">
+          🌐 <span id="txtFilterAll">All</span> (<span id="countAllFeed">0</span>)
+        </button>
+        <button class="filter-chip" data-filter="PAYMENT" onclick="setFeedFilter('PAYMENT', this)">
+          ✅ <span id="txtFilterPaid">Paid Members</span> (<span id="countPaidFeed">0</span>)
+        </button>
+        <button class="filter-chip" data-filter="DISTRIBUTION" onclick="setFeedFilter('DISTRIBUTION', this)">
+          💰 <span id="txtFilterLoans">Loans Taken</span> (<span id="countDistFeed">0</span>)
+        </button>
+      </div>
+    </div>
+
+    <div class="feed-table-card">
+      <table class="feed-table">
+        <thead>
+          <tr>
+            <th>Member</th>
+            <th>Activity / Purpose</th>
+            <th>Month / Date</th>
+            <th>Amount</th>
+            <th style="text-align:right">Status</th>
+          </tr>
+        </thead>
+        <tbody id="feedTableBody">
+          <tr>
+            <td colspan="5" style="text-align:center;padding:30px;color:var(--text3)">
+              <div class="feed-empty">Loading live transaction feed...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- PRIVACY FOOTER -->
   <footer>
     🔒 <strong>PUBLIC DATA PRIVACY NOTICE</strong><br>
@@ -887,7 +1158,14 @@
       lblBarReceived: "Total Received",
       lblBarDistributed: "Total Distributed",
       lblBarAvailable: "Current Balance",
-      lblBarOutside: "Outside Fund"
+      lblBarOutside: "Outside Fund",
+      tickerBadge: "LIVE ACTIVITY",
+      liveFeedTitle: "Live Member Transactions & Contribution Feed",
+      liveFeedDesc: "Real-time record of verified payments (₹500 PAID) & Seed Fund loans given to members. Reflects live when verified by Admin.",
+      filterAll: "All",
+      filterPaid: "Paid Members",
+      filterLoans: "Loans Taken",
+      emptyFeed: "No transactions recorded yet."
     },
     ta: {
       orgName: "புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்",
@@ -916,11 +1194,20 @@
       lblBarReceived: "மொத்த வரவு",
       lblBarDistributed: "மொத்த வழங்கள்",
       lblBarAvailable: "தற்போதைய இருப்பு",
-      lblBarOutside: "வெளியே உள்ளது"
+      lblBarOutside: "வெளியே உள்ளது",
+      tickerBadge: "நேரலை செயல்பாடுகள்",
+      liveFeedTitle: "நேரலை உறுப்பினர் பரிவர்த்தனைகள் & வரவு செலவு பட்டியல்",
+      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (₹500 PAID) மற்றும் சீட்டு நிதி கடன்கள். அட்மின் சரிபார்த்தவுடன் உடனடியாக நேரலையில் புதுப்பிக்கப்படும்.",
+      filterAll: "அனைத்தும்",
+      filterPaid: "பணம் செலுத்தியவர்கள்",
+      filterLoans: "கடன் பெற்றவர்கள்",
+      emptyFeed: "இதுவரை பரிவர்த்தனைகள் ஏதுமில்லை."
     }
   };
 
   let currentLang = 'en';
+  let rawLiveFeed = [];
+  let activeFeedFilter = 'ALL';
 
   function setLang(lang) {
     currentLang = lang;
@@ -960,15 +1247,36 @@
     document.getElementById('lblBarDistributed').textContent = t.lblBarDistributed;
     document.getElementById('lblBarAvailable').textContent = t.lblBarAvailable;
     document.getElementById('lblBarOutside').textContent = t.lblBarOutside;
+
+    const tb = document.getElementById('txtTickerBadge');
+    if (tb) tb.textContent = t.tickerBadge;
+    const lft = document.getElementById('txtLiveFeedTitle');
+    if (lft) lft.textContent = t.liveFeedTitle;
+    const lfd = document.getElementById('txtLiveFeedDesc');
+    if (lfd) lfd.textContent = t.liveFeedDesc;
+    const fa = document.getElementById('txtFilterAll');
+    if (fa) fa.textContent = t.filterAll;
+    const fp = document.getElementById('txtFilterPaid');
+    if (fp) fp.textContent = t.filterPaid;
+    const fl = document.getElementById('txtFilterLoans');
+    if (fl) fl.textContent = t.filterLoans;
+
+    renderLiveFeed();
   }
 
-  // Format currency helper (INR format: ₹10,00,000)
   function formatINR(val) {
     const num = parseFloat(val) || 0;
     return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
   }
 
-  // Fetch Public Fund Data from backend API
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
+  }
+
+  // Fetch Public Fund Summary
   async function fetchSummaryData() {
     try {
       const res = await fetch('/api/public-dashboard/summary');
@@ -982,6 +1290,161 @@
     } catch (err) {
       console.error('Error loading public summary:', err);
     }
+  }
+
+  // Fetch App Settings (Logo, Org Name, etc.)
+  async function loadPublicSettings() {
+    try {
+      const res = await fetch('/api/settings/public');
+      if (!res.ok) return;
+      const s = await res.json();
+      if (s.logo_path) {
+        document.querySelectorAll('.brand-logo').forEach(img => { img.src = s.logo_path; });
+      }
+      if (s.org_name && currentLang === 'en') {
+        document.getElementById('txtOrgName').textContent = s.org_name;
+      }
+      if (s.org_name_tamil && currentLang === 'ta') {
+        document.getElementById('txtOrgName').textContent = s.org_name_tamil;
+      }
+    } catch (e) {
+      console.warn('Settings load warning:', e.message);
+    }
+  }
+
+  // Fetch Live Activity Feed
+  async function fetchLiveFeed() {
+    try {
+      const res = await fetch('/api/public-dashboard/live-feed');
+      if (!res.ok) throw new Error('Live feed fetch failed');
+      const data = await res.json();
+
+      if (data && data.success && Array.isArray(data.feed)) {
+        rawLiveFeed = data.feed;
+
+        // Update counts
+        const allCount = rawLiveFeed.length;
+        const paidCount = rawLiveFeed.filter(x => x.type === 'PAYMENT').length;
+        const distCount = rawLiveFeed.filter(x => x.type === 'DISTRIBUTION').length;
+
+        const cAll = document.getElementById('countAllFeed');
+        if (cAll) cAll.textContent = allCount;
+        const cPaid = document.getElementById('countPaidFeed');
+        if (cPaid) cPaid.textContent = paidCount;
+        const cDist = document.getElementById('countDistFeed');
+        if (cDist) cDist.textContent = distCount;
+
+        renderLiveTicker();
+        renderLiveFeed();
+      }
+    } catch (err) {
+      console.warn('Error fetching live feed:', err.message);
+    }
+  }
+
+  function setFeedFilter(filter, btn) {
+    activeFeedFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderLiveFeed();
+  }
+
+  function renderLiveTicker() {
+    const container = document.getElementById('tickerItemsContainer');
+    if (!container) return;
+
+    if (!rawLiveFeed.length) {
+      container.innerHTML = '<span class="ticker-item">No recent activity recorded.</span>';
+      return;
+    }
+
+    const recent = rawLiveFeed.slice(0, 10);
+    container.innerHTML = recent.map(item => {
+      const isPaid = item.type === 'PAYMENT';
+      const tagClass = isPaid ? 'tag-paid' : 'tag-taken';
+      const actionText = isPaid
+        ? `paid <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (PAID ✅)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`
+        : `received <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} Seed Fund Loan 💰</span>`;
+
+      return `
+        <span class="ticker-item">
+          <strong>${esc(item.member_name)}</strong> (${esc(item.member_code)}) ${actionText}
+          <span style="color:var(--text3);font-size:11px">(${esc(item.time)})</span>
+          <span style="color:var(--border2);margin:0 4px">•</span>
+        </span>
+      `;
+    }).join('');
+  }
+
+  function renderLiveFeed() {
+    const tbody = document.getElementById('feedTableBody');
+    if (!tbody) return;
+
+    let items = rawLiveFeed;
+    if (activeFeedFilter === 'PAYMENT') {
+      items = items.filter(x => x.type === 'PAYMENT');
+    } else if (activeFeedFilter === 'DISTRIBUTION') {
+      items = items.filter(x => x.type === 'DISTRIBUTION');
+    }
+
+    if (!items.length) {
+      const emptyMsg = i18n[currentLang]?.emptyFeed || 'No transactions recorded yet.';
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5">
+            <div class="feed-empty">${emptyMsg}</div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = items.map(item => {
+      const isPaid = item.type === 'PAYMENT';
+      const initial = (item.member_name || 'M').charAt(0).toUpperCase();
+      const avatarHtml = item.profile_photo
+        ? `<div class="m-avatar"><img src="${esc(item.profile_photo)}" alt="${esc(item.member_name)}"></div>`
+        : `<div class="m-avatar">${initial}</div>`;
+
+      const titleText = currentLang === 'ta' && item.title_tamil ? item.title_tamil : item.title;
+      const dateText = `${esc(item.date)} · ${esc(item.time)}`;
+      const monthSub = item.month_label ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">Month: ${esc(item.month_label)}</div>` : '';
+
+      const amountHtml = isPaid
+        ? `<span class="amount-paid">+ ₹${item.amount.toLocaleString('en-IN')}</span>`
+        : `<span class="amount-taken">₹${item.amount.toLocaleString('en-IN')}</span>`;
+
+      const badgeHtml = isPaid
+        ? `<span class="badge-paid">✅ PAID</span>`
+        : `<span class="badge-taken">💰 LOAN GIVEN</span>`;
+
+      return `
+        <tr>
+          <td>
+            <div class="member-cell">
+              ${avatarHtml}
+              <div>
+                <strong>${esc(item.member_name)}</strong>
+                <span class="m-code-badge">${esc(item.member_code)}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text)">${esc(titleText)}</div>
+            ${monthSub}
+          </td>
+          <td style="white-space:nowrap;color:var(--text2);font-size:12px">
+            ${dateText}
+          </td>
+          <td style="white-space:nowrap">
+            ${amountHtml}
+          </td>
+          <td style="text-align:right">
+            ${badgeHtml}
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   // Render metrics to UI elements
@@ -1040,10 +1503,36 @@
     document.getElementById('tb6Val').textContent = m.active_groups_count;
   }
 
-  // Auto-init on page load & refresh every 30 seconds
+  // Socket.IO Real-time Connection
+  function initRealtimeSocket() {
+    if (typeof io !== 'undefined') {
+      try {
+        const socket = io();
+        socket.on('payment:approved', () => {
+          fetchSummaryData();
+          fetchLiveFeed();
+        });
+        socket.on('settings:updated', () => {
+          loadPublicSettings();
+          fetchSummaryData();
+        });
+      } catch (e) {
+        console.warn('Public dashboard socket notice:', e.message);
+      }
+    }
+  }
+
+  // Auto-init on page load & refresh cycles
   window.addEventListener('DOMContentLoaded', () => {
     fetchSummaryData();
-    setInterval(fetchSummaryData, 30000);
+    fetchLiveFeed();
+    loadPublicSettings();
+    initRealtimeSocket();
+
+    // Fast 6-second polling for transactions ticker
+    setInterval(fetchLiveFeed, 6000);
+    // 25-second polling for summary cards
+    setInterval(fetchSummaryData, 25000);
   });
 </script>
 

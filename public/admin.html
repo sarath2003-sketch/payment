@@ -2735,6 +2735,7 @@
 
       try {
         const d = await api(`/api/admin/members?search=${encodeURIComponent(search)}&activation_status=${act}&payment_status=${pay}&sort_by=${sort}`);
+        window.adminMembersCache = d.members || [];
         const tbody = document.getElementById('membersTableBody');
         if (!d.members || !d.members.length) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No members found.</td></tr>';
@@ -2757,7 +2758,7 @@
 
           return `
             <tr>
-              <td><strong style="color:var(--primary);font-size:15px">${m.member_id}</strong></td>
+              <td><strong style="color:var(--primary);font-size:15px">${esc(m.member_id)}</strong></td>
               <td>
                 <div style="display:flex;align-items:center;gap:10px">
                   ${photoHtml}
@@ -2781,8 +2782,8 @@
                 <button class="btn-secondary btn-sm" style="padding:2px 8px;font-size:11px" onclick="togglePaymentStatus(${m.id}, '${nextPayStatus}')">Set ${nextPayStatus}</button>
               </td>
               <td style="display:flex;gap:6px">
-                <button class="btn-secondary btn-sm" onclick="showEditMemberModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">✏️ Edit</button>
-                <button class="btn-danger btn-sm" onclick="confirmDeleteMember(${m.id}, '${esc(m.name)}')">🗑 Delete</button>
+                <button class="btn-secondary btn-sm" onclick="showEditMemberById(${m.id})">✏️ Edit</button>
+                <button class="btn-danger btn-sm" onclick="confirmDeleteMemberById(${m.id})">🗑 Delete</button>
               </td>
             </tr>
           `;
@@ -2792,6 +2793,16 @@
         const tbody = document.getElementById('membersTableBody');
         if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--red)">Failed to load members: ${esc(e.message)}</td></tr>`;
       }
+    }
+
+    function showEditMemberById(id) {
+      const m = (window.adminMembersCache || []).find(x => x.id === id);
+      if (m) showEditMemberModal(m);
+    }
+
+    function confirmDeleteMemberById(id) {
+      const m = (window.adminMembersCache || []).find(x => x.id === id);
+      if (m) confirmDeleteMember(id, m.name || 'Member');
     }
 
     function handleAdminMemberPhotoUpload(event) {
