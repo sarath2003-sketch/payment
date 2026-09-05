@@ -193,7 +193,7 @@ router.post(['/login', '/login/'], async (req, res) => {
     if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
 
     const result = await pool.query(
-      `SELECT id, member_id, name, email, phone, password_hash, balance, status, activation_status 
+      `SELECT id, member_id, name, email, phone, upi_id, profile_photo, password_hash, balance, status, activation_status 
        FROM members 
        WHERE LOWER(member_id) = LOWER($1) OR LOWER(email) = LOWER($1) OR (phone = $2 AND $2 != '')`,
       [member_id, cleanPhone]
@@ -227,9 +227,13 @@ router.post(['/login', '/login/'], async (req, res) => {
     res.json({
       message: 'Login successful',
       token,
+      id: member.id,
       member_id: member.member_id,
       name: member.name,
+      phone: member.phone,
       email: member.email,
+      upi_id: member.upi_id,
+      profile_photo: member.profile_photo,
       balance: parseFloat(member.balance)
     });
 
@@ -612,46 +616,6 @@ router.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ error: 'Password reset failed.' });
-  }
-});
-
-/**
- * UPDATE MEMBER PROFILE (Name, Email, UPI ID)
- */
-router.put('/profile', authenticateToken, async (req, res) => {
-  try {
-    if (req.admin?.type === 'admin') {
-      return res.status(403).json({ error: 'Members only' });
-    }
-    const memberId = req.admin.id;
-    let { name, email, upi_id } = req.body || {};
-
-    name = (name !== undefined) ? name.trim() : null;
-    email = (email !== undefined) ? email.trim().toLowerCase() : null;
-    upi_id = (upi_id !== undefined) ? upi_id.trim() : null;
-
-    const existingRes = await pool.query('SELECT * FROM members WHERE id = $1', [memberId]);
-    if (existingRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Member not found' });
-    }
-    const existing = existingRes.rows[0];
-
-    const newName = name || existing.name;
-    const newEmail = email || existing.email;
-    const newUpi = (upi_id !== null) ? upi_id : existing.upi_id;
-
-    const updateRes = await pool.query(
-      `UPDATE members 
-       SET name = $1, email = $2, upi_id = $3, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $4
-       RETURNING id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status`,
-      [newName, newEmail, newUpi || null, memberId]
-    );
-
-    res.json({ message: 'Profile updated successfully', member: updateRes.rows[0] });
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 

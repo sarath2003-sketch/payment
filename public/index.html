@@ -1066,6 +1066,135 @@
     .profile-tab.active { background: var(--surface2); color: var(--gold); border: 1px solid var(--border); }
     .profile-tab-panel { display: none; }
     .profile-tab-panel.active { display: block; }
+
+    /* ====== PROFILE COMPLETION WIDGET ====== */
+    .profile-completion-box {
+      background: linear-gradient(135deg, rgba(35,26,0,0.85) 0%, rgba(18,12,0,0.95) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-top: 14px;
+      text-align: left;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-completion-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), #4ade80, transparent);
+    }
+    .pc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .pc-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .pc-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 20px;
+      transition: var(--transition);
+    }
+    .pc-badge.partial {
+      background: rgba(245,200,66,0.18);
+      color: var(--gold);
+      border: 1px solid rgba(245,200,66,0.35);
+    }
+    .pc-badge.complete {
+      background: rgba(34,197,94,0.18);
+      color: #4ade80;
+      border: 1px solid rgba(34,197,94,0.4);
+    }
+    .pc-percent-text {
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pc-bar-track {
+      width: 100%;
+      height: 9px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .pc-bar-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pc-bar-fill.partial {
+      background: linear-gradient(90deg, #eab308, #f5c842);
+      box-shadow: 0 0 10px rgba(245,200,66,0.4);
+    }
+    .pc-bar-fill.complete {
+      background: linear-gradient(90deg, #10b981, #22c55e, #4ade80);
+      box-shadow: 0 0 12px rgba(34,197,94,0.6);
+    }
+    .pc-status-msg {
+      font-size: 11.5px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      color: var(--text2);
+    }
+    .pc-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 7px 12px;
+      background: rgba(245,200,66,0.12);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .pc-action-btn:hover {
+      background: var(--gold);
+      color: var(--dark);
+    }
+    .pc-checklist {
+      display: grid;
+      gap: 6px;
+      margin: 10px 0;
+      background: rgba(0,0,0,0.25);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .pc-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .pc-item.done {
+      color: #4ade80;
+    }
+    .pc-item.pending {
+      color: var(--gold);
+    }
+    .pc-icon {
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -1149,19 +1278,9 @@
         <label data-i18n="fullName">Full Name *</label>
         <input type="text" id="regName" placeholder="Your full name...">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Email *</label>
-          <input type="email" id="regEmail" placeholder="email@example.com">
-        </div>
-        <div class="form-group">
-          <label data-i18n="phone">Phone (10-digit) *</label>
-          <input type="tel" id="regPhone" placeholder="10-digit number">
-        </div>
-      </div>
       <div class="form-group">
-        <label>UPI ID (Optional)</label>
-        <input type="text" id="regUpi" placeholder="name@upi">
+        <label data-i18n="phone">Mobile Number (10-digit) *</label>
+        <input type="tel" id="regPhone" placeholder="10-digit mobile number">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -1234,9 +1353,10 @@
       
       <div style="font-size:13px;color:var(--text);display:grid;grid-template-columns:1fr;gap:6px">
         <div>Name: <strong id="resName">—</strong></div>
-        <div>Phone: <strong id="resPhone">—</strong></div>
-        <div>Email: <strong id="resEmail">—</strong></div>
-        <div>UPI ID: <strong id="resUpi">—</strong></div>
+        <div>Mobile: <strong id="resPhone">—</strong></div>
+      </div>
+      <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px;color:var(--gold-light);border:1px dashed rgba(245,200,66,0.3)">
+        💡 <strong>Profile 50% Complete:</strong> You can add your UPI ID anytime in your Profile to reach 100% and enable payouts!
       </div>
     </div>
     
@@ -1327,6 +1447,26 @@
         <div class="profile-name" id="dashName">—</div>
         <div class="profile-id" id="dashMemberId">ID: —</div>
         <div class="profile-status" data-i18n="activeStatus">Active Member</div>
+
+        <!-- Dashboard Profile Completion Widget -->
+        <div class="profile-completion-box" id="dashProfileCompletionBox">
+          <div class="pc-header">
+            <div class="pc-title">
+              <span>📊 Profile Completion</span>
+              <span class="pc-badge partial" id="dashPcBadge">50%</span>
+            </div>
+            <span class="pc-percent-text" id="dashPcPercentText" style="color:var(--gold)">50% Complete</span>
+          </div>
+          <div class="pc-bar-track">
+            <div class="pc-bar-fill partial" id="dashPcBarFill" style="width:50%"></div>
+          </div>
+          <div class="pc-status-msg" id="dashPcMsg">
+            ⚠️ 50% Complete — Add UPI ID in Edit Profile to reach 100%
+          </div>
+          <button class="pc-action-btn" id="dashPcActionBtn" onclick="showEditProfileModal()">
+            ✏️ Add UPI ID (Complete 100%)
+          </button>
+        </div>
       </div>
 
       <!-- MEMBER DASHBOARD TOTAL SUMMARY -->
@@ -1588,6 +1728,41 @@
             <button class="btn-secondary" style="padding:6px 14px;font-size:12px;color:var(--red)" onclick="removeProfilePhoto()">🗑 Remove</button>
           </div>
         </div>
+
+        <!-- Settings Profile Completion Card -->
+        <div class="profile-completion-box" id="settingsProfileCompletionBox" style="margin-bottom:16px">
+          <div class="pc-header">
+            <div class="pc-title">
+              <span>🌟 Profile Completion Status</span>
+              <span class="pc-badge partial" id="settingsPcBadge">50%</span>
+            </div>
+            <span class="pc-percent-text" id="settingsPcPercentText" style="color:var(--gold)">50% Complete</span>
+          </div>
+          <div class="pc-bar-track">
+            <div class="pc-bar-fill partial" id="settingsPcBarFill" style="width:50%"></div>
+          </div>
+          <div class="pc-checklist" id="settingsPcChecklist">
+            <div class="pc-item done">
+              <span class="pc-icon">✅</span>
+              <span>Name & Mobile (Registered)</span>
+            </div>
+            <div class="pc-item done">
+              <span class="pc-icon">✅</span>
+              <span>Member ID (Generated)</span>
+            </div>
+            <div class="pc-item pending" id="settingsPcUpiItem">
+              <span class="pc-icon" id="settingsPcUpiIcon">⏳</span>
+              <span id="settingsPcUpiText">UPI ID (Not Added — Add for 100% complete)</span>
+            </div>
+          </div>
+          <div class="pc-status-msg" id="settingsPcMsg">
+            ⚠️ Profile is at 50%. Click below to add your UPI ID and reach 100%.
+          </div>
+          <button class="pc-action-btn" id="settingsPcBtn" onclick="showEditProfileModal()">
+            ✏️ Add UPI ID (Complete 100%)
+          </button>
+        </div>
+
         <!-- Stats row -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px" id="profileStatsRow">
           <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:10px">
@@ -1857,8 +2032,14 @@
       <input type="email" id="epEmail" placeholder="yourname@example.com">
     </div>
     <div class="form-group">
-      <label>UPI ID (Optional for payouts)</label>
-      <input type="text" id="epUpi" placeholder="name@upi">
+      <label style="display:flex;justify-content:space-between;align-items:center">
+        <span>UPI ID <strong style="color:var(--gold)">* (For 100% Completion)</strong></span>
+        <span style="font-size:11px;color:var(--green);font-weight:700">Required for Payouts</span>
+      </label>
+      <input type="text" id="epUpi" placeholder="e.g. yourname@okaxis, 9876543210@upi">
+      <div style="font-size:11.5px;color:var(--text3);margin-top:4px">
+        💡 Adding your UPI ID completes your profile to <strong>100%</strong> and enables instant chit prize payouts.
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="document.getElementById('editProfileModal').classList.add('hidden')" data-i18n="cancel">Cancel</button>
@@ -2229,13 +2410,11 @@ let pendingRegData = null;
 async function doRegister() {
   const btn = document.getElementById('registerBtn');
   const name = document.getElementById('regName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
   const phone = document.getElementById('regPhone').value.trim();
-  const upi_id = document.getElementById('regUpi').value.trim();
   const password = document.getElementById('regPassword').value;
   const confirm = document.getElementById('regConfirm').value;
 
-  if (!name || !phone || !password) { showAuthAlert('Name, Phone and Password are required'); return; }
+  if (!name || !phone || !password) { showAuthAlert('Name, Mobile Number and Password are required'); return; }
   if (password.length < 6) { showAuthAlert('Password must be at least 6 characters'); return; }
   if (password !== confirm) { showAuthAlert('Passwords do not match'); return; }
   if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) { showAuthAlert('Enter a valid 10-digit phone number'); return; }
@@ -2245,14 +2424,12 @@ async function doRegister() {
   try {
     const data = await api('/api/member-auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, phone, upi_id, password, confirmPassword: confirm })
+      body: JSON.stringify({ name, phone, password, confirmPassword: confirm })
     });
     pendingRegData = data;
     document.getElementById('resMemberId').textContent = data.member_id || '101';
     document.getElementById('resName').textContent = data.name || name;
     document.getElementById('resPhone').textContent = data.phone || phone;
-    document.getElementById('resEmail').textContent = data.email || email || '—';
-    document.getElementById('resUpi').textContent = data.upi_id || upi_id || '—';
 
     document.getElementById('regSuccessModal').classList.remove('hidden');
     showToast(t('regSuccess'), 'success');
@@ -2407,7 +2584,101 @@ function updateHeaderUI() {
   if (document.getElementById('setProfilePhone')) document.getElementById('setProfilePhone').value = currentUser.phone || '';
   if (document.getElementById('setProfileUpi')) document.getElementById('setProfileUpi').value = currentUser.upi_id || '';
   if (document.getElementById('setProfileMemberId')) document.getElementById('setProfileMemberId').value = mId;
+
+  // Render profile completion
+  renderProfileCompletion();
 }
+
+function getProfileCompletion(user) {
+  if (!user) return { percent: 0, hasUpi: false, isComplete: false };
+  const hasUpi = Boolean(user.upi_id && user.upi_id.trim() !== '');
+  // Basic registration (Name, Phone, Member ID) gives 50%
+  // Adding UPI ID in Edit Profile completes the remaining 50% to reach 100%
+  const percent = hasUpi ? 100 : 50;
+  return {
+    percent,
+    hasUpi,
+    isComplete: percent === 100
+  };
+}
+
+function renderProfileCompletion() {
+  if (!currentUser) return;
+  const comp = getProfileCompletion(currentUser);
+
+  // Dashboard Profile Completion Box
+  const dashBadge = document.getElementById('dashPcBadge');
+  const dashText = document.getElementById('dashPcPercentText');
+  const dashFill = document.getElementById('dashPcBarFill');
+  const dashMsg = document.getElementById('dashPcMsg');
+  const dashBtn = document.getElementById('dashPcActionBtn');
+
+  if (dashBadge) {
+    dashBadge.textContent = `${comp.percent}%`;
+    dashBadge.className = `pc-badge ${comp.isComplete ? 'complete' : 'partial'}`;
+  }
+  if (dashText) {
+    dashText.textContent = comp.isComplete ? '100% Complete' : '50% Complete';
+    dashText.style.color = comp.isComplete ? '#4ade80' : 'var(--gold)';
+  }
+  if (dashFill) {
+    dashFill.style.width = `${comp.percent}%`;
+    dashFill.className = `pc-bar-fill ${comp.isComplete ? 'complete' : 'partial'}`;
+  }
+  if (dashMsg) {
+    dashMsg.textContent = comp.isComplete 
+      ? '✅ 100% Complete — All details verified for chit fund payouts!' 
+      : '⚠️ 50% Complete — Add UPI ID in Edit Profile to reach 100%';
+    dashMsg.style.color = comp.isComplete ? '#4ade80' : 'var(--gold-light)';
+  }
+  if (dashBtn) {
+    dashBtn.style.display = comp.isComplete ? 'none' : 'inline-flex';
+  }
+
+  // Settings Profile Completion Box
+  const setBadge = document.getElementById('settingsPcBadge');
+  const setText = document.getElementById('settingsPcPercentText');
+  const setFill = document.getElementById('settingsPcBarFill');
+  const setMsg = document.getElementById('settingsPcMsg');
+  const setBtn = document.getElementById('settingsPcBtn');
+  const upiItem = document.getElementById('settingsPcUpiItem');
+  const upiIcon = document.getElementById('settingsPcUpiIcon');
+  const upiText = document.getElementById('settingsPcUpiText');
+
+  if (setBadge) {
+    setBadge.textContent = `${comp.percent}%`;
+    setBadge.className = `pc-badge ${comp.isComplete ? 'complete' : 'partial'}`;
+  }
+  if (setText) {
+    setText.textContent = comp.isComplete ? '100% Complete' : '50% Complete';
+    setText.style.color = comp.isComplete ? '#4ade80' : 'var(--gold)';
+  }
+  if (setFill) {
+    setFill.style.width = `${comp.percent}%`;
+    setFill.className = `pc-bar-fill ${comp.isComplete ? 'complete' : 'partial'}`;
+  }
+  if (upiItem) {
+    if (comp.isComplete) {
+      upiItem.className = 'pc-item done';
+      if (upiIcon) upiIcon.textContent = '✅';
+      if (upiText) upiText.textContent = `UPI ID: ${currentUser.upi_id || ''} (Active & Verified)`;
+    } else {
+      upiItem.className = 'pc-item pending';
+      if (upiIcon) upiIcon.textContent = '⏳';
+      if (upiText) upiText.textContent = 'UPI ID: Not Added (Add in Edit Profile for 100%)';
+    }
+  }
+  if (setMsg) {
+    setMsg.textContent = comp.isComplete
+      ? '🎉 Profile is 100% complete! Your account is ready for chit distributions and refunds.'
+      : '⚠️ Profile is at 50%. Click below to add your UPI ID and reach 100%.';
+    setMsg.style.color = comp.isComplete ? '#4ade80' : 'var(--gold-light)';
+  }
+  if (setBtn) {
+    setBtn.textContent = comp.isComplete ? '✏️ Edit Profile' : '✏️ Add UPI ID (Complete 100%)';
+  }
+}
+
 function updateDashboard(profile) {
   const balance = parseFloat(profile.balance || 0);
   document.getElementById('dashBalance').textContent = `₹${balance.toLocaleString('en-IN')}`;
@@ -4168,10 +4439,18 @@ async function doSaveProfile() {
       method: 'PUT',
       body: JSON.stringify({ name, email, upi_id: upi })
     });
-    showToast('Profile updated successfully!', 'success');
     document.getElementById('editProfileModal').classList.add('hidden');
-    if (res.member) currentUser = { ...currentUser, ...res.member };
+    if (res.member) {
+      currentUser = { ...currentUser, ...res.member };
+    } else {
+      currentUser = { ...currentUser, name, email, upi_id: upi };
+    }
     updateHeaderUI();
+    if (upi) {
+      showToast('🎉 Profile updated! Profile is now 100% complete!', 'success', 5000);
+    } else {
+      showToast('Profile updated successfully!', 'success');
+    }
   } catch(e) {
     if (alertEl) alertEl.innerHTML = `<div style="color:var(--red);margin-bottom:10px">${e.message}</div>`;
   }

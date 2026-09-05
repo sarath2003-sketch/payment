@@ -1514,6 +1514,10 @@
         <input type="tel" id="mPhone" placeholder="Enter 10-digit mobile number" maxlength="10">
       </div>
       <div class="form-group">
+        <label>💳 UPI ID (For 100% Profile & Payouts)</label>
+        <input type="text" id="mUpi" placeholder="e.g. member@upi">
+      </div>
+      <div class="form-group">
         <label>🔑 Password (Optional — Auto-generated if blank)</label>
         <input type="text" id="mPassword" placeholder="Set custom password (e.g. 1235)">
       </div>
@@ -2759,7 +2763,11 @@
                   ${photoHtml}
                   <div>
                     <strong>${esc(m.name)}</strong> ${m.is_duplicate ? '<span class="badge badge-duplicate">DUPLICATE</span>' : ''}
-                    <div style="font-size:11px;color:var(--text-muted)">Bal: ₹${parseFloat(m.balance || 0).toLocaleString('en-IN')}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+                      <span class="badge ${m.upi_id ? 'badge-active' : 'badge-pending'}" style="font-size:10px;padding:1px 6px">${m.upi_id ? '100% Profile' : '50% Profile'}</span>
+                      <span style="font-size:11px;color:var(--text-muted)">Bal: ₹${parseFloat(m.balance || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                    ${m.upi_id ? `<div style="font-size:11px;color:var(--primary);margin-top:1px">💳 ${esc(m.upi_id)}</div>` : ''}
                   </div>
                 </div>
               </td>
@@ -2812,6 +2820,7 @@
       document.getElementById('memberModalTitle').textContent = 'Add New Member';
       document.getElementById('mName').value = '';
       document.getElementById('mPhone').value = '';
+      document.getElementById('mUpi').value = '';
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = 'ACTIVE';
       document.getElementById('mPaymentStatus').value = 'UNPAID';
@@ -2824,6 +2833,7 @@
       document.getElementById('memberModalTitle').textContent = `Edit Member — ${m.member_id}`;
       document.getElementById('mName').value = m.name || '';
       document.getElementById('mPhone').value = m.phone || '';
+      document.getElementById('mUpi').value = m.upi_id || '';
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
       document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
@@ -2840,6 +2850,7 @@
     async function saveMemberForm() {
       const name = document.getElementById('mName').value.trim();
       const phone = document.getElementById('mPhone').value.trim();
+      const upi_id = document.getElementById('mUpi').value.trim();
       const password = document.getElementById('mPassword').value.trim();
       const activation_status = document.getElementById('mActivation').value;
       const payment_status = document.getElementById('mPaymentStatus').value;
@@ -2859,14 +2870,14 @@
         if (currentEditingMemberId) {
           await api(`/api/admin/members/${currentEditingMemberId}`, {
             method: 'PUT',
-            body: JSON.stringify({ name, phone, password, activation_status, payment_status, profile_photo })
+            body: JSON.stringify({ name, phone, upi_id, password, activation_status, payment_status, profile_photo })
           });
           showToast('Member details updated successfully!', 'success');
           closeModal('memberModal');
         } else {
           const res = await api('/api/admin/members', {
             method: 'POST',
-            body: JSON.stringify({ name, phone, password, activation_status, payment_status, profile_photo })
+            body: JSON.stringify({ name, phone, upi_id, password, activation_status, payment_status, profile_photo })
           });
 
           closeModal('memberModal');
