@@ -1,0 +1,18 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - img "Logo" [ref=e5]
+    - generic [ref=e6]: PF Chit Fund Club
+    - generic [ref=e7]: 🔐 Admin Management Portal
+  - generic [ref=e8]:
+    - generic [ref=e9]: Admin Username
+    - textbox "Enter username" [ref=e10]
+  - generic [ref=e11]:
+    - generic [ref=e12]: Password
+    - textbox "Enter password" [ref=e13]
+  - button "🔐 Login to Admin Panel" [ref=e14] [cursor=pointer]
+  - generic [ref=e15]:
+    - link "🌐 Public Fund Details" [ref=e16] [cursor=pointer]:
+      - /url: /public-dashboard
+    - generic [ref=e17]: "|"
+    - link "← Member Portal" [ref=e18] [cursor=pointer]:
+      - /url: /

@@ -1,0 +1,120 @@
+- generic [ref=e19]:
+  - complementary [ref=e20]:
+    - generic [ref=e22]:
+      - generic [ref=e23]: PF Chit Fund Club
+      - generic [ref=e24]: Admin Portal
+    - navigation [ref=e25]:
+      - generic [ref=e26]: Main
+      - button "📊 Dashboard" [ref=e27] [cursor=pointer]:
+        - generic [ref=e28]: 📊
+        - text: Dashboard
+      - link "🌐 Public Dashboard" [ref=e29] [cursor=pointer]:
+        - /url: /public-dashboard
+        - generic [ref=e30]: 🌐
+        - text: Public Dashboard
+      - generic [ref=e31]: Member Management
+      - button "👥 All Members" [ref=e32] [cursor=pointer]:
+        - generic [ref=e33]: 👥
+        - text: All Members
+      - button "➕ Add Member" [ref=e34] [cursor=pointer]:
+        - generic [ref=e35]: ➕
+        - text: Add Member
+      - button "⚠️ Possible Duplicates" [ref=e36] [cursor=pointer]:
+        - generic [ref=e37]: ⚠️
+        - text: Possible Duplicates
+      - generic [ref=e38]: Payments & Activation
+      - button "💰 Seettu Cycles" [ref=e39] [cursor=pointer]:
+        - generic [ref=e40]: 💰
+        - text: Seettu Cycles
+      - button "💳 Payments" [ref=e41] [cursor=pointer]:
+        - generic [ref=e42]: 💳
+        - text: Payments
+      - button "⚡ Activation Status" [ref=e43] [cursor=pointer]:
+        - generic [ref=e44]: ⚡
+        - text: Activation Status
+      - button "🏛️ Live Auction" [ref=e45] [cursor=pointer]:
+        - generic [ref=e46]: 🏛️
+        - text: Live Auction
+      - button "💬 Chat Groups" [ref=e47] [cursor=pointer]:
+        - generic [ref=e48]: 💬
+        - text: Chat Groups
+      - generic [ref=e49]: Seed Fund & Accounting
+      - button "🌿 Seed Fund Distributions" [ref=e50] [cursor=pointer]:
+        - generic [ref=e51]: 🌿
+        - text: Seed Fund Distributions
+      - button "🤝 Group Management" [ref=e52] [cursor=pointer]:
+        - generic [ref=e53]: 🤝
+        - text: Group Management
+      - button "🔄 Repayment Tracking" [ref=e54] [cursor=pointer]:
+        - generic [ref=e55]: 🔄
+        - text: Repayment Tracking
+      - button "✅ Proof Verification" [ref=e56] [cursor=pointer]:
+        - generic [ref=e57]: ✅
+        - text: Proof Verification
+      - button "📢 Notice Board" [ref=e58] [cursor=pointer]:
+        - generic [ref=e59]: 📢
+        - text: Notice Board
+      - button "📑 Transaction Ledger" [ref=e60] [cursor=pointer]:
+        - generic [ref=e61]: 📑
+        - text: Transaction Ledger
+      - button "📈 Financial Reports" [ref=e62] [cursor=pointer]:
+        - generic [ref=e63]: 📈
+        - text: Financial Reports
+      - generic [ref=e64]: System
+      - button "📜 Audit Logs" [ref=e65] [cursor=pointer]:
+        - generic [ref=e66]: 📜
+        - text: Audit Logs
+      - button "⚙️ Settings" [ref=e67] [cursor=pointer]:
+        - generic [ref=e68]: ⚙️
+        - text: Settings
+    - button "🚪 Logout" [ref=e70] [cursor=pointer]
+  - generic [ref=e71]:
+    - generic [ref=e72]:
+      - generic [ref=e73]: Dashboard
+      - generic [ref=e75]:
+        - combobox [ref=e76] [cursor=pointer]:
+          - option "🌙 Dark Mode" [selected]
+          - option "☀️ Light Mode"
+          - option "💻 System Default"
+        - generic [ref=e77]: Admin
+    - generic [ref=e79]:
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - generic [ref=e82]: Total Members
+          - generic [ref=e83]: "1"
+        - generic [ref=e84]:
+          - generic [ref=e85]: Active Members
+          - generic [ref=e86]: "1"
+        - generic [ref=e87]:
+          - generic [ref=e88]: Inactive Members
+          - generic [ref=e89]: "0"
+        - generic [ref=e90]:
+          - generic [ref=e91]: Pending Activations
+          - generic [ref=e92]: "0"
+        - generic [ref=e94] [cursor=pointer]:
+          - generic [ref=e95]: Possible Duplicates
+          - generic [ref=e96]: "0"
+        - generic [ref=e97]:
+          - generic [ref=e98]: Total Collected
+          - generic [ref=e99]: ₹500
+        - generic [ref=e100]:
+          - generic [ref=e101]: Paid Members
+          - generic [ref=e102]: "0"
+        - generic [ref=e103]:
+          - generic [ref=e104]: Pending Payments
+          - generic [ref=e105]: "0"
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]: 👥 Recent Members
+            - button "View All" [ref=e110] [cursor=pointer]
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - strong [ref=e114]: Ajith
+              - text: (101)
+            - generic [ref=e115]: ACTIVE
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - generic [ref=e118]: 💳 Recent Payment Proofs
+            - button "View All" [ref=e119] [cursor=pointer]
+          - generic [ref=e120]: No recent payments
