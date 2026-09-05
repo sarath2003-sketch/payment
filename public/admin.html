@@ -862,9 +862,9 @@
       <button class="btn-primary" style="width:100%" id="adminLoginBtn" onclick="doAdminLogin()">🔐 Login to Admin
         Panel</button>
       <div style="margin-top:16px;text-align:center;display:flex;gap:12px;justify-content:center;align-items:center">
-        <a href="/public-dashboard" style="color:var(--gold);font-size:13px;text-decoration:none;font-weight:600">🌐 Public Fund Details</a>
+        <a href="javascript:void(0)" onclick="navigatePortal('public')" style="color:var(--gold);font-size:13px;text-decoration:none;font-weight:600;cursor:pointer">🌐 Public Fund Details</a>
         <span style="color:var(--text-muted)">|</span>
-        <a href="/" style="color:var(--text-muted);font-size:13px;text-decoration:none">← Member Portal</a>
+        <a href="javascript:void(0)" onclick="navigatePortal('member')" style="color:var(--text-muted);font-size:13px;text-decoration:none;cursor:pointer">← Member Portal</a>
       </div>
     </div>
   </div>
@@ -885,7 +885,8 @@
         <div class="nav-group-label">Main</div>
         <button class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span
             class="nav-icon">📊</span> Dashboard</button>
-        <a href="/public-dashboard" target="_blank" class="nav-item" style="text-decoration:none;color:var(--text);display:flex;align-items:center"><span class="nav-icon">🌐</span> Public Dashboard</a>
+        <a href="javascript:void(0)" onclick="navigatePortal('public')" class="nav-item" style="text-decoration:none;color:var(--text);display:flex;align-items:center;cursor:pointer"><span class="nav-icon">🌐</span> Public Dashboard</a>
+        <a href="javascript:void(0)" onclick="navigatePortal('member')" class="nav-item" style="text-decoration:none;color:var(--text);display:flex;align-items:center;cursor:pointer"><span class="nav-icon">👤</span> Member Portal</a>
 
         <div class="nav-group-label">Member Management</div>
         <button class="nav-item" onclick="showPage('members')" id="nav-members"><span class="nav-icon">👥</span> All
@@ -937,6 +938,8 @@
           <div class="topbar-title" id="topbarTitle">Dashboard</div>
         </div>
         <div class="topbar-right">
+          <button class="btn-secondary" onclick="navigatePortal('public')" style="padding:5px 10px;font-size:12px;cursor:pointer" title="Open Public Transparency Portal">🌐 Public</button>
+          <button class="btn-secondary" onclick="navigatePortal('member')" style="padding:5px 10px;font-size:12px;cursor:pointer" title="Open Member Portal">👤 Member</button>
           <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
             <option value="dark">🌙 Dark Mode</option>
             <option value="light">☀️ Light Mode</option>
@@ -1992,6 +1995,17 @@
     let confirmCb = null;
 
     const API_BASE = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:5000' : '';
+
+    function navigatePortal(target) {
+      const isFile = window.location.protocol === 'file:' || !window.location.host;
+      if (target === 'public') {
+        window.location.href = isFile ? 'public-dashboard.html' : '/public-dashboard';
+      } else if (target === 'member') {
+        window.location.href = isFile ? 'index.html' : '/';
+      } else if (target === 'admin') {
+        window.location.href = isFile ? 'admin.html' : '/admin';
+      }
+    }
 
     async function api(url, opts = {}) {
       const targetUrl = url.startsWith('http') ? url : (API_BASE + url);

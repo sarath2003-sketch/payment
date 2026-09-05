@@ -758,9 +758,157 @@
       font-size: 14px;
     }
 
+    /* ====== UNIVERSAL PORTAL SWITCHER BAR ====== */
+    .universal-portal-bar {
+      background: linear-gradient(90deg, rgba(20, 14, 0, 0.98), rgba(30, 22, 0, 0.98));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      flex-wrap: wrap;
+    }
+    .upb-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--gold);
+    }
+    .upb-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulseGreen 1.5s infinite;
+    }
+    .upb-tabs {
+      display: flex;
+      align-items: center;
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 3px;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .upb-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: none;
+      border-radius: 20px;
+      background: transparent;
+      color: var(--text2);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .upb-tab:hover {
+      color: var(--white);
+      background: rgba(245, 200, 66, 0.12);
+    }
+    .upb-tab.active {
+      background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+      color: var(--dark);
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(245, 200, 66, 0.35);
+    }
+    .upb-lang {
+      display: flex;
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .upb-lang-btn {
+      padding: 4px 10px;
+      border: none;
+      background: transparent;
+      color: var(--text3);
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .upb-lang-btn.active {
+      background: var(--gold);
+      color: var(--dark);
+    }
+
+    /* Modal Overlay & Card */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.hidden { display: none !important; }
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8), var(--shadow-gold);
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+    }
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text3);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: var(--transition);
+    }
+    .close-btn:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+    .clickable-member {
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .clickable-member:hover .m-code-badge {
+      background: var(--gold);
+      color: var(--dark);
+      border-color: var(--gold);
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
     /* ====== RESPONSIVE MEDIA QUERIES ====== */
     @media (max-width: 768px) {
       .dashboard-container { padding: 16px 12px 40px; }
+      .universal-portal-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+      .upb-tabs { justify-content: center; }
       header { padding: 16px; flex-direction: column; align-items: flex-start; }
       .brand-title { font-size: 19px; }
       .card-value { font-size: 26px; }
@@ -774,10 +922,33 @@
 
 <div class="dashboard-container">
 
+  <!-- UNIVERSAL TOP PORTAL SWITCHER BAR -->
+  <div class="universal-portal-bar">
+    <div class="upb-brand">
+      <span class="upb-live-dot"></span>
+      <span>PF CHIT FUND CLUB</span>
+    </div>
+    <div class="upb-tabs">
+      <button class="upb-tab active" onclick="navigatePortal('public')" id="upbTabPublic">
+        🌐 <span id="txtUpbPublic">Public Portal</span>
+      </button>
+      <button class="upb-tab" onclick="navigatePortal('member')" id="upbTabMember">
+        👤 <span id="txtUpbMember">Member Portal</span>
+      </button>
+      <button class="upb-tab" onclick="navigatePortal('admin')" id="upbTabAdmin">
+        🛡️ <span id="txtUpbAdmin">Admin Portal</span>
+      </button>
+    </div>
+    <div class="upb-lang">
+      <button class="upb-lang-btn active" onclick="setLang('en')" id="btnTopLangEn">EN</button>
+      <button class="upb-lang-btn" onclick="setLang('ta')" id="btnTopLangTa">தமிழ்</button>
+    </div>
+  </div>
+
   <!-- HEADER -->
   <header>
     <div class="brand-group">
-      <img src="/assets/logo.png" class="brand-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%23f5c842%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22>PF</text></svg>'" alt="PF Seed Fund Logo">
+      <img id="publicBrandLogo" src="assets/logo.png" class="brand-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%23f5c842%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22>PF</text></svg>'" alt="PF Seed Fund Logo">
       <div>
         <div class="brand-title" id="txtOrgName">PF Chit Fund Club</div>
         <div class="brand-subtitle" id="txtOrgSub">Public Seed Fund Details & Financial Dashboard</div>
@@ -792,17 +963,17 @@
         <button class="lang-btn" onclick="setLang('ta')" id="btnLangTa">தமிழ்</button>
       </div>
 
-      <button class="nav-link-btn" onclick="fetchSummaryData()">
+      <button type="button" class="nav-link-btn" onclick="fetchSummaryData()">
         🔄 <span id="txtRefresh">Refresh</span>
       </button>
 
-      <a href="/" class="nav-link-btn">
+      <button type="button" class="nav-link-btn" onclick="navigatePortal('member')">
         🔑 <span id="txtMemberLogin">Member Login</span>
-      </a>
+      </button>
 
-      <a href="/admin" class="nav-link-btn">
+      <button type="button" class="nav-link-btn" onclick="navigatePortal('admin')">
         🔐 <span id="txtAdminLogin">Admin Portal</span>
-      </a>
+      </button>
     </div>
   </header>
 
@@ -1127,11 +1298,75 @@
 
 </div>
 
+<!-- PUBLIC MEMBER DETAILS MODAL -->
+<div id="memberModalOverlay" class="modal-overlay hidden" onclick="closeMemberModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="m-avatar" id="modalMemberAvatar" style="width:48px;height:48px;font-size:18px">M</div>
+        <div>
+          <h3 id="modalMemberName" style="color:var(--gold);font-size:18px;margin:0">Member</h3>
+          <div style="color:var(--text2);font-size:13px" id="modalMemberCode">SF001</div>
+        </div>
+      </div>
+      <button class="close-btn" onclick="closeMemberModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalMemberBody" style="padding:10px 0">
+      <!-- loaded dynamically -->
+    </div>
+    <div class="modal-footer" style="display:flex;gap:10px;margin-top:16px">
+      <button type="button" class="nav-link-btn" style="flex:1;justify-content:center;background:var(--gold);color:var(--dark);font-weight:700" onclick="navigatePortal('member')">
+        🔑 <span id="txtModalLoginBtn">Member Login</span>
+      </button>
+      <button type="button" class="nav-link-btn" style="flex:1;justify-content:center" onclick="closeMemberModal()">
+        ✕ <span id="txtModalCloseBtn">Close</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- JAVASCRIPT LOGIC -->
 <script>
+  // Protocol-resilient base resolver
+  function getPortalBase() {
+    if (window.location.protocol === 'file:' || !window.location.host) {
+      return 'http://localhost:5000';
+    }
+    return window.location.origin;
+  }
+  const BASE = getPortalBase();
+
+  // Smart portal navigation helper (works seamlessly in both HTTP and file://)
+  function navigatePortal(target) {
+    const isFile = window.location.protocol === 'file:' || !window.location.host;
+    if (isFile) {
+      if (target === 'admin') window.location.href = 'admin.html';
+      else if (target === 'member' || target === 'login') window.location.href = 'index.html';
+      else if (target === 'public') window.location.href = 'public-dashboard.html';
+      else window.location.href = 'index.html';
+    } else {
+      const origin = window.location.origin;
+      if (target === 'admin') window.location.href = origin + '/admin';
+      else if (target === 'member' || target === 'login') window.location.href = origin + '/';
+      else if (target === 'public') window.location.href = origin + '/public-dashboard';
+      else window.location.href = origin + '/';
+    }
+  }
+
+  function resolveAssetUrl(p) {
+    if (!p) return '';
+    if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://')) return p;
+    return BASE + (p.startsWith('/') ? p : '/' + p);
+  }
+
   // Bilingual Translations
   const i18n = {
     en: {
+      upbPublic: "Public Portal",
+      upbMember: "Member Portal",
+      upbAdmin: "Admin Portal",
+      modalLoginBtn: "Member Login",
+      modalCloseBtn: "Close",
       orgName: "PF Chit Fund Club",
       orgSub: "Public Seed Fund Details & Financial Dashboard",
       mainTitle: "Overall Seed Fund Statistics",
@@ -1168,6 +1403,11 @@
       emptyFeed: "No transactions recorded yet."
     },
     ta: {
+      upbPublic: "பொதுப் பலகை",
+      upbMember: "உறுப்பினர் பக்கம்",
+      upbAdmin: "நிர்வாகி பக்கம்",
+      modalLoginBtn: "உறுப்பினர் உள்நுழைவு",
+      modalCloseBtn: "மூடு",
       orgName: "புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்",
       orgSub: "பொது சீட்டு நிதி விவரங்கள் மற்றும் நிதி டாஷ்போர்டு",
       mainTitle: "மொத்த சீட்டு நிதி புள்ளிவிவரங்கள்",
@@ -1214,8 +1454,24 @@
     document.body.setAttribute('data-lang', lang);
     document.getElementById('btnLangEn').classList.toggle('active', lang === 'en');
     document.getElementById('btnLangTa').classList.toggle('active', lang === 'ta');
+    const topEn = document.getElementById('btnTopLangEn');
+    const topTa = document.getElementById('btnTopLangTa');
+    if (topEn) topEn.classList.toggle('active', lang === 'en');
+    if (topTa) topTa.classList.toggle('active', lang === 'ta');
 
     const t = i18n[lang];
+    const up = document.getElementById('txtUpbPublic');
+    if (up) up.textContent = t.upbPublic;
+    const um = document.getElementById('txtUpbMember');
+    if (um) um.textContent = t.upbMember;
+    const ua = document.getElementById('txtUpbAdmin');
+    if (ua) ua.textContent = t.upbAdmin;
+
+    const mlb = document.getElementById('txtModalLoginBtn');
+    if (mlb) mlb.textContent = t.modalLoginBtn;
+    const mcb = document.getElementById('txtModalCloseBtn');
+    if (mcb) mcb.textContent = t.modalCloseBtn;
+
     document.getElementById('txtOrgName').textContent = t.orgName;
     document.getElementById('txtOrgSub').textContent = t.orgSub;
     document.getElementById('txtMainTitle').textContent = t.mainTitle;
@@ -1279,7 +1535,7 @@
   // Fetch Public Fund Summary
   async function fetchSummaryData() {
     try {
-      const res = await fetch('/api/public-dashboard/summary');
+      const res = await fetch(`${BASE}/api/public-dashboard/summary`);
       if (!res.ok) throw new Error('API fetch failed');
       const data = await res.json();
       
@@ -1295,11 +1551,12 @@
   // Fetch App Settings (Logo, Org Name, etc.)
   async function loadPublicSettings() {
     try {
-      const res = await fetch('/api/settings/public');
+      const res = await fetch(`${BASE}/api/settings/public`);
       if (!res.ok) return;
       const s = await res.json();
       if (s.logo_path) {
-        document.querySelectorAll('.brand-logo').forEach(img => { img.src = s.logo_path; });
+        const logoUrl = resolveAssetUrl(s.logo_path);
+        document.querySelectorAll('.brand-logo').forEach(img => { img.src = logoUrl; });
       }
       if (s.org_name && currentLang === 'en') {
         document.getElementById('txtOrgName').textContent = s.org_name;
@@ -1315,7 +1572,7 @@
   // Fetch Live Activity Feed
   async function fetchLiveFeed() {
     try {
-      const res = await fetch('/api/public-dashboard/live-feed');
+      const res = await fetch(`${BASE}/api/public-dashboard/live-feed`);
       if (!res.ok) throw new Error('Live feed fetch failed');
       const data = await res.json();
 
@@ -1367,7 +1624,7 @@
         : `received <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} Seed Fund Loan 💰</span>`;
 
       return `
-        <span class="ticker-item">
+        <span class="ticker-item" style="cursor:pointer" onclick="openMemberTransparencyModal('${esc(item.member_code)}', '${esc(item.member_name)}')">
           <strong>${esc(item.member_name)}</strong> (${esc(item.member_code)}) ${actionText}
           <span style="color:var(--text3);font-size:11px">(${esc(item.time)})</span>
           <span style="color:var(--border2);margin:0 4px">•</span>
@@ -1402,8 +1659,9 @@
     tbody.innerHTML = items.map(item => {
       const isPaid = item.type === 'PAYMENT';
       const initial = (item.member_name || 'M').charAt(0).toUpperCase();
-      const avatarHtml = item.profile_photo
-        ? `<div class="m-avatar"><img src="${esc(item.profile_photo)}" alt="${esc(item.member_name)}"></div>`
+      const photoUrl = item.profile_photo ? resolveAssetUrl(item.profile_photo) : null;
+      const avatarHtml = photoUrl
+        ? `<div class="m-avatar"><img src="${esc(photoUrl)}" alt="${esc(item.member_name)}"></div>`
         : `<div class="m-avatar">${initial}</div>`;
 
       const titleText = currentLang === 'ta' && item.title_tamil ? item.title_tamil : item.title;
@@ -1419,13 +1677,13 @@
         : `<span class="badge-taken">💰 LOAN GIVEN</span>`;
 
       return `
-        <tr>
+        <tr class="clickable-member" onclick="openMemberTransparencyModal('${esc(item.member_code)}', '${esc(item.member_name)}')">
           <td>
             <div class="member-cell">
               ${avatarHtml}
               <div>
                 <strong>${esc(item.member_name)}</strong>
-                <span class="m-code-badge">${esc(item.member_code)}</span>
+                <span class="m-code-badge" title="Click to view verified member details">${esc(item.member_code)}</span>
               </div>
             </div>
           </td>
@@ -1503,11 +1761,88 @@
     document.getElementById('tb6Val').textContent = m.active_groups_count;
   }
 
+  // Open Member Transparency Modal
+  async function openMemberTransparencyModal(memberCode, fallbackName) {
+    const modal = document.getElementById('memberModalOverlay');
+    const nameEl = document.getElementById('modalMemberName');
+    const codeEl = document.getElementById('modalMemberCode');
+    const avatarEl = document.getElementById('modalMemberAvatar');
+    const bodyEl = document.getElementById('modalMemberBody');
+
+    nameEl.textContent = fallbackName || 'Member';
+    codeEl.textContent = memberCode || '—';
+    avatarEl.textContent = (fallbackName || 'M').charAt(0).toUpperCase();
+    bodyEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2)">Loading verified member information...</div>';
+    modal.classList.remove('hidden');
+
+    try {
+      const res = await fetch(`${BASE}/api/public-dashboard/member/${encodeURIComponent(memberCode)}`);
+      if (!res.ok) throw new Error('Member not found');
+      const data = await res.json();
+      if (data && data.success && data.member) {
+        const m = data.member;
+        nameEl.textContent = m.name;
+        codeEl.textContent = m.member_code;
+        if (m.profile_photo) {
+          avatarEl.innerHTML = `<img src="${esc(resolveAssetUrl(m.profile_photo))}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        } else {
+          avatarEl.textContent = m.name.charAt(0).toUpperCase();
+        }
+
+        bodyEl.innerHTML = `
+          <div style="background:rgba(245,200,66,0.06);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="color:var(--text2);font-size:13px">Status</span>
+              <span style="color:var(--green-light);font-weight:700;font-size:13px">✅ VERIFIED MEMBER</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="color:var(--text2);font-size:13px">Joined Date</span>
+              <span style="color:var(--text);font-weight:600;font-size:13px">${esc(m.joined_date)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="color:var(--text2);font-size:13px">Total Contributions Paid</span>
+              <span style="color:var(--gold);font-weight:800;font-size:14px">${formatINR(m.total_paid_amount)} (${m.payments_count} payments)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:var(--text2);font-size:13px">Seed Fund Loans</span>
+              <span style="color:var(--text);font-weight:600;font-size:13px">${m.loans_count > 0 ? `${formatINR(m.total_loan_amount)} (${m.loans_count})` : 'None'}</span>
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--text3);line-height:1.5;background:var(--dark2);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+            🔒 <strong>Member Privacy Note:</strong> Personal phone numbers, password hashes, and bank nominee records are strictly protected and never displayed publicly.
+          </div>
+        `;
+      }
+    } catch (e) {
+      bodyEl.innerHTML = `
+        <div style="background:rgba(245,200,66,0.06);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="color:var(--text2);font-size:13px">Member Code</span>
+            <span style="color:var(--gold);font-weight:700;font-size:13px">${esc(memberCode)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:var(--text2);font-size:13px">Verified Monthly Payments</span>
+            <span style="color:var(--green);font-weight:700;font-size:13px">✅ ACTIVE CONTRIBUTOR</span>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:var(--text3);line-height:1.5;background:var(--dark2);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+          🔒 Member verified in Chit Fund Club ledger.
+        </div>
+      `;
+    }
+  }
+
+  function closeMemberModal(e) {
+    if (e && e.target && e.target.id !== 'memberModalOverlay' && !e.target.classList.contains('close-btn')) return;
+    const modal = document.getElementById('memberModalOverlay');
+    if (modal) modal.classList.add('hidden');
+  }
+
   // Socket.IO Real-time Connection
   function initRealtimeSocket() {
     if (typeof io !== 'undefined') {
       try {
-        const socket = io();
+        const socket = io(BASE, { transports: ['websocket', 'polling'] });
         socket.on('payment:approved', () => {
           fetchSummaryData();
           fetchLiveFeed();

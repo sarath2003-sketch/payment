@@ -555,6 +555,9 @@ app.get('/admin', (req, res) => {
 app.get('/admin.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+app.get('/public', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
+});
 app.get('/public-dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
 });
@@ -565,6 +568,12 @@ app.get('/public-dashboard.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
 });
 app.get('/member', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/portal', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/hub', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 app.get('/member-ui.html', (req, res) => {

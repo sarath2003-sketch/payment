@@ -281,5 +281,69 @@ router.get('/live-feed', async (req, res) => {
   }
 });
 
+/**
+ * PUBLIC MEMBER TRANSPARENCY LOOKUP
+ * GET /api/public-dashboard/member/:code
+ * Returns public verified contribution metrics for a member.
+ * Strictly no phone, password, email, or nominee data exposed.
+ */
+router.get('/member/:code', async (req, res) => {
+  try {
+    const code = String(req.params.code || '').trim();
+    if (!code) return res.status(400).json({ success: false, error: 'Member code is required' });
+
+    const memberRes = await pool.query(
+      `SELECT id, member_id, name, profile_photo, status, created_at
+       FROM members
+       WHERE (member_id = $1 OR CAST(id AS TEXT) = $1) AND deleted_at IS NULL
+       LIMIT 1`,
+      [code]
+    );
+
+    if (memberRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Member not found' });
+    }
+
+    const m = memberRes.rows[0];
+
+    // Payments summary
+    const paymentsRes = await pool.query(
+      `SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total
+       FROM payment_proofs
+       WHERE member_id = $1 AND status = 'APPROVED'`,
+      [m.id]
+    );
+
+    // Distribution summary
+    const distRes = await pool.query(
+      `SELECT COUNT(*) as count, COALESCE(SUM(principal_amount), 0) as total
+       FROM seed_fund_distributions
+       WHERE member_id = $1`,
+      [m.id]
+    );
+
+    const joinedDate = m.created_at ? new Date(m.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+
+    res.json({
+      success: true,
+      member: {
+        id: m.id,
+        member_code: m.member_id || `SF${String(m.id).padStart(3, '0')}`,
+        name: m.name,
+        profile_photo: m.profile_photo || null,
+        status: m.status || 'ACTIVE',
+        joined_date: joinedDate,
+        payments_count: parseInt(paymentsRes.rows[0]?.count || 0, 10),
+        total_paid_amount: parseFloat(paymentsRes.rows[0]?.total || 0),
+        loans_count: parseInt(distRes.rows[0]?.count || 0, 10),
+        total_loan_amount: parseFloat(distRes.rows[0]?.total || 0)
+      }
+    });
+  } catch (error) {
+    console.error('Public Member Lookup Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to look up member' });
+  }
+});
+
 module.exports = router;
 
