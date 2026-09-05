@@ -2724,6 +2724,23 @@ async function loadHubPublicData() {
         renderHubLiveFeed();
       }
     }
+
+    const setRes = await fetch(`${base}/api/settings/public`).catch(() => null);
+    if (setRes && setRes.ok) {
+      const s = await setRes.json();
+      const qrPath = s.qr_path_versioned || (s.qr_path ? `${s.qr_path}?v=${Date.now()}` : 'assets/qr.png');
+      const resolvedQr = resolveMediaUrl(qrPath);
+      const hubQr = document.getElementById('hubQrImg');
+      if (hubQr) hubQr.src = resolvedQr;
+      const memQr = document.getElementById('qrCodeImg');
+      if (memQr) memQr.src = resolvedQr;
+      if (s.admin_upi_id && document.getElementById('hubUpiIdDisplay')) {
+        document.getElementById('hubUpiIdDisplay').textContent = `UPI ID: ${s.admin_upi_id}`;
+      }
+      if (s.admin_upi_name && document.getElementById('hubUpiNameDisplay')) {
+        document.getElementById('hubUpiNameDisplay').textContent = s.admin_upi_name;
+      }
+    }
   } catch (err) {
     console.warn('Hub public data notice:', err.message);
   }
@@ -5412,6 +5429,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       });
       publicSocket.on('settings:updated', () => {
         loadSettings();
+        loadHubPublicData();
+      });
+      publicSocket.on('stats:updated', () => {
+        loadHubPublicData();
+      });
+      publicSocket.on('seed_fund:updated', () => {
+        loadHubPublicData();
+      });
+      publicSocket.on('member:deleted', () => {
         loadHubPublicData();
       });
     } catch(e) {}

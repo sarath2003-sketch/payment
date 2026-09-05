@@ -13,7 +13,7 @@ router.get('/public', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT key, value FROM app_settings
-      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','qr_version','admin_upi_id','admin_upi_name','whatsapp_link','default_payment_amount','auto_approve_payment','payment_instructions_en','payment_instructions_ta')
+      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','qr_version','admin_upi_id','admin_upi_name','whatsapp_link','default_payment_amount','auto_approve_payment','payment_instructions_en','payment_instructions_ta','initial_fund_pool')
     `);
     const settings = {};
     result.rows.forEach(row => { settings[row.key] = row.value; });
@@ -54,7 +54,7 @@ router.put('/', authenticateToken, requireAdmin, async (req, res) => {
     'payment_instructions_en', 'payment_instructions_ta',
     'admin_upi_id', 'admin_upi_name', 'qr_path', 'auto_approve_payment',
     'auction_default_duration', 'auction_default_starting_amount', 'auction_default_bid_increment',
-    'notifications_enabled', 'sound_enabled'
+    'notifications_enabled', 'sound_enabled', 'initial_fund_pool'
   ];
   try {
     const updates = req.body;

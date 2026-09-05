@@ -19,16 +19,28 @@ router.get(['/summary', '/'], async (req, res) => {
     const totalMembers = parseInt(membersRes.rows[0]?.total_count || 0, 10);
     const activeMembers = parseInt(membersRes.rows[0]?.active_count || totalMembers, 10);
 
-    // 2. Total Payments / Contributions Received from Members
-    // Monthly payments collected
+    // Fetch initial base fund pool & payment settings
+    const settingsRes = await pool.query(
+      "SELECT key, value FROM app_settings WHERE key IN ('initial_fund_pool', 'admin_upi_id', 'admin_upi_name', 'qr_path', 'qr_version')"
+    );
+    const setMap = {};
+    settingsRes.rows.forEach(r => { setMap[r.key] = r.value; });
+    const initialFundPool = parseFloat(setMap['initial_fund_pool'] || 0);
+    const qrVersion = setMap['qr_version'] || Date.now();
+    let qrPathVersioned = setMap['qr_path'] || '/assets/qr.png';
+    if (setMap['qr_path'] && !setMap['qr_path'].includes('?v=')) {
+      qrPathVersioned = `${setMap['qr_path']}?v=${qrVersion}`;
+    }
+
+    // 2. Total Payments / Contributions Received from Valid Members
     const monthlyPaidRes = await pool.query(
-      "SELECT COALESCE(SUM(amount_paid), 0) as total FROM monthly_payments WHERE status = 'PAID' OR amount_paid > 0"
+      "SELECT COALESCE(SUM(mp.amount_paid), 0) as total FROM monthly_payments mp JOIN members m ON mp.member_id = m.id WHERE (mp.status = 'PAID' OR mp.amount_paid > 0) AND m.deleted_at IS NULL"
     );
     const totalMonthlyPaid = parseFloat(monthlyPaidRes.rows[0]?.total || 0);
 
     // Approved payment proofs
     const paymentProofsRes = await pool.query(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM payment_proofs WHERE status = 'APPROVED'"
+      "SELECT COALESCE(SUM(p.amount), 0) as total FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'APPROVED' AND m.deleted_at IS NULL"
     );
     const totalPaymentProofs = parseFloat(paymentProofsRes.rows[0]?.total || 0);
 
@@ -37,25 +49,27 @@ router.get(['/summary', '/'], async (req, res) => {
 
     // Loan/Distribution Repayments received from members
     const repaymentsRes = await pool.query(
-      "SELECT COALESCE(SUM(payment_amount), 0) as total FROM repayments WHERE status = 'COMPLETED'"
+      "SELECT COALESCE(SUM(r.payment_amount), 0) as total FROM repayments r JOIN members m ON r.member_id = m.id WHERE r.status = 'COMPLETED' AND m.deleted_at IS NULL"
     );
     const totalRepaymentsReceived = parseFloat(repaymentsRes.rows[0]?.total || 0);
 
     // Total Amount Received From Members
     const totalReceivedFromMembers = Math.round((totalMemberContributions + totalRepaymentsReceived) * 100) / 100;
 
-    // 3. Seed Fund Distributions & Loan Statistics
+    // 3. Seed Fund Distributions & Loan Statistics (Valid Members Only)
     const seedRes = await pool.query(`
       SELECT 
-        COALESCE(SUM(principal_amount), 0) as total_distributed,
-        COALESCE(SUM(interest_amount), 0) as total_interest_earned,
-        COALESCE(SUM(total_payable), 0) as total_payable,
-        COALESCE(SUM(total_repaid), 0) as total_repaid,
-        COALESCE(SUM(remaining_amount), 0) as amount_outside_fund,
+        COALESCE(SUM(d.principal_amount), 0) as total_distributed,
+        COALESCE(SUM(d.interest_amount), 0) as total_interest_earned,
+        COALESCE(SUM(d.total_payable), 0) as total_payable,
+        COALESCE(SUM(d.total_repaid), 0) as total_repaid,
+        COALESCE(SUM(d.remaining_amount), 0) as amount_outside_fund,
         COUNT(*) as total_distributions_count,
-        SUM(CASE WHEN remaining_amount > 0 THEN 1 ELSE 0 END) as active_distributions_count,
-        SUM(CASE WHEN remaining_amount <= 0.01 THEN 1 ELSE 0 END) as completed_distributions_count
-      FROM seed_fund_distributions
+        SUM(CASE WHEN d.remaining_amount > 0 THEN 1 ELSE 0 END) as active_distributions_count,
+        SUM(CASE WHEN d.remaining_amount <= 0.01 THEN 1 ELSE 0 END) as completed_distributions_count
+      FROM seed_fund_distributions d
+      JOIN members m ON d.member_id = m.id
+      WHERE m.deleted_at IS NULL
     `);
 
     const seedRow = seedRes.rows[0] || {};
@@ -74,20 +88,23 @@ router.get(['/summary', '/'], async (req, res) => {
     );
     const totalWithdrawn = parseFloat(withdrawalsRes.rows[0]?.total || 0);
 
-    // 5. Total Amount Given to Members (Distributions + Withdrawals)
+    // 5. Total Amount Given to Members
     const totalGivenToMembers = Math.round(totalDistributed * 100) / 100;
 
     // 6. Current Fund Balance / Available Cash Balance
-    // Current Balance = Total Received - Total Distributed
-    const currentBalance = Math.max(0, Math.round((totalReceivedFromMembers - totalGivenToMembers - totalWithdrawn) * 100) / 100);
+    // Current Balance = Initial Pool + Total Received - Total Distributed - Total Withdrawn
+    const currentBalance = Math.max(0, Math.round((initialFundPool + totalReceivedFromMembers - totalGivenToMembers - totalWithdrawn) * 100) / 100);
 
     // 7. Total Fund Amount (Total Pool Value: Available Balance + Outstanding Funds Outside)
     const totalFundAmount = Math.round((currentBalance + amountOutsideFund) * 100) / 100;
 
     // 8. Member Count Breakdown (Received vs Not Yet Received)
-    const distinctMembersReceivedRes = await pool.query(
-      "SELECT COUNT(DISTINCT member_id) as count FROM seed_fund_distributions"
-    );
+    const distinctMembersReceivedRes = await pool.query(`
+      SELECT COUNT(DISTINCT d.member_id) as count 
+      FROM seed_fund_distributions d
+      JOIN members m ON d.member_id = m.id
+      WHERE m.deleted_at IS NULL
+    `);
     const membersReceivedCount = parseInt(distinctMembersReceivedRes.rows[0]?.count || 0, 10);
     const membersNotReceivedCount = Math.max(0, totalMembers - membersReceivedCount);
 
@@ -110,8 +127,14 @@ router.get(['/summary', '/'], async (req, res) => {
     res.json({
       success: true,
       last_updated: new Date().toISOString(),
+      payment_info: {
+        admin_upi_id: setMap['admin_upi_id'] || '9025893352@idfcfirst',
+        admin_upi_name: setMap['admin_upi_name'] || 'IDFC First Bank · Sarathkumar Pandiyaraja',
+        qr_path_versioned: qrPathVersioned
+      },
       metrics: {
         // Core 11 Requested Figures
+        initial_fund_pool: initialFundPool,
         total_fund_amount: totalFundAmount,
         total_collected: totalReceivedFromMembers,
         total_distributed: totalGivenToMembers,

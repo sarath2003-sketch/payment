@@ -1288,7 +1288,10 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">🌿 Seed Fund Distributions / Loans</div>
-              <button class="btn-primary" onclick="showNewDistributionModal()">+ Create Fund Distribution</button>
+              <div style="display:flex;gap:10px;align-items:center">
+                <button class="btn-danger btn-sm" onclick="triggerClearAllSeedFunds()" style="background:rgba(239,68,68,0.15)">🗑️ Clear All Loans (Reset to ₹0)</button>
+                <button class="btn-primary" onclick="showNewDistributionModal()">+ Create Fund Distribution</button>
+              </div>
             </div>
             <div class="table-wrapper">
               <table>
@@ -1526,7 +1529,10 @@
             <div class="form-group"><label>💳 Admin UPI ID (Displayed on Payment Page)</label><input type="text" id="sAdminUpiId" placeholder="e.g. 9025893352@idfcfirst"></div>
             <div class="form-group"><label>🏦 Admin UPI Name / Bank Account Name</label><input type="text" id="sAdminUpiName" placeholder="e.g. IDFC First Bank · Sarathkumar Pandiyaraja"></div>
             <div class="form-group"><label>WhatsApp Group Link</label><input type="url" id="sWhatsApp"></div>
-            <div class="form-group"><label>Default Monthly Payment (₹)</label><input type="number" id="sPayAmount"></div>
+            <div class="form-row">
+              <div class="form-group"><label>Default Monthly Payment (₹)</label><input type="number" id="sPayAmount"></div>
+              <div class="form-group"><label>💰 Opening Fund Pool / Base Club Fund (₹)</label><input type="number" id="sInitialFundPool" placeholder="0" title="Initial opening balance or base fund pool for the club"></div>
+            </div>
             <div class="form-group" style="margin:16px 0;padding:14px;background:var(--bg);border:1px solid var(--border-accent);border-radius:10px">
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0;font-size:14px;font-weight:700">
                 <input type="checkbox" id="sAutoApprovePayment" style="width:20px;height:20px;accent-color:var(--primary);cursor:pointer">
@@ -1541,12 +1547,21 @@
             <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
 
             <div class="card-title" style="font-size:16px">📷 Upload Custom Payment QR Code Image</div>
-            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Upload the UPI QR scanner image from your phone/gallery to display on the Member Payment Page.</p>
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Upload the UPI QR scanner image from your phone/gallery to display on the Member Payment Page and Public Dashboard.</p>
             <div class="form-group">
               <input type="file" id="adminQrFileInput" accept="image/*" style="margin-bottom:10px">
               <button class="btn-secondary" onclick="uploadAdminQrCode()">📤 Upload QR Code Scanner Image</button>
             </div>
             <div id="adminQrPreview" style="margin-top:10px"></div>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
+
+            <div class="card-title" style="font-size:16px;color:var(--red)">🧹 Reset & Clean Test Data (சோதனை தரவு அழித்தல்)</div>
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">If you have old test loans, orphan member payments, or want to reset the public balance back to clean ₹0, click below.</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <button class="btn-danger" type="button" onclick="triggerCleanTestData()">🧹 Clean Orphan Test Records & Ghost Balances</button>
+              <button class="btn-danger" type="button" onclick="triggerClearAllSeedFunds()" style="background:rgba(239,68,68,0.2)">🗑️ Clear All Seed Fund Distributions (Reset to ₹0)</button>
+            </div>
           </div>
         </div>
 
@@ -1691,6 +1706,71 @@
       </div>
       <div class="modal-actions" id="proofPreviewActions">
         <button class="btn-secondary" onclick="closeModal('proofPreviewModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT SEED FUND DISTRIBUTION MODAL -->
+  <div id="editDistributionModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-title">✏️ Edit Seed Fund Distribution Amount & Details</div>
+      <div id="editDistAlert"></div>
+      <input type="hidden" id="editDistId">
+      <div class="form-group">
+        <label>Member Name / Details</label>
+        <input type="text" id="editDistMemberName" disabled style="opacity:0.7;background:var(--bg-surface-hover)">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Principal Amount (₹) *</label>
+          <input type="number" id="editDistPrincipal" step="0.01" oninput="recalcEditDist()">
+        </div>
+        <div class="form-group">
+          <label>Interest %</label>
+          <input type="number" id="editDistInterestPct" step="0.1" oninput="recalcEditDist()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Interest Amount (₹)</label>
+          <input type="number" id="editDistInterestAmt" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Total Payable (₹)</label>
+          <input type="number" id="editDistTotalPayable" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Total Repaid (₹)</label>
+          <input type="number" id="editDistTotalRepaid" step="0.01" oninput="recalcEditDist()">
+        </div>
+        <div class="form-group">
+          <label>Remaining Balance (₹)</label>
+          <input type="number" id="editDistRemaining" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select id="editDistStatus">
+            <option value="PENDING">PENDING</option>
+            <option value="PARTIALLY_PAID">PARTIALLY_PAID</option>
+            <option value="PAID">PAID</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input type="date" id="editDistDueDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes / Remarks</label>
+        <input type="text" id="editDistNotes" placeholder="Optional remarks">
+      </div>
+      <div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+        <button class="btn-secondary" onclick="closeModal('editDistributionModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveEditedDistribution()">💾 Save Loan Changes</button>
       </div>
     </div>
   </div>
@@ -2210,8 +2290,10 @@
               <td style="font-weight:700;color:var(--red)">₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')}</td>
               <td style="font-size:12px">${d.next_payment_date || d.due_date || '—'}</td>
               <td>${statusBadge}</td>
-              <td>
-                ${parseFloat(d.remaining_amount) > 0 ? `<button class="btn-success btn-sm" onclick="openRepayForDist(${d.id})">💵 Record Pay</button>` : '✅ Complete'}
+              <td style="white-space:nowrap">
+                ${parseFloat(d.remaining_amount) > 0 ? `<button class="btn-success btn-sm" onclick="openRepayForDist(${d.id})" style="margin-right:4px">💵 Pay</button>` : ''}
+                <button class="btn-secondary btn-sm" onclick="openEditDistModal(${d.id})" style="margin-right:4px" title="Edit Distribution Amount">✏️ Edit</button>
+                <button class="btn-danger btn-sm" onclick="deleteDist(${d.id})" title="Delete Distribution">🗑️</button>
               </td>
             </tr>
           `;
@@ -2639,6 +2721,107 @@
         loadRepayments();
         loadSeedFundDistributions();
       } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    function openEditDistModal(distId) {
+      const dist = cachedDistributions.find(d => String(d.id) === String(distId));
+      if (!dist) { showToast('Distribution not found', 'error'); return; }
+
+      document.getElementById('editDistId').value = dist.id;
+      document.getElementById('editDistMemberName').value = `${dist.member_name} (${dist.member_code || dist.member_id})`;
+      document.getElementById('editDistPrincipal').value = dist.principal_amount;
+      document.getElementById('editDistInterestPct').value = dist.interest_percentage || 5;
+      document.getElementById('editDistInterestAmt').value = dist.interest_amount;
+      document.getElementById('editDistTotalPayable').value = dist.total_payable;
+      document.getElementById('editDistTotalRepaid').value = dist.total_repaid || 0;
+      document.getElementById('editDistRemaining').value = dist.remaining_amount;
+      document.getElementById('editDistStatus').value = dist.payment_status || 'PENDING';
+      document.getElementById('editDistDueDate').value = dist.due_date || (dist.next_payment_date ? dist.next_payment_date.split('T')[0] : '');
+      document.getElementById('editDistNotes').value = dist.notes || '';
+      document.getElementById('editDistAlert').innerHTML = '';
+
+      document.getElementById('editDistributionModal').classList.remove('hidden');
+    }
+
+    function recalcEditDist() {
+      const p = parseFloat(document.getElementById('editDistPrincipal').value) || 0;
+      const pct = parseFloat(document.getElementById('editDistInterestPct').value) || 0;
+      const iAmt = Math.round((p * (pct / 100)) * 100) / 100;
+      const tPay = Math.round((p + iAmt) * 100) / 100;
+      const tRep = parseFloat(document.getElementById('editDistTotalRepaid').value) || 0;
+      const rem = Math.max(0, Math.round((tPay - tRep) * 100) / 100);
+
+      document.getElementById('editDistInterestAmt').value = iAmt;
+      document.getElementById('editDistTotalPayable').value = tPay;
+      document.getElementById('editDistRemaining').value = rem;
+      if (rem <= 0) {
+        document.getElementById('editDistStatus').value = 'PAID';
+      } else if (tRep > 0) {
+        document.getElementById('editDistStatus').value = 'PARTIALLY_PAID';
+      }
+    }
+
+    async function saveEditedDistribution() {
+      const id = document.getElementById('editDistId').value;
+      if (!id) return;
+
+      const payload = {
+        principal_amount: parseFloat(document.getElementById('editDistPrincipal').value) || 0,
+        interest_percentage: parseFloat(document.getElementById('editDistInterestPct').value) || 0,
+        interest_amount: parseFloat(document.getElementById('editDistInterestAmt').value) || 0,
+        total_payable: parseFloat(document.getElementById('editDistTotalPayable').value) || 0,
+        total_repaid: parseFloat(document.getElementById('editDistTotalRepaid').value) || 0,
+        remaining_amount: parseFloat(document.getElementById('editDistRemaining').value) || 0,
+        payment_status: document.getElementById('editDistStatus').value,
+        due_date: document.getElementById('editDistDueDate').value || null,
+        notes: document.getElementById('editDistNotes').value.trim() || null
+      };
+
+      try {
+        await api(`/api/seed-fund/distributions/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        });
+        showToast('Seed fund distribution updated successfully!', 'success');
+        closeModal('editDistributionModal');
+        loadSeedFundDistributions();
+      } catch (err) {
+        showToast(err.message || 'Failed to update distribution', 'error');
+      }
+    }
+
+    async function deleteDist(id) {
+      if (!confirm(`Are you sure you want to permanently delete Seed Fund Distribution #${id}? This will remove its loan schedules and repayment balance.`)) return;
+      try {
+        await api(`/api/seed-fund/distributions/${id}`, { method: 'DELETE' });
+        showToast(`Distribution #${id} deleted successfully!`, 'success');
+        loadSeedFundDistributions();
+      } catch (err) {
+        showToast(err.message || 'Failed to delete distribution', 'error');
+      }
+    }
+
+    async function triggerClearAllSeedFunds() {
+      if (!confirm('⚠️ WARNING: This will permanently delete ALL seed fund distributions and reset loan balances to ₹0. Are you sure you want to proceed?')) return;
+      try {
+        const res = await api('/api/seed-fund/distributions/clear-all', { method: 'POST' });
+        showToast(res.message || 'All seed fund distributions cleared!', 'success');
+        loadSeedFundDistributions();
+      } catch (err) {
+        showToast(err.message || 'Failed to clear seed fund distributions', 'error');
+      }
+    }
+
+    async function triggerCleanTestData() {
+      if (!confirm('🧹 Clean up all orphan member transactions, test distributions, and ghost balances?')) return;
+      try {
+        const res = await api('/api/admin/members/clean-test-data', { method: 'POST' });
+        showToast(res.message || 'Orphan test data cleaned successfully!', 'success');
+        loadSeedFundDistributions();
+        loadDashboard();
+      } catch (err) {
+        showToast(err.message || 'Failed to clean test data', 'error');
+      }
     }
 
     // ============================================================
@@ -3637,6 +3820,9 @@
         if (d.admin_upi_name) document.getElementById('sAdminUpiName').value = d.admin_upi_name;
         if (d.whatsapp_link) document.getElementById('sWhatsApp').value = d.whatsapp_link;
         if (d.default_payment_amount) document.getElementById('sPayAmount').value = d.default_payment_amount;
+        if (document.getElementById('sInitialFundPool')) {
+          document.getElementById('sInitialFundPool').value = d.initial_fund_pool !== undefined ? d.initial_fund_pool : 0;
+        }
         if (document.getElementById('sAutoApprovePayment')) {
           document.getElementById('sAutoApprovePayment').checked = (d.auto_approve_payment === '1' || d.auto_approve_payment === 'true' || d.auto_approve_payment === undefined);
         }
@@ -3651,8 +3837,8 @@
           const qrPath = d.qr_path_versioned || (d.qr_path ? `${d.qr_path}?v=${Date.now()}` : '/assets/qr.png');
           qrContainer.innerHTML = `
             <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;max-width:280px;text-align:center">
-              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:700">CURRENT QR CODE PREVIEW</div>
-              <img src="${qrPath}" id="currentAdminQrImg" style="max-width:200px;border-radius:8px;border:1px solid var(--border);margin-bottom:8px">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:700">CURRENT ACTIVE QR CODE</div>
+              <img src="${qrPath}" id="currentAdminQrImg" style="max-width:200px;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;background:#fff;padding:4px">
               <div style="font-size:12px;color:var(--text-muted)">UPI ID: <strong>${esc(d.admin_upi_id || '9025893352@idfcfirst')}</strong></div>
               <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Last Updated: ${d.qr_version ? new Date(parseInt(d.qr_version, 10)).toLocaleString() : 'Just now'}</div>
             </div>
@@ -3672,6 +3858,7 @@
             admin_upi_name: document.getElementById('sAdminUpiName').value,
             whatsapp_link: document.getElementById('sWhatsApp').value,
             default_payment_amount: document.getElementById('sPayAmount').value,
+            initial_fund_pool: document.getElementById('sInitialFundPool')?.value || '0',
             auto_approve_payment: document.getElementById('sAutoApprovePayment')?.checked ? '1' : '0'
           })
         });
@@ -4007,63 +4194,6 @@
         });
         showToast(res.message || 'Chat room created successfully!', 'success');
         loadAdminGroups();
-      } catch(e) { showToast(e.message, 'error'); }
-    }
-
-    async function loadSettings() {
-      try {
-        const s = await api('/api/settings');
-        if (document.getElementById('sOrgName')) document.getElementById('sOrgName').value = s.org_name || '';
-        if (document.getElementById('sOrgNameTa')) document.getElementById('sOrgNameTa').value = s.org_name_tamil || '';
-        if (document.getElementById('sAdminUpiId')) document.getElementById('sAdminUpiId').value = s.admin_upi_id || '9025893352@idfcfirst';
-        if (document.getElementById('sAdminUpiName')) document.getElementById('sAdminUpiName').value = s.admin_upi_name || 'IDFC First Bank · Sarathkumar Pandiyaraja';
-        if (document.getElementById('sWhatsApp')) document.getElementById('sWhatsApp').value = s.whatsapp_link || '';
-        if (document.getElementById('sPayAmount')) document.getElementById('sPayAmount').value = s.default_payment_amount || 500;
-
-        const qrPrev = document.getElementById('adminQrPreview');
-        if (qrPrev) {
-          if (s.qr_path) {
-            qrPrev.innerHTML = `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Active Payment QR Scanner Code:</div><img src="${s.qr_path}" style="max-width:180px;border-radius:10px;border:1px solid var(--border);padding:4px;background:#fff" alt="Current QR">`;
-          } else {
-            qrPrev.innerHTML = '<div style="font-size:12px;color:var(--text-muted)">No QR image uploaded yet.</div>';
-          }
-        }
-      } catch(e) { console.warn('Could not load settings:', e); }
-    }
-
-    async function saveSettings() {
-      try {
-        const updates = {
-          org_name: document.getElementById('sOrgName').value.trim(),
-          org_name_tamil: document.getElementById('sOrgNameTa').value.trim(),
-          admin_upi_id: document.getElementById('sAdminUpiId').value.trim(),
-          admin_upi_name: document.getElementById('sAdminUpiName').value.trim(),
-          whatsapp_link: document.getElementById('sWhatsApp').value.trim(),
-          default_payment_amount: document.getElementById('sPayAmount').value.trim()
-        };
-        await api('/api/settings', { method: 'PUT', body: JSON.stringify(updates) });
-        showToast('Settings saved successfully!', 'success');
-      } catch(e) { showToast(e.message, 'error'); }
-    }
-
-    async function uploadAdminQrCode() {
-      const fileInput = document.getElementById('adminQrFileInput');
-      const file = fileInput.files[0];
-      if (!file) { showToast('Please select a QR code image file to upload', 'error'); return; }
-
-      try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          try {
-            const res = await api('/api/settings/upload-qr', {
-              method: 'POST',
-              body: JSON.stringify({ image_data: e.target.result })
-            });
-            showToast(res.message || 'QR Code uploaded successfully!', 'success');
-            loadSettings();
-          } catch(err) { showToast(err.message, 'error'); }
-        };
-        reader.readAsDataURL(file);
       } catch(e) { showToast(e.message, 'error'); }
     }
 

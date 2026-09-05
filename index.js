@@ -579,6 +579,15 @@ app.get('/hub', (req, res) => {
 app.get('/member-ui.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/index.public.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
+});
 // Catch-all: serve member portal for any non-API route
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path.startsWith('/assets/')) {

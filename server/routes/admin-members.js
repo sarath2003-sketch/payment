@@ -562,12 +562,59 @@ router.delete('/:id', async (req, res) => {
     if (checkRes.rows.length === 0) return res.status(404).json({ error: 'Member not found' });
 
     const member = checkRes.rows[0];
+
+    // Cascade delete all dependent records
+    await pool.query('DELETE FROM payment_schedules WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM repayments WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM transactions WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM seed_fund_distributions WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM payment_proofs WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM monthly_payments WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM notice_board WHERE target_id = $1', [id]);
+    await pool.query('DELETE FROM nominees WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM group_members WHERE member_id = $1', [id]);
     await pool.query('DELETE FROM members WHERE id = $1', [id]);
 
     await logAudit(req, 'DELETE_MEMBER_PERMANENT', 'MEMBER', id, { member_id: member.member_id, name: member.name });
-    res.json({ message: 'Member permanently deleted' });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('member:deleted', { id, member_code: member.member_id });
+      io.emit('stats:updated');
+    }
+
+    res.json({ message: 'Member and all associated records permanently deleted' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete member' });
+    console.error('Delete member error:', err);
+    res.status(500).json({ error: 'Failed to delete member: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/admin/members/clean-test-data (Purge all orphan records & test data)
+ */
+router.post('/clean-test-data', async (req, res) => {
+  try {
+    // Delete orphan distributions and proofs where member no longer exists
+    await pool.query('DELETE FROM seed_fund_distributions WHERE member_id NOT IN (SELECT id FROM members)');
+    await pool.query('DELETE FROM payment_schedules WHERE member_id NOT IN (SELECT id FROM members)');
+    await pool.query('DELETE FROM payment_proofs WHERE member_id NOT IN (SELECT id FROM members)');
+    await pool.query('DELETE FROM monthly_payments WHERE member_id NOT IN (SELECT id FROM members)');
+    await pool.query('DELETE FROM repayments WHERE member_id NOT IN (SELECT id FROM members)');
+    await pool.query('DELETE FROM transactions WHERE member_id NOT IN (SELECT id FROM members)');
+    await pool.query('DELETE FROM notice_board WHERE target_id NOT IN (SELECT id FROM members)');
+    await pool.query('DELETE FROM nominees WHERE member_id NOT IN (SELECT id FROM members)');
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('stats:updated');
+      io.emit('seed_fund:updated');
+    }
+
+    res.json({ message: 'All orphaned test data and ghost transactions cleaned up successfully!' });
+  } catch (err) {
+    console.error('Error cleaning test data:', err);
+    res.status(500).json({ error: 'Failed to clean test data: ' + err.message });
   }
 });
 

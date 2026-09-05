@@ -11,9 +11,13 @@ const router = express.Router();
 router.get('/distributions', authenticateToken, async (req, res) => {
   try {
     let sql = `
-      SELECT d.*, m.name as member_name, m.member_id as member_code, m.phone as member_phone, g.group_name
+      SELECT d.*, 
+             COALESCE(m.name, d.nominee_name, 'Member #' || d.member_id) as member_name, 
+             COALESCE(m.member_id, '' || d.member_id) as member_code, 
+             COALESCE(m.phone, '—') as member_phone, 
+             g.group_name
       FROM seed_fund_distributions d
-      JOIN members m ON d.member_id = m.id
+      LEFT JOIN members m ON d.member_id = m.id
       LEFT JOIN groups g ON d.group_id = g.id
     `;
     let params = [];
@@ -249,6 +253,126 @@ router.get('/summary', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('Error fetching seed fund summary:', err);
     res.status(500).json({ error: 'Failed to fetch summary' });
+  }
+});
+
+/**
+ * UPDATE A SEED FUND DISTRIBUTION
+ * PUT /api/seed-fund/distributions/:id
+ */
+router.put('/distributions/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let {
+      principal_amount,
+      interest_percentage,
+      interest_amount,
+      total_payable,
+      total_repaid,
+      remaining_amount,
+      due_date,
+      next_payment_date,
+      payment_status,
+      nominee_name,
+      notes
+    } = req.body;
+
+    const existRes = await pool.query('SELECT * FROM seed_fund_distributions WHERE id = $1', [id]);
+    if (existRes.rows.length === 0) return res.status(404).json({ error: 'Seed fund distribution not found' });
+    const current = existRes.rows[0];
+
+    const pAmount = principal_amount !== undefined ? parseFloat(principal_amount) : parseFloat(current.principal_amount);
+    const iPct = interest_percentage !== undefined ? parseFloat(interest_percentage) : parseFloat(current.interest_percentage || 5);
+    const iAmount = interest_amount !== undefined ? parseFloat(interest_amount) : Math.round((pAmount * (iPct / 100)) * 100) / 100;
+    const tPayable = total_payable !== undefined ? parseFloat(total_payable) : Math.round((pAmount + iAmount) * 100) / 100;
+    const tRepaid = total_repaid !== undefined ? parseFloat(total_repaid) : parseFloat(current.total_repaid || 0);
+    const remAmount = remaining_amount !== undefined ? parseFloat(remaining_amount) : Math.max(0, Math.round((tPayable - tRepaid) * 100) / 100);
+
+    let status = payment_status || current.payment_status;
+    if (remAmount <= 0) status = 'PAID';
+    else if (tRepaid > 0) status = 'PARTIALLY_PAID';
+
+    const updRes = await pool.query(`
+      UPDATE seed_fund_distributions SET
+        principal_amount = $1,
+        interest_percentage = $2,
+        interest_amount = $3,
+        total_payable = $4,
+        total_repaid = $5,
+        remaining_amount = $6,
+        payment_status = $7,
+        due_date = COALESCE($8, due_date),
+        next_payment_date = COALESCE($9, next_payment_date),
+        nominee_name = COALESCE($10, nominee_name),
+        notes = COALESCE($11, notes),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $12
+      RETURNING *
+    `, [pAmount, iPct, iAmount, tPayable, tRepaid, remAmount, status, due_date || null, next_payment_date || null, nominee_name || null, notes || null, id]);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('seed_fund:updated', { distributionId: id });
+      io.emit('stats:updated');
+    }
+
+    res.json({ message: 'Seed fund distribution updated successfully!', distribution: updRes.rows[0] });
+  } catch (err) {
+    console.error('Error updating distribution:', err);
+    res.status(500).json({ error: 'Failed to update distribution: ' + err.message });
+  }
+});
+
+/**
+ * DELETE A SEED FUND DISTRIBUTION
+ * DELETE /api/seed-fund/distributions/:id
+ */
+router.delete('/distributions/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existRes = await pool.query('SELECT * FROM seed_fund_distributions WHERE id = $1', [id]);
+    if (existRes.rows.length === 0) return res.status(404).json({ error: 'Distribution not found' });
+
+    // Clean up dependent payment schedules & repayments
+    await pool.query('DELETE FROM payment_schedules WHERE distribution_id = $1', [id]);
+    await pool.query('DELETE FROM repayments WHERE distribution_id = $1', [id]);
+    await pool.query("DELETE FROM transactions WHERE reference_type = 'SEED_FUND' AND reference_id = $1", [id]);
+    await pool.query('DELETE FROM seed_fund_distributions WHERE id = $1', [id]);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('seed_fund:updated', { distributionId: id, action: 'deleted' });
+      io.emit('stats:updated');
+    }
+
+    res.json({ message: `Seed fund distribution #${id} deleted successfully!` });
+  } catch (err) {
+    console.error('Error deleting distribution:', err);
+    res.status(500).json({ error: 'Failed to delete distribution' });
+  }
+});
+
+/**
+ * CLEAR ALL SEED FUND DISTRIBUTIONS
+ * POST /api/seed-fund/distributions/clear-all
+ */
+router.post('/distributions/clear-all', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM payment_schedules');
+    await pool.query('DELETE FROM repayments WHERE distribution_id IS NOT NULL');
+    await pool.query("DELETE FROM transactions WHERE reference_type = 'SEED_FUND'");
+    await pool.query('DELETE FROM seed_fund_distributions');
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('seed_fund:updated', { action: 'cleared_all' });
+      io.emit('stats:updated');
+    }
+
+    res.json({ message: 'All seed fund distributions cleared successfully! Total seed fund loans reset to ₹0.' });
+  } catch (err) {
+    console.error('Error clearing distributions:', err);
+    res.status(500).json({ error: 'Failed to clear distributions' });
   }
 });
 
