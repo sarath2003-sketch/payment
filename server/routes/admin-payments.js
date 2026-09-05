@@ -320,4 +320,75 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+/**
+ * PUT/POST/PATCH /api/admin/payments/:id/approve
+ * Instant 1-click payment approval
+ */
+router.all('/:id/approve', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    await client.query('BEGIN');
+
+    const existingRes = await client.query('SELECT pp.*, m.name as member_name, m.member_id as member_code FROM payment_proofs pp JOIN members m ON pp.member_id = m.id WHERE pp.id = $1', [id]);
+    if (existingRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Payment record not found' });
+    }
+    const existing = existingRes.rows[0];
+
+    // If not already approved
+    if (existing.status !== 'APPROVED' && existing.status !== 'PAID') {
+      await client.query(
+        "UPDATE members SET balance = balance + $1, payment_status = 'PAID', updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+        [existing.amount, existing.member_id]
+      );
+    }
+
+    const updateRes = await client.query(
+      `UPDATE payment_proofs 
+       SET status = 'APPROVED', verified_by = $1, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING *`,
+      [req.admin?.id || 1, id]
+    );
+
+    // Record into transaction ledger
+    const pDate = new Date(existing.payment_date || Date.now());
+    const monthStr = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
+    try {
+      await client.query(`
+        INSERT INTO transactions (member_id, transaction_date, transaction_time, month, transaction_type, amount, description, reference_type, reference_id, status)
+        VALUES ($1, CURRENT_DATE, '12:00:00', $2, 'PAYMENT', $3, $4, 'PAYMENT_PROOF', $5, 'COMPLETED')
+      `, [existing.member_id, monthStr, existing.amount, `Payment Approved (Ref: ${existing.transaction_reference || 'N/A'})`, id]);
+    } catch (e) {}
+
+    await client.query('COMMIT');
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payment:approved', { proof_id: id, member_id: existing.member_id, amount: existing.amount, status: 'APPROVED' });
+      io.emit('member:balance-updated', { member_id: existing.member_id, amount: existing.amount, payment_status: 'PAID' });
+      io.emit('notification:broadcast', {
+        title: '✅ Payment Approved',
+        body: `Payment of ₹${existing.amount} for ${existing.member_name} (${existing.member_code}) has been approved!`
+      });
+    }
+
+    await logAudit(req, 'APPROVE_PAYMENT', 'PAYMENT', id, { amount: existing.amount, member_id: existing.member_id, member_name: existing.member_name });
+
+    res.json({
+      success: true,
+      message: `Payment of ₹${existing.amount} for ${existing.member_name} approved and credited!`,
+      payment: updateRes.rows[0]
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error approving payment:', err);
+    res.status(500).json({ error: 'Failed to approve payment' });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

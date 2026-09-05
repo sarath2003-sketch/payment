@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const pool = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
@@ -72,17 +74,44 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Delete member
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+// Profile photo upload
+router.post('/profile-photo', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query('DELETE FROM members WHERE id = $1 RETURNING id', [req.params.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Member not found' });
+    const memberId = req.admin?.id;
+    if (!memberId) return res.status(401).json({ error: 'Authentication required' });
+
+    let photoUrl = '';
+    if (req.body && req.body.image_data) {
+      const base64Data = req.body.image_data.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `avatar_${memberId}_${Date.now()}.png`;
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const filePath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      photoUrl = `/uploads/${filename}`;
+    } else if (req.files && (req.files.photo || req.files.image)) {
+      const file = req.files.photo || req.files.image;
+      const ext = path.extname(file.name) || '.png';
+      const filename = `avatar_${memberId}_${Date.now()}${ext}`;
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const filePath = path.join(uploadsDir, filename);
+      await file.mv(filePath);
+      photoUrl = `/uploads/${filename}`;
+    } else if (req.body && req.body.photo_url) {
+      photoUrl = req.body.photo_url.trim();
+    } else {
+      return res.status(400).json({ error: 'No photo provided' });
     }
-    res.json({ message: 'Member deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting member:', error);
-    res.status(500).json({ error: 'Failed to delete member' });
+
+    await pool.query('UPDATE members SET profile_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [photoUrl, memberId]);
+    res.json({ message: 'Profile photo updated successfully', photo_url: photoUrl });
+  } catch (err) {
+    console.error('Error uploading profile photo:', err);
+    res.status(500).json({ error: 'Failed to upload profile photo' });
   }
 });
 

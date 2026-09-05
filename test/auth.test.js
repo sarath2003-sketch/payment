@@ -52,20 +52,24 @@ test('admin authorization rejects member tokens with 403', () => {
 
 test('admin authorization accepts admin tokens', () => {
   const response = responseDouble();
-  let received;
+  let called = false;
+  const req = requestWithToken({ id: 1, username: 'admin', type: 'admin' });
 
-  requireAdmin(requestWithToken({ id: 1, username: 'admin', type: 'admin' }), response, (req) => { received = req; });
+  requireAdmin(req, response, () => { called = true; });
 
   assert.equal(response.statusCode, 200);
-  assert.equal(received.admin.type, 'admin');
+  assert.equal(called, true);
+  assert.equal(req.admin.type, 'admin');
 });
 
 test('member authorization accepts member tokens', () => {
   const response = responseDouble();
-  let received;
+  let called = false;
+  const req = requestWithToken({ id: 7, member_id: '101', type: 'member' });
 
-  memberOnly(requestWithToken({ id: 7, member_id: '101', type: 'member' }), response, (req) => { received = req; });
+  memberOnly(req, response, () => { called = true; });
 
   assert.equal(response.statusCode, 200);
-  assert.equal(received.admin.member_id, '101');
+  assert.equal(called, true);
+  assert.equal(req.admin.member_id, '101');
 });

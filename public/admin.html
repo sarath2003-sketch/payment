@@ -767,17 +767,70 @@
     }
 
     @media (max-width: 768px) {
+      #menuToggle {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: var(--bg-surface-hover);
+      }
+
       .sidebar {
         transform: translateX(-100%);
-        transition: transform 0.25s;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
+        width: 280px;
       }
 
       .sidebar.open {
         transform: translateX(0);
+        box-shadow: 6px 0 30px rgba(0, 0, 0, 0.6);
+      }
+
+      .sidebar-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        backdrop-filter: blur(2px);
+      }
+
+      .sidebar-backdrop.active {
+        display: block;
       }
 
       .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+
+      .topbar {
+        padding: 10px 16px;
+      }
+
+      .page-content {
+        padding: 14px 10px;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        margin-bottom: 12px;
+      }
+
+      button, .nav-item, .btn-primary, .btn-secondary, .btn-danger, .btn-success, .btn-warning {
+        touch-action: manipulation;
+        cursor: pointer;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
     }
   </style>
@@ -818,6 +871,7 @@
 
   <!-- ADMIN MAIN APP -->
   <div id="adminApp" class="hidden">
+    <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <img class="sidebar-logo" id="sidebarLogo" src="/assets/logo.png" onerror="this.style.display='none'"
@@ -869,6 +923,9 @@
           Settings</button>
       </nav>
       <div class="sidebar-footer">
+        <button class="btn-secondary" style="width:100%;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="toggleSidebarTheme()" id="sidebarThemeBtn">
+          <span>🌓</span> <span id="sidebarThemeText">Dark Mode</span>
+        </button>
         <button class="btn-danger" style="width:100%" onclick="doAdminLogout()">🚪 Logout</button>
       </div>
     </aside>
@@ -876,9 +933,7 @@
     <div class="main-content">
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
-          <button onclick="document.getElementById('sidebar').classList.toggle('open')"
-            style="background:transparent;border:none;color:var(--text);font-size:22px;cursor:pointer;display:none"
-            id="menuToggle">☰</button>
+          <button onclick="toggleSidebar()" id="menuToggle" aria-label="Toggle Navigation">☰</button>
           <div class="topbar-title" id="topbarTitle">Dashboard</div>
         </div>
         <div class="topbar-right">
@@ -1039,6 +1094,34 @@
 
         <!-- ================= PAYMENTS MANAGEMENT ================= -->
         <div id="payments" class="page">
+          <!-- Active QR Code Quick Management Card -->
+          <div class="card" style="margin-bottom:18px;border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+              <div>
+                <div style="font-weight:800;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px">
+                  📸 Active Payment QR Scanner Code
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+                  This UPI QR code is shown to members on their payment page to scan & pay ₹500.
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="file" id="payTabQrInput" accept="image/*" style="display:none" onchange="uploadPaymentTabQr(this)">
+                <button class="btn-secondary btn-sm" onclick="document.getElementById('payTabQrInput').click()">📷 Upload New QR Image</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:18px;margin-top:14px;flex-wrap:wrap">
+              <div id="payTabQrPreview" style="width:110px;height:110px;border-radius:12px;border:1px solid var(--border);padding:4px;background:#fff;display:flex;align-items:center;justify-content:center">
+                <img id="payTabQrImg" src="/assets/qr.png" alt="Active QR" style="max-width:100%;max-height:100%;object-fit:contain">
+              </div>
+              <div style="font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:6px">
+                <div>UPI ID: <strong id="payTabUpiId" style="color:var(--primary);font-size:14px">9025893352@idfcfirst</strong></div>
+                <div>Bank / Payee Name: <strong id="payTabUpiName">IDFC First Bank · Sarathkumar Pandiyaraja</strong></div>
+                <div>Default Amount: <strong style="color:var(--green)">₹500 / month</strong></div>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">
               <div class="card-title">💳 Payment Management</div>
@@ -1450,6 +1533,17 @@
           </select>
         </div>
       </div>
+      <div class="form-group">
+        <label>📸 Member Profile Photo</label>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div id="mPhotoPreview" style="width:44px;height:44px;border-radius:50%;background:var(--bg-surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:20px;">👤</div>
+          <div style="flex:1;">
+            <input type="file" id="mPhotoFile" accept="image/*" style="font-size:12px;padding:6px;width:100%" onchange="handleAdminMemberPhotoUpload(event)">
+            <input type="hidden" id="mProfilePhoto">
+          </div>
+          <button type="button" class="btn-secondary btn-sm" onclick="clearAdminMemberPhoto()" style="padding:4px 8px;font-size:12px">Clear</button>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('memberModal')">Cancel</button>
         <button class="btn-primary" onclick="saveMemberForm()">Submit / Add Member</button>
@@ -1856,13 +1950,44 @@
 
     // Theme System
     function changeTheme(theme) {
+      let actualTheme = theme;
       if (theme === 'system') {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      } else {
-        document.documentElement.setAttribute('data-theme', theme);
+        actualTheme = prefersDark ? 'dark' : 'light';
       }
+      document.documentElement.setAttribute('data-theme', actualTheme);
       localStorage.setItem('adminTheme', theme);
+      updateSidebarThemeLabel(actualTheme);
+    }
+
+    function toggleSidebarTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nextTheme = current === 'dark' ? 'light' : 'dark';
+      changeTheme(nextTheme);
+      const sel = document.getElementById('themeSelect');
+      if (sel) sel.value = nextTheme;
+    }
+
+    function updateSidebarThemeLabel(theme) {
+      const icon = document.getElementById('sidebarThemeIcon');
+      const text = document.getElementById('sidebarThemeText');
+      if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+      if (text) text.textContent = theme === 'dark' ? 'Dark Mode' : 'Light Mode';
+    }
+
+    // Mobile Sidebar Drawer Toggle
+    function toggleSidebar(forceState) {
+      const sb = document.getElementById('sidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (!sb) return;
+      const isOpen = forceState !== undefined ? forceState : !sb.classList.contains('open');
+      if (isOpen) {
+        sb.classList.add('open');
+        if (bd) bd.classList.add('active');
+      } else {
+        sb.classList.remove('open');
+        if (bd) bd.classList.remove('active');
+      }
     }
 
     // Admin Auth
@@ -1894,6 +2019,7 @@
 
     // App Navigation
     function showPage(name) {
+      toggleSidebar(false); // Auto-close mobile drawer when navigating
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       const p = document.getElementById(name); if (p) p.classList.add('active');
@@ -2579,9 +2705,15 @@
         // Recent payments
         const pData = await api('/api/admin/payments?limit=5');
         document.getElementById('dashRecentPayments').innerHTML = (pData.proofs || []).map(p => `
-      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-        <div><strong>${esc(p.member_name)}</strong> (₹${p.amount})</div>
-        <span class="badge badge-${p.status === 'APPROVED' ? 'paid' : 'pending'}">${p.status}</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px">
+        <div>
+          <div><strong>${esc(p.member_name)}</strong> <span style="color:var(--primary);font-weight:700">(${p.member_code})</span> — <span style="color:var(--green);font-weight:700">₹${p.amount}</span></div>
+          <div style="font-size:11px;color:var(--text-muted)">Ref: <code>${esc(p.transaction_reference || '—')}</code></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="badge badge-${p.status === 'APPROVED' ? 'paid' : 'pending'}">${p.status}</span>
+          ${p.status === 'PENDING' ? `<button class="btn-success btn-sm" style="padding:4px 8px;font-size:11px;font-weight:700" onclick="quickApprovePayment(${p.id}, '${esc(p.member_name)}')">⚡ Approve ₹500</button>` : ''}
+        </div>
       </div>
     `).join('') || '<div>No recent payments</div>';
 
@@ -2615,10 +2747,22 @@
           const nextActStatus = actStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
           const nextPayStatus = payStatus === 'PAID' ? 'UNPAID' : 'PAID';
 
+          const photoHtml = m.profile_photo 
+            ? `<img src="${m.profile_photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border)">`
+            : `<div style="width:34px;height:34px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">${esc(m.name || 'M')[0].toUpperCase()}</div>`;
+
           return `
             <tr>
               <td><strong style="color:var(--primary);font-size:15px">${m.member_id}</strong></td>
-              <td><strong>${esc(m.name)}</strong> ${m.is_duplicate ? '<span class="badge badge-duplicate">DUPLICATE</span>' : ''}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                  ${photoHtml}
+                  <div>
+                    <strong>${esc(m.name)}</strong> ${m.is_duplicate ? '<span class="badge badge-duplicate">DUPLICATE</span>' : ''}
+                    <div style="font-size:11px;color:var(--text-muted)">Bal: ₹${parseFloat(m.balance || 0).toLocaleString('en-IN')}</div>
+                  </div>
+                </div>
+              </td>
               <td>${esc(m.phone)}</td>
               <td>
                 <span class="badge ${actBadgeClass}" style="margin-right:6px">${actStatus}</span>
@@ -2642,6 +2786,27 @@
       }
     }
 
+    function handleAdminMemberPhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        document.getElementById('mProfilePhoto').value = base64;
+        const prev = document.getElementById('mPhotoPreview');
+        if (prev) prev.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAdminMemberPhoto() {
+      document.getElementById('mProfilePhoto').value = '';
+      const f = document.getElementById('mPhotoFile');
+      if (f) f.value = '';
+      const prev = document.getElementById('mPhotoPreview');
+      if (prev) prev.innerHTML = '👤';
+    }
+
     function showAddMemberModal() {
       currentEditingMemberId = null;
       document.getElementById('memberModalTitle').textContent = 'Add New Member';
@@ -2650,6 +2815,7 @@
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = 'ACTIVE';
       document.getElementById('mPaymentStatus').value = 'UNPAID';
+      clearAdminMemberPhoto();
       document.getElementById('memberModal').classList.remove('hidden');
     }
 
@@ -2661,6 +2827,13 @@
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
       document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
+      document.getElementById('mProfilePhoto').value = m.profile_photo || '';
+      const f = document.getElementById('mPhotoFile');
+      if (f) f.value = '';
+      const prev = document.getElementById('mPhotoPreview');
+      if (prev) {
+        prev.innerHTML = m.profile_photo ? `<img src="${m.profile_photo}" style="width:100%;height:100%;object-fit:cover;">` : '👤';
+      }
       document.getElementById('memberModal').classList.remove('hidden');
     }
 
@@ -2670,6 +2843,7 @@
       const password = document.getElementById('mPassword').value.trim();
       const activation_status = document.getElementById('mActivation').value;
       const payment_status = document.getElementById('mPaymentStatus').value;
+      const profile_photo = document.getElementById('mProfilePhoto').value.trim();
 
       if (!name || !phone) {
         showToast('Member Name and Mobile Number are required', 'error');
@@ -2685,14 +2859,14 @@
         if (currentEditingMemberId) {
           await api(`/api/admin/members/${currentEditingMemberId}`, {
             method: 'PUT',
-            body: JSON.stringify({ name, phone, password, activation_status, payment_status })
+            body: JSON.stringify({ name, phone, password, activation_status, payment_status, profile_photo })
           });
           showToast('Member details updated successfully!', 'success');
           closeModal('memberModal');
         } else {
           const res = await api('/api/admin/members', {
             method: 'POST',
-            body: JSON.stringify({ name, phone, password, activation_status, payment_status })
+            body: JSON.stringify({ name, phone, password, activation_status, payment_status, profile_photo })
           });
 
           closeModal('memberModal');
@@ -3073,6 +3247,19 @@
       const search = document.getElementById('paymentSearch').value;
       const status = document.getElementById('filterPayStatus').value;
 
+      // Sync active QR details in payments tab
+      try {
+        const s = await api('/api/settings/public');
+        if (s) {
+          const qrImg = document.getElementById('payTabQrImg');
+          if (qrImg && (s.qr_path || s.qr_path_versioned)) {
+            qrImg.src = s.qr_path_versioned || s.qr_path;
+          }
+          if (document.getElementById('payTabUpiId')) document.getElementById('payTabUpiId').textContent = s.admin_upi_id || '9025893352@idfcfirst';
+          if (document.getElementById('payTabUpiName')) document.getElementById('payTabUpiName').textContent = s.admin_upi_name || 'IDFC First Bank · Sarathkumar Pandiyaraja';
+        }
+      } catch (e) {}
+
       try {
         const d = await api(`/api/admin/payments?search=${encodeURIComponent(search)}&status=${status}`);
         const tbody = document.getElementById('paymentsTableBody');
@@ -3086,16 +3273,47 @@
         <td>#${p.id}</td>
         <td><strong>${esc(p.member_name)}</strong></td>
         <td><strong style="color:var(--primary)">${p.member_code}</strong></td>
-        <td>₹${parseFloat(p.amount).toLocaleString('en-IN')}</td>
+        <td><strong style="color:var(--green)">₹${parseFloat(p.amount).toLocaleString('en-IN')}</strong></td>
         <td><code>${esc(p.transaction_reference || '—')}</code></td>
         <td>${new Date(p.payment_date).toLocaleDateString()}</td>
         <td><span class="badge badge-${p.status === 'APPROVED' ? 'paid' : 'pending'}">${p.status}</span></td>
-        <td style="display:flex;gap:4px">
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          ${p.status === 'PENDING' ? `<button class="btn-success btn-sm" style="font-weight:700" onclick="quickApprovePayment(${p.id}, '${esc(p.member_name)}')">⚡ Approve ₹500</button>` : ''}
           <button class="btn-secondary btn-sm" onclick="showEditPaymentModal(${JSON.stringify(p).replace(/"/g, '&quot;')})">Edit</button>
           <button class="btn-danger btn-sm" onclick="deletePayment(${p.id})">🗑</button>
         </td>
       </tr>
     `).join('');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function quickApprovePayment(id, memberName) {
+      try {
+        const res = await api(`/api/admin/payments/${id}/approve`, { method: 'POST' });
+        showToast(res.message || `Payment approved! ₹500 credited to ${memberName}`, 'success');
+        loadAdminPayments();
+        loadDashboard();
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function uploadPaymentTabQr(input) {
+      const file = input.files[0];
+      if (!file) return;
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const res = await api('/api/settings/upload-qr', {
+              method: 'POST',
+              body: JSON.stringify({ image_data: e.target.result })
+            });
+            showToast(res.message || 'QR Code uploaded successfully!', 'success');
+            const qrImg = document.getElementById('payTabQrImg');
+            if (qrImg) qrImg.src = `${e.target.result}`;
+            loadSettings();
+          } catch (err) { showToast(err.message, 'error'); }
+        };
+        reader.readAsDataURL(file);
       } catch (e) { showToast(e.message, 'error'); }
     }
 

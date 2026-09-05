@@ -1,7 +1,26 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+
+function saveBase64Image(dataStr, prefix = 'profile') {
+  if (!dataStr || typeof dataStr !== 'string' || !dataStr.startsWith('data:image/')) return dataStr;
+  try {
+    const uploadDir = path.join(__dirname, '../../public/uploads');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    const extMatch = dataStr.match(/^data:image\/(\w+);base64,/);
+    const ext = extMatch ? extMatch[1].replace('jpeg', 'jpg') : 'png';
+    const base64Data = dataStr.replace(/^data:image\/\w+;base64,/, '');
+    const filename = `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
+    fs.writeFileSync(path.join(uploadDir, filename), Buffer.from(base64Data, 'base64'));
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.error('Error saving base64 image in admin-members:', err);
+    return dataStr;
+  }
+}
 
 const router = express.Router();
 
@@ -273,7 +292,7 @@ router.post('/', async (req, res) => {
     if (phone.length > 10) phone = phone.slice(-10);
     email = (email || '').trim().toLowerCase();
     upi_id = (upi_id || '').trim();
-    profile_photo = (profile_photo || '').trim();
+    profile_photo = saveBase64Image((profile_photo || '').trim());
 
     if (!name || !phone) {
       return res.status(400).json({ error: 'Name and phone number are required.' });
@@ -394,7 +413,7 @@ router.put('/:id', async (req, res) => {
     if (phone.length > 10) phone = phone.slice(-10);
     email = (email !== undefined) ? email.trim().toLowerCase() : existing.email;
     upi_id = (upi_id !== undefined) ? upi_id.trim() : existing.upi_id;
-    profile_photo = (profile_photo !== undefined) ? profile_photo.trim() : existing.profile_photo;
+    profile_photo = (profile_photo !== undefined) ? saveBase64Image(profile_photo.trim()) : existing.profile_photo;
     activation_status = activation_status || existing.activation_status || 'ACTIVE';
     payment_status = payment_status || existing.payment_status || 'UNPAID';
     group_category = group_category || existing.group_category || 'General';

@@ -52,7 +52,7 @@ router.put('/', authenticateToken, requireAdmin, async (req, res) => {
   const allowed = [
     'org_name', 'org_name_tamil', 'whatsapp_link', 'default_payment_amount',
     'payment_instructions_en', 'payment_instructions_ta',
-    'admin_upi_id', 'admin_upi_name', 'qr_path',
+    'admin_upi_id', 'admin_upi_name', 'qr_path', 'auto_approve_payment',
     'auction_default_duration', 'auction_default_starting_amount', 'auction_default_bid_increment',
     'notifications_enabled', 'sound_enabled'
   ];

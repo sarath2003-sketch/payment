@@ -1,4 +1,6 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
@@ -30,7 +32,7 @@ router.post(['/', '/register'], async (req, res) => {
     }
     
     password = password || '';
-    confirmPassword = confirmPassword || '';
+    confirmPassword = confirmPassword || password;
 
     // Smart Email Auto-formatting
     if (!email) {
@@ -42,7 +44,7 @@ router.post(['/', '/register'], async (req, res) => {
     }
 
     // Validation
-    if (!name || !cleanPhone || !password || !confirmPassword) {
+    if (!name || !cleanPhone || !password) {
       return res.status(400).json({ error: 'Name, phone number, and password are required.' });
     }
 

@@ -1433,7 +1433,7 @@
         <div style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:20px" id="paymentInstructions">Scan the QR code to pay via UPI</div>
         <!-- QR Code -->
         <div class="qr-container" id="qrContainer">
-            <img id="qrCodeImg" src="assets/qr_1786253841385.png" onerror="this.style.display='none'; if(!document.getElementById('qrFallbackMsg')){ const p=document.createElement('p'); p.id='qrFallbackMsg'; p.style='color:#333;font-size:13px;padding:10px'; p.innerHTML='QR Code Not Available.<br>Contact Admin to pay via UPI.'; this.parentElement.appendChild(p); }" alt="Payment QR">
+            <img id="qrCodeImg" src="/assets/qr.png" onerror="this.onerror=null; this.src='/assets/qr.png';" alt="Payment QR">
           <div class="qr-upi" id="paymentUpiDisplay">UPI ID: 9025893352@idfcfirst</div>
           <div style="font-size:11px;color:#666;margin-top:4px" id="paymentUpiNameDisplay">IDFC First Bank · Sarathkumar Pandiyaraja</div>
         </div>
@@ -1707,6 +1707,8 @@
       <button class="btn-danger" style="width:100%;padding:14px;font-size:16px" onclick="doLogout()">
         🚪 <span data-i18n="logout">Logout</span>
       </button>
+    </div>
+
     <!-- SEED FUND & NOMINEE PAGE -->
     <div id="seedFundPage" class="page">
       <div class="card card-gold">
@@ -2073,7 +2075,7 @@ async function api(endpoint, options = {}) {
   const targetUrl = endpoint.startsWith('http') ? endpoint : (BASE + endpoint);
   const response = await fetch(targetUrl, { ...options, headers });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+  if (!response.ok) throw new Error(data.error || data.message || `HTTP ${response.status}`);
   return data;
 }
 
@@ -2085,30 +2087,57 @@ async function loadSettings() {
     appSettings = await api('/api/settings/public');
     // Update logo
     if (appSettings.logo_path) {
-      document.getElementById('authLogoImg').src = appSettings.logo_path;
-      document.getElementById('headerLogo').src = appSettings.logo_path;
+      const aLogo = document.getElementById('authLogoImg');
+      if (aLogo) aLogo.src = appSettings.logo_path;
+      const hLogo = document.getElementById('headerLogo');
+      if (hLogo) hLogo.src = appSettings.logo_path;
     }
     // Update org name
     if (appSettings.org_name) {
-      document.getElementById('authOrgName').textContent = appSettings.org_name;
-      document.getElementById('headerOrgName').textContent = appSettings.org_name;
+      const aOrg = document.getElementById('authOrgName');
+      if (aOrg) aOrg.textContent = appSettings.org_name;
+      const hOrg = document.getElementById('headerOrgName');
+      if (hOrg) hOrg.textContent = appSettings.org_name;
     }
-    if (appSettings.org_name_tamil) document.getElementById('authOrgNameTa').textContent = appSettings.org_name_tamil;
+    if (appSettings.org_name_tamil) {
+      const tOrg = document.getElementById('authOrgNameTa');
+      if (tOrg) tOrg.textContent = appSettings.org_name_tamil;
+    }
     // WhatsApp
     if (appSettings.whatsapp_link) {
       const btn = document.getElementById('whatsappBtn');
-      btn.href = appSettings.whatsapp_link;
-      btn.style.display = 'flex';
+      if (btn) {
+        btn.href = appSettings.whatsapp_link;
+        btn.style.display = 'flex';
+      }
       const sw = document.getElementById('settingsWhatsApp');
       if (sw) sw.innerHTML = `<a href="${appSettings.whatsapp_link}" target="_blank" class="whatsapp-btn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.0198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg><span>${t('joinWhatsApp')}</span></a>`;
     }
     // QR
-    if (appSettings.qr_path) document.getElementById('qrCodeImg').src = appSettings.qr_path;
+    const qrImg = document.getElementById('qrCodeImg');
+    if (qrImg) {
+      const qrSrc = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
+      qrImg.src = qrSrc;
+      qrImg.style.display = 'block';
+      const fb = document.getElementById('qrFallbackMsg');
+      if (fb) fb.remove();
+    }
+    // UPI Details
+    const upiEl = document.getElementById('paymentUpiDisplay');
+    if (upiEl && appSettings.admin_upi_id) upiEl.textContent = `UPI ID: ${appSettings.admin_upi_id}`;
+    const nameEl = document.getElementById('paymentUpiNameDisplay');
+    if (nameEl && appSettings.admin_upi_name) nameEl.textContent = appSettings.admin_upi_name;
     // Payment amount
-    if (appSettings.default_payment_amount) document.getElementById('paymentAmount').textContent = `₹${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
+    if (appSettings.default_payment_amount) {
+      const pa = document.getElementById('paymentAmount');
+      if (pa) pa.textContent = `₹${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
+    }
     // Payment instructions
     const instr = currentLang === 'ta' ? appSettings.payment_instructions_ta : appSettings.payment_instructions_en;
-    if (instr) document.getElementById('paymentInstructions').textContent = instr;
+    if (instr) {
+      const pi = document.getElementById('paymentInstructions');
+      if (pi) pi.textContent = instr;
+    }
   } catch (e) { console.warn('Could not load settings:', e.message); }
 }
 
@@ -2216,7 +2245,7 @@ async function doRegister() {
   try {
     const data = await api('/api/member-auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, phone, upi_id, password })
+      body: JSON.stringify({ name, email, phone, upi_id, password, confirmPassword: confirm })
     });
     pendingRegData = data;
     document.getElementById('resMemberId').textContent = data.member_id || '101';
@@ -2783,9 +2812,11 @@ async function loadSettings() {
 
     const qrImg = document.getElementById('qrCodeImg');
     if (qrImg) {
-      const qrSrc = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : 'assets/qr_1786253841385.png');
+      const qrSrc = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
       qrImg.src = qrSrc;
       qrImg.style.display = 'block';
+      const fb = document.getElementById('qrFallbackMsg');
+      if (fb) fb.remove();
     }
   } catch(e) {
     console.warn('Could not load public settings:', e);
