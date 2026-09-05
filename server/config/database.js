@@ -15,28 +15,44 @@ if (!fs.existsSync(dbDir)) {
 
 const sqliteDbPath = path.join(dbDir, 'payment_system.sqlite');
 
-// Postgres Connection String
-const hasEnvDbUrl = !!(process.env.DATABASE_URL || process.env.RAILWAY_DATABASE_URL);
-let connectionString = process.env.DATABASE_URL || process.env.RAILWAY_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/amount_management_db';
+// Check if 100% Localhost Storage / SQLite mode is enabled
+const isLocalStorageMode = process.env.USE_LOCAL_STORAGE === 'true' || 
+                           process.env.USE_SQLITE === 'true' || 
+                           process.env.DB_CLIENT === 'sqlite' || 
+                           !process.env.DATABASE_URL;
 
-if (!hasEnvDbUrl && connectionString && process.env.DOCKER_ENV !== 'true') {
-  connectionString = connectionString.replace(/@db:/, '@localhost:');
-}
+if (isLocalStorageMode) {
+  useSQLite = true;
+  console.log('------------------------------------------------------------------');
+  console.log('[LOCAL STORAGE] 100% Localhost Storage Mode Active');
+  console.log(`[LOCAL STORAGE] Database: ${sqliteDbPath}`);
+  console.log(`[LOCAL STORAGE] Uploads : ${path.resolve(process.env.UPLOAD_DIR || './uploads')}`);
+  console.log('------------------------------------------------------------------');
+  initSQLiteFallback();
+} else {
+  // Postgres Connection String (when local storage mode is not forced)
+  const hasEnvDbUrl = !!(process.env.DATABASE_URL || process.env.RAILWAY_DATABASE_URL);
+  let connectionString = process.env.DATABASE_URL || process.env.RAILWAY_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/amount_management_db';
 
-const useSsl = !(connectionString.includes('localhost') || connectionString.includes('db:'));
+  if (!hasEnvDbUrl && connectionString && process.env.DOCKER_ENV !== 'true') {
+    connectionString = connectionString.replace(/@db:/, '@localhost:');
+  }
 
-try {
-  pgPool = new Pool({
-    connectionString,
-    ssl: useSsl ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 1500
-  });
+  const useSsl = !(connectionString.includes('localhost') || connectionString.includes('db:'));
 
-  pgPool.on('error', (err) => {
-    console.warn('[PostgreSQL Pool Warning]', err.message);
-  });
-} catch (err) {
-  console.warn('[PostgreSQL Init Exception]', err.message);
+  try {
+    pgPool = new Pool({
+      connectionString,
+      ssl: useSsl ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 1500
+    });
+
+    pgPool.on('error', (err) => {
+      console.warn('[PostgreSQL Pool Warning]', err.message);
+    });
+  } catch (err) {
+    console.warn('[PostgreSQL Init Exception]', err.message);
+  }
 }
 
 // SQLite Driver & Fallback Logic
@@ -223,6 +239,8 @@ function initSQLiteFallback() {
         ['admin_upi_id', '9025893352@idfcfirst'],
         ['admin_upi_name', 'IDFC First Bank · Sarathkumar Pandiyaraja'],
         ['default_payment_amount', '500'],
+        ['auto_approve_payment', '1'],
+        ['auto_verify_amount', '500'],
         ['payment_instructions_en', 'Scan the QR code to make payment via UPI. Enter your transaction reference ID and upload a screenshot as proof.'],
         ['payment_instructions_ta', 'UPI மூலம் பணம் செலுத்த QR குறியீட்டை ஸ்கேன் செய்யவும். உங்கள் பரிவர்த்தனை குறிப்பு ID ஐ உள்ளிட்டு ஸ்கிரீன்ஷாட்டை சமர்ப்பிக்கவும்.']
       ];
@@ -608,10 +626,18 @@ function execSQLiteQuery(sqlText, params = []) {
           const tableName = tableMatch ? (tableMatch[1] || tableMatch[2]) : null;
 
           if (tableName) {
-            const fetchSql = lastID 
+            let targetId = lastID;
+            if (!targetId && /UPDATE/i.test(sql)) {
+              // Check if query has WHERE id = ?
+              if (/WHERE\s+id\s*=\s*\?/i.test(sql) && cleanParams.length > 0) {
+                targetId = cleanParams[cleanParams.length - 1];
+              }
+            }
+
+            const fetchSql = targetId 
               ? `SELECT * FROM ${tableName} WHERE id = ?` 
               : `SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 1`;
-            const fetchParams = lastID ? [lastID] : [];
+            const fetchParams = targetId ? [targetId] : [];
 
             db.get(fetchSql, fetchParams, (err2, row) => {
               if (!err2 && row) {

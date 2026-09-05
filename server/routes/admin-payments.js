@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { verifyPaymentRules, executePaymentApproval } = require('../services/payment-verifier');
 
 const router = express.Router();
 
@@ -101,12 +102,33 @@ router.get('/', async (req, res) => {
 
     const result = await pool.query(sql, params);
 
+    // Compute summary stats for dashboard cards
+    let stats = { total_collected: 0, pending_count: 0, approved_count: 0, rejected_count: 0 };
+    try {
+      const statsRes = await pool.query(`
+        SELECT 
+          COALESCE(SUM(CASE WHEN status = 'APPROVED' OR status = 'PAID' THEN amount ELSE 0 END), 0) AS total_collected,
+          COUNT(CASE WHEN status = 'PENDING' THEN 1 END) AS pending_count,
+          COUNT(CASE WHEN status = 'APPROVED' OR status = 'PAID' THEN 1 END) AS approved_count,
+          COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) AS rejected_count
+        FROM payment_proofs
+      `);
+      if (statsRes.rows.length > 0) {
+        const sr = statsRes.rows[0];
+        stats.total_collected = parseFloat(sr.total_collected || sr['total_collected'] || 0);
+        stats.pending_count = parseInt(sr.pending_count || sr['pending_count'] || 0, 10);
+        stats.approved_count = parseInt(sr.approved_count || sr['approved_count'] || 0, 10);
+        stats.rejected_count = parseInt(sr.rejected_count || sr['rejected_count'] || 0, 10);
+      }
+    } catch (e) {}
+
     res.json({
       payments: result.rows,
       proofs: result.rows,
       total,
       page: pageNum,
-      limit: limitNum
+      limit: limitNum,
+      stats
     });
   } catch (err) {
     console.error('Error fetching admin payments:', err);
@@ -271,7 +293,9 @@ router.put('/:id', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    const updatedPayment = updateRes.rows[0];
+    const updatedPayment = (updateRes.rows && updateRes.rows.length > 0 && updateRes.rows[0].id == id)
+      ? updateRes.rows[0]
+      : { ...existing, id: parseInt(id), member_id: targetMemberId, amount: newAmount, status: newStatus, transaction_reference: newRef, payment_date: newDate, rejection_reason: rejection_reason || null };
 
     await logAudit(req, 'EDIT_PAYMENT', 'PAYMENT', id, { old: existing, updated: updatedPayment });
 
@@ -306,12 +330,24 @@ router.delete('/:id', async (req, res) => {
       await client.query('UPDATE members SET balance = balance - $1 WHERE id = $2', [existing.amount, existing.member_id]);
     }
 
+    try {
+      await client.query("DELETE FROM transactions WHERE reference_type = 'PAYMENT_PROOF' AND reference_id = $1", [id]);
+    } catch (e) {}
+
     await client.query('DELETE FROM payment_proofs WHERE id = $1', [id]);
     await client.query('COMMIT');
 
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('payment:deleted', { id, member_id: existing.member_id });
+      if (existing.status === 'APPROVED' || existing.status === 'PAID') {
+        io.emit('member:balance-updated', { member_id: existing.member_id, amount: -existing.amount });
+      }
+    }
+
     await logAudit(req, 'DELETE_PAYMENT', 'PAYMENT', id, { amount: existing.amount, member_id: existing.member_id });
 
-    res.json({ message: 'Payment record deleted successfully' });
+    res.json({ message: 'Payment record deleted successfully and balance reverted' });
   } catch (err) {
     await client.query('ROLLBACK');
     res.status(500).json({ error: 'Failed to delete payment record' });
@@ -388,6 +424,154 @@ router.all('/:id/approve', async (req, res) => {
     res.status(500).json({ error: 'Failed to approve payment' });
   } finally {
     client.release();
+  }
+});
+
+/**
+ * GET /api/admin/payments/:id
+ * Retrieve single payment with member details
+ */
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        pp.*,
+        m.name AS member_name,
+        m.member_id AS member_code,
+        m.phone AS member_phone,
+        m.balance AS member_balance
+      FROM payment_proofs pp
+      JOIN members m ON pp.member_id = m.id
+      WHERE pp.id = $1
+    `, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment record not found' });
+    }
+    res.json({ payment: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch payment' });
+  }
+});
+
+/**
+ * POST /api/admin/payments/:id/auto-verify
+ * Run auto-verification rules against a pending payment
+ */
+router.post('/:id/auto-verify', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existingRes = await pool.query(
+      'SELECT pp.*, m.name as member_name, m.member_id as member_code FROM payment_proofs pp JOIN members m ON pp.member_id = m.id WHERE pp.id = $1',
+      [id]
+    );
+    if (existingRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment record not found' });
+    }
+    const payment = existingRes.rows[0];
+    if (payment.status === 'APPROVED' || payment.status === 'PAID') {
+      return res.json({ success: true, message: 'Payment is already approved and credited', payment });
+    }
+
+    const verification = await verifyPaymentRules({
+      member_id: payment.member_id,
+      amount: payment.amount,
+      transaction_reference: payment.transaction_reference,
+      payment_id: payment.id
+    });
+
+    if (!verification.autoApprove) {
+      await pool.query('UPDATE payment_proofs SET rejection_reason = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [verification.reason, id]);
+      return res.status(400).json({
+        success: false,
+        error: `Auto-verification paused: ${verification.reason}`,
+        reason: verification.reason
+      });
+    }
+
+    const io = req.app.get('io');
+    const result = await executePaymentApproval({
+      payment_id: payment.id,
+      member_id: payment.member_id,
+      amount: parseFloat(payment.amount),
+      transaction_reference: payment.transaction_reference,
+      payment_date: payment.payment_date,
+      verified_by: req.admin?.id || 1,
+      io
+    });
+
+    await logAudit(req, 'AUTO_VERIFY_PAYMENT', 'PAYMENT', id, { amount: payment.amount, member_id: payment.member_id });
+
+    res.json({
+      success: true,
+      message: `Payment #${id} auto-verified! ₹${payment.amount} credited to ${payment.member_name}`,
+      payment: result.payment
+    });
+  } catch (err) {
+    console.error('Error in auto-verify:', err);
+    res.status(500).json({ error: err.message || 'Auto-verification failed' });
+  }
+});
+
+/**
+ * POST /api/admin/payments/auto-verify-all
+ * Batch auto-verify all pending payments that meet business criteria
+ */
+router.post('/auto-verify-all', async (req, res) => {
+  try {
+    const pendingRes = await pool.query(
+      `SELECT pp.*, m.name as member_name, m.member_id as member_code 
+       FROM payment_proofs pp 
+       JOIN members m ON pp.member_id = m.id 
+       WHERE pp.status = 'PENDING'
+       ORDER BY pp.id ASC`
+    );
+    const pendingList = pendingRes.rows || [];
+    let verifiedCount = 0;
+    let skippedCount = 0;
+    const results = [];
+    const io = req.app.get('io');
+
+    for (const payment of pendingList) {
+      const verification = await verifyPaymentRules({
+        member_id: payment.member_id,
+        amount: payment.amount,
+        transaction_reference: payment.transaction_reference,
+        payment_id: payment.id
+      });
+
+      if (verification.autoApprove) {
+        await executePaymentApproval({
+          payment_id: payment.id,
+          member_id: payment.member_id,
+          amount: parseFloat(payment.amount),
+          transaction_reference: payment.transaction_reference,
+          payment_date: payment.payment_date,
+          verified_by: req.admin?.id || 1,
+          io
+        });
+        verifiedCount++;
+        results.push({ id: payment.id, member_code: payment.member_code, status: 'APPROVED', amount: payment.amount });
+      } else {
+        await pool.query('UPDATE payment_proofs SET rejection_reason = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [verification.reason, payment.id]);
+        skippedCount++;
+        results.push({ id: payment.id, member_code: payment.member_code, status: 'SKIPPED', reason: verification.reason });
+      }
+    }
+
+    await logAudit(req, 'BATCH_AUTO_VERIFY', 'PAYMENT', null, { verifiedCount, skippedCount, total: pendingList.length });
+
+    res.json({
+      success: true,
+      message: `Batch Auto-Verification complete: ${verifiedCount} auto-verified and approved, ${skippedCount} skipped for manual review.`,
+      verified_count: verifiedCount,
+      skipped_count: skippedCount,
+      total_pending: pendingList.length,
+      results
+    });
+  } catch (err) {
+    console.error('Error in batch auto-verify:', err);
+    res.status(500).json({ error: 'Batch auto-verification failed' });
   }
 });
 

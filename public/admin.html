@@ -1122,9 +1122,50 @@
             </div>
           </div>
 
+          <!-- Auto-Verification Status & Batch Action Card -->
+          <div class="card" style="margin-bottom:18px;border:1px solid var(--border-accent);background:linear-gradient(135deg, rgba(99,102,241,0.06), rgba(16,185,129,0.06))">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+              <div>
+                <div style="font-weight:800;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px">
+                  ⚡ Amount Auto-Verification Engine
+                  <span class="badge badge-paid" id="autoVerifyStatusBadge">ACTIVE (₹500)</span>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
+                  Automatically validates ₹500 payments with unique UTR/Transaction IDs and credits balances instantly.
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <button class="btn-success btn-sm" style="font-weight:700" id="batchAutoVerifyBtn" onclick="runBatchAutoVerify()">
+                  ⚡ Auto-Verify All Pending (<span id="batchPendingCount">0</span>)
+                </button>
+                <button class="btn-secondary btn-sm" onclick="loadAdminPayments()">🔄 Refresh</button>
+              </div>
+            </div>
+
+            <!-- Quick Metrics Grid -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:12px;margin-top:16px">
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:11px;color:var(--text-muted);font-weight:700">TOTAL COLLECTED</div>
+                <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="payMetricTotal">₹0</div>
+              </div>
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:11px;color:var(--text-muted);font-weight:700">APPROVED PAYMENTS</div>
+                <div style="font-size:20px;font-weight:800;color:var(--primary);margin-top:4px" id="payMetricApproved">0</div>
+              </div>
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:11px;color:var(--text-muted);font-weight:700">PENDING VERIFICATION</div>
+                <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px" id="payMetricPending">0</div>
+              </div>
+              <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px">
+                <div style="font-size:11px;color:var(--text-muted);font-weight:700">REJECTED / FLAGGED</div>
+                <div style="font-size:20px;font-weight:800;color:var(--red);margin-top:4px" id="payMetricRejected">0</div>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">
-              <div class="card-title">💳 Payment Management</div>
+              <div class="card-title">💳 Payment Management (Select · Update · Delete · Auto-Verify)</div>
               <button class="btn-primary" onclick="showAddPaymentModal()">+ Add Manual Payment</button>
             </div>
             <div class="filter-bar">
@@ -1146,15 +1187,16 @@
                     <th>Member</th>
                     <th>Member ID</th>
                     <th>Amount</th>
-                    <th>Ref ID</th>
+                    <th>Ref / UTR ID</th>
                     <th>Date</th>
+                    <th>Proof</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="paymentsTableBody">
                   <tr>
-                    <td colspan="8" style="text-align:center;padding:30px">Loading payments...</td>
+                    <td colspan="9" style="text-align:center;padding:30px">Loading payments...</td>
                   </tr>
                 </tbody>
               </table>
@@ -1482,6 +1524,15 @@
             <div class="form-group"><label>🏦 Admin UPI Name / Bank Account Name</label><input type="text" id="sAdminUpiName" placeholder="e.g. IDFC First Bank · Sarathkumar Pandiyaraja"></div>
             <div class="form-group"><label>WhatsApp Group Link</label><input type="url" id="sWhatsApp"></div>
             <div class="form-group"><label>Default Monthly Payment (₹)</label><input type="number" id="sPayAmount"></div>
+            <div class="form-group" style="margin:16px 0;padding:14px;background:var(--bg);border:1px solid var(--border-accent);border-radius:10px">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:0;font-size:14px;font-weight:700">
+                <input type="checkbox" id="sAutoApprovePayment" style="width:20px;height:20px;accent-color:var(--primary);cursor:pointer">
+                <span>⚡ Enable Amount Auto-Verification (தானியங்கி சரிபார்ப்பு)</span>
+              </label>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:6px;margin-left:30px">
+                When enabled, payments of the monthly amount (₹500) with a valid unique UTR will be automatically verified and credited to member accounts immediately upon submission.
+              </div>
+            </div>
             <button class="btn-primary" onclick="saveSettings()">💾 Save Settings</button>
 
             <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
@@ -1612,9 +1663,31 @@
           <option value="REJECTED">REJECTED</option>
         </select>
       </div>
+      <div class="form-group">
+        <label>Notes / Rejection Reason</label>
+        <input type="text" id="pReason" placeholder="Optional notes or reason if rejected">
+      </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('paymentModal')">Cancel</button>
         <button class="btn-primary" onclick="savePaymentForm()">Save Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYMENT PROOF RECEIPT PREVIEW MODAL -->
+  <div id="proofPreviewModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:540px">
+      <div class="modal-title" id="proofPreviewTitle">Payment Proof Receipt</div>
+      <div id="proofPreviewBody" style="text-align:center;margin:16px 0;max-height:380px;overflow:auto;background:var(--bg);border-radius:10px;padding:8px;border:1px solid var(--border)">
+        <img id="proofPreviewImg" src="" alt="Proof Screenshot" style="max-width:100%;border-radius:8px;display:none">
+        <div id="proofPreviewDoc" style="display:none;padding:24px">
+          <a id="proofPreviewDocLink" href="#" target="_blank" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px">📄 Open Payment Document in New Tab</a>
+        </div>
+      </div>
+      <div id="proofPreviewMeta" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;margin-bottom:16px;display:flex;flex-direction:column;gap:6px">
+      </div>
+      <div class="modal-actions" id="proofPreviewActions">
+        <button class="btn-secondary" onclick="closeModal('proofPreviewModal')">Close</button>
       </div>
     </div>
   </div>
@@ -3264,10 +3337,14 @@
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    // Payments Management
+    // ============================================================
+    // PAYMENTS MANAGEMENT & AUTO-VERIFICATION ENGINE
+    // ============================================================
+    window.adminPaymentsCache = [];
+
     async function loadAdminPayments() {
-      const search = document.getElementById('paymentSearch').value;
-      const status = document.getElementById('filterPayStatus').value;
+      const search = (document.getElementById('paymentSearch')?.value || '').trim();
+      const status = document.getElementById('filterPayStatus')?.value || '';
 
       // Sync active QR details in payments tab
       try {
@@ -3284,28 +3361,54 @@
 
       try {
         const d = await api(`/api/admin/payments?search=${encodeURIComponent(search)}&status=${status}`);
+        window.adminPaymentsCache = d.proofs || d.payments || [];
         const tbody = document.getElementById('paymentsTableBody');
-        if (!d.proofs || !d.proofs.length) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px">No payment records found.</td></tr>';
+
+        // Update Auto-Verification Metrics
+        if (d.stats) {
+          if (document.getElementById('payMetricTotal')) document.getElementById('payMetricTotal').textContent = '₹' + (d.stats.total_collected || 0).toLocaleString('en-IN');
+          if (document.getElementById('payMetricApproved')) document.getElementById('payMetricApproved').textContent = d.stats.approved_count || 0;
+          if (document.getElementById('payMetricPending')) document.getElementById('payMetricPending').textContent = d.stats.pending_count || 0;
+          if (document.getElementById('payMetricRejected')) document.getElementById('payMetricRejected').textContent = d.stats.rejected_count || 0;
+          if (document.getElementById('batchPendingCount')) document.getElementById('batchPendingCount').textContent = d.stats.pending_count || 0;
+        }
+
+        if (!window.adminPaymentsCache.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">No payment records found.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = d.proofs.map(p => `
-      <tr>
-        <td>#${p.id}</td>
-        <td><strong>${esc(p.member_name)}</strong></td>
-        <td><strong style="color:var(--primary)">${p.member_code}</strong></td>
-        <td><strong style="color:var(--green)">₹${parseFloat(p.amount).toLocaleString('en-IN')}</strong></td>
-        <td><code>${esc(p.transaction_reference || '—')}</code></td>
-        <td>${new Date(p.payment_date).toLocaleDateString()}</td>
-        <td><span class="badge badge-${p.status === 'APPROVED' ? 'paid' : 'pending'}">${p.status}</span></td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap">
-          ${p.status === 'PENDING' ? `<button class="btn-success btn-sm" style="font-weight:700" onclick="quickApprovePayment(${p.id}, '${esc(p.member_name)}')">⚡ Approve ₹500</button>` : ''}
-          <button class="btn-secondary btn-sm" onclick="showEditPaymentModal(${JSON.stringify(p).replace(/"/g, '&quot;')})">Edit</button>
-          <button class="btn-danger btn-sm" onclick="deletePayment(${p.id})">🗑</button>
-        </td>
-      </tr>
-    `).join('');
+        tbody.innerHTML = window.adminPaymentsCache.map(p => {
+          const isPending = p.status === 'PENDING';
+          const isPaid = p.status === 'APPROVED' || p.status === 'PAID';
+          const badgeClass = isPaid ? 'badge-paid' : (isPending ? 'badge-pending' : 'badge-rejected');
+          const hasProof = !!p.proof_file_path;
+
+          return `
+            <tr>
+              <td>#${p.id}</td>
+              <td><strong>${esc(p.member_name)}</strong></td>
+              <td><strong style="color:var(--primary)">${p.member_code || p.member_id}</strong></td>
+              <td><strong style="color:var(--green)">₹${parseFloat(p.amount).toLocaleString('en-IN')}</strong></td>
+              <td><code>${esc(p.transaction_reference || '—')}</code></td>
+              <td>${new Date(p.payment_date).toLocaleDateString()}</td>
+              <td>
+                ${hasProof 
+                  ? `<button class="btn-secondary btn-sm" onclick="showProofPreview(${p.id})">👁️ Proof</button>` 
+                  : `<span style="color:var(--text-muted);font-size:12px">None</span>`}
+              </td>
+              <td><span class="badge ${badgeClass}">${p.status}</span></td>
+              <td style="display:flex;gap:6px;flex-wrap:wrap">
+                ${isPending ? `
+                  <button class="btn-success btn-sm" style="font-weight:700" title="Auto-verify rules & approve" onclick="autoVerifySinglePayment(${p.id})">⚡ Auto-Verify</button>
+                  <button class="btn-primary btn-sm" onclick="quickApprovePayment(${p.id}, '${esc(p.member_name)}')">✓ Approve</button>
+                ` : ''}
+                <button class="btn-secondary btn-sm" onclick="showEditPaymentById(${p.id})">✏️ Edit</button>
+                <button class="btn-danger btn-sm" onclick="deletePayment(${p.id})">🗑️</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch (e) { showToast(e.message, 'error'); }
     }
 
@@ -3318,25 +3421,84 @@
       } catch (e) { showToast(e.message, 'error'); }
     }
 
-    async function uploadPaymentTabQr(input) {
-      const file = input.files[0];
-      if (!file) return;
+    async function autoVerifySinglePayment(id) {
       try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          try {
-            const res = await api('/api/settings/upload-qr', {
-              method: 'POST',
-              body: JSON.stringify({ image_data: e.target.result })
-            });
-            showToast(res.message || 'QR Code uploaded successfully!', 'success');
-            const qrImg = document.getElementById('payTabQrImg');
-            if (qrImg) qrImg.src = `${e.target.result}`;
-            loadSettings();
-          } catch (err) { showToast(err.message, 'error'); }
-        };
-        reader.readAsDataURL(file);
+        const res = await api(`/api/admin/payments/${id}/auto-verify`, { method: 'POST' });
+        showToast(res.message || 'Payment auto-verified successfully!', 'success');
+        closeModal('proofPreviewModal');
+        loadAdminPayments();
+        loadDashboard();
+      } catch (e) { 
+        showToast(e.message || 'Auto-verification paused for manual review', 'error');
+        loadAdminPayments();
+      }
+    }
+
+    async function runBatchAutoVerify() {
+      const btn = document.getElementById('batchAutoVerifyBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Verifying...'; }
+      try {
+        const res = await api('/api/admin/payments/auto-verify-all', { method: 'POST' });
+        showToast(res.message || `Batch complete: ${res.verified_count} auto-approved`, 'success');
+        loadAdminPayments();
+        loadDashboard();
       } catch (e) { showToast(e.message, 'error'); }
+      finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '⚡ Auto-Verify All Pending (<span id="batchPendingCount">0</span>)';
+        }
+      }
+    }
+
+    function showProofPreview(id) {
+      const p = (window.adminPaymentsCache || []).find(item => item.id == id);
+      if (!p) { showToast('Payment record not found in cache', 'error'); return; }
+
+      const title = document.getElementById('proofPreviewTitle');
+      if (title) title.textContent = `Payment Proof #${p.id} — ${p.member_name} (${p.member_code || p.member_id})`;
+
+      const img = document.getElementById('proofPreviewImg');
+      const doc = document.getElementById('proofPreviewDoc');
+      const docLink = document.getElementById('proofPreviewDocLink');
+
+      const path = p.proof_file_path || '';
+      if (path.toLowerCase().endsWith('.pdf')) {
+        img.style.display = 'none';
+        doc.style.display = 'block';
+        docLink.href = path;
+      } else {
+        doc.style.display = 'none';
+        img.style.display = 'inline-block';
+        img.src = path;
+      }
+
+      const meta = document.getElementById('proofPreviewMeta');
+      if (meta) {
+        meta.innerHTML = `
+          <div>Member: <strong>${esc(p.member_name)}</strong> (ID: <strong style="color:var(--primary)">${p.member_code || p.member_id}</strong>)</div>
+          <div>Amount: <strong style="color:var(--green);font-size:15px">₹${parseFloat(p.amount).toLocaleString('en-IN')}</strong></div>
+          <div>Transaction / UTR Reference: <code>${esc(p.transaction_reference || 'Not provided')}</code></div>
+          <div>Payment Date: <strong>${new Date(p.payment_date).toLocaleDateString()}</strong></div>
+          <div>Current Status: <span class="badge badge-${p.status === 'APPROVED' ? 'paid' : (p.status === 'PENDING' ? 'pending' : 'rejected')}">${p.status}</span></div>
+          ${p.rejection_reason ? `<div style="color:var(--red);margin-top:4px">Note / Flag Reason: <em>${esc(p.rejection_reason)}</em></div>` : ''}
+        `;
+      }
+
+      const actions = document.getElementById('proofPreviewActions');
+      if (actions) {
+        if (p.status === 'PENDING') {
+          actions.innerHTML = `
+            <button class="btn-success" onclick="autoVerifySinglePayment(${p.id})">⚡ Auto-Verify</button>
+            <button class="btn-primary" onclick="quickApprovePayment(${p.id}, '${esc(p.member_name)}'); closeModal('proofPreviewModal')">✓ Approve ₹500</button>
+            <button class="btn-secondary" onclick="closeModal('proofPreviewModal')">Close</button>
+          `;
+        } else {
+          actions.innerHTML = `<button class="btn-secondary" onclick="closeModal('proofPreviewModal')">Close</button>`;
+        }
+      }
+
+      document.getElementById('proofPreviewModal').classList.remove('hidden');
     }
 
     function showAddPaymentModal() {
@@ -3347,17 +3509,22 @@
       document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('pRef').value = '';
       document.getElementById('pStatus').value = 'APPROVED';
+      if (document.getElementById('pReason')) document.getElementById('pReason').value = '';
       document.getElementById('paymentModal').classList.remove('hidden');
     }
 
-    function showEditPaymentModal(p) {
+    function showEditPaymentById(id) {
+      const p = (window.adminPaymentsCache || []).find(item => item.id == id);
+      if (!p) { showToast('Payment record not found', 'error'); return; }
+
       currentEditingPaymentId = p.id;
-      document.getElementById('paymentModalTitle').textContent = `Edit Payment #${p.id}`;
+      document.getElementById('paymentModalTitle').textContent = `Edit Payment #${p.id} (${p.member_name})`;
       document.getElementById('pMemberId').value = p.member_code || p.member_id;
       document.getElementById('pAmount').value = p.amount;
-      document.getElementById('pDate').value = p.payment_date.split('T')[0];
+      document.getElementById('pDate').value = p.payment_date ? p.payment_date.split('T')[0] : new Date().toISOString().split('T')[0];
       document.getElementById('pRef').value = p.transaction_reference || '';
       document.getElementById('pStatus').value = p.status;
+      if (document.getElementById('pReason')) document.getElementById('pReason').value = p.rejection_reason || '';
       document.getElementById('paymentModal').classList.remove('hidden');
     }
 
@@ -3367,6 +3534,7 @@
       const payment_date = document.getElementById('pDate').value;
       const transaction_reference = document.getElementById('pRef').value.trim();
       const status = document.getElementById('pStatus').value;
+      const rejection_reason = document.getElementById('pReason')?.value.trim() || null;
 
       if (!member_id || !amount) { showToast('Member ID and Amount are required', 'error'); return; }
 
@@ -3374,13 +3542,13 @@
         if (currentEditingPaymentId) {
           await api(`/api/admin/payments/${currentEditingPaymentId}`, {
             method: 'PUT',
-            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status })
+            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status, rejection_reason })
           });
-          showToast('Payment record updated', 'success');
+          showToast('Payment record updated and balance synchronized', 'success');
         } else {
           await api('/api/admin/payments', {
             method: 'POST',
-            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status })
+            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status, rejection_reason })
           });
           showToast('Payment recorded successfully', 'success');
         }
@@ -3391,10 +3559,10 @@
     }
 
     async function deletePayment(id) {
-      openConfirm('Delete Payment', 'Are you sure you want to remove this payment record?', async () => {
+      openConfirm('Delete Payment', 'Are you sure you want to remove this payment record? If approved, the amount will be safely deducted from the member balance.', async () => {
         try {
           await api(`/api/admin/payments/${id}`, { method: 'DELETE' });
-          showToast('Payment deleted', 'info');
+          showToast('Payment deleted and balance reverted', 'info');
           loadAdminPayments();
           loadDashboard();
         } catch (e) { showToast(e.message, 'error'); }
@@ -3455,6 +3623,14 @@
         if (d.admin_upi_name) document.getElementById('sAdminUpiName').value = d.admin_upi_name;
         if (d.whatsapp_link) document.getElementById('sWhatsApp').value = d.whatsapp_link;
         if (d.default_payment_amount) document.getElementById('sPayAmount').value = d.default_payment_amount;
+        if (document.getElementById('sAutoApprovePayment')) {
+          document.getElementById('sAutoApprovePayment').checked = (d.auto_approve_payment === '1' || d.auto_approve_payment === 'true' || d.auto_approve_payment === undefined);
+        }
+        if (document.getElementById('autoVerifyStatusBadge')) {
+          const isAuto = (d.auto_approve_payment === '1' || d.auto_approve_payment === 'true' || d.auto_approve_payment === undefined);
+          document.getElementById('autoVerifyStatusBadge').textContent = isAuto ? `ACTIVE (₹${d.default_payment_amount || 500})` : 'PAUSED';
+          document.getElementById('autoVerifyStatusBadge').className = isAuto ? 'badge badge-paid' : 'badge badge-pending';
+        }
 
         const qrContainer = document.getElementById('adminQrPreview');
         if (qrContainer) {
@@ -3481,7 +3657,8 @@
             admin_upi_id: document.getElementById('sAdminUpiId').value,
             admin_upi_name: document.getElementById('sAdminUpiName').value,
             whatsapp_link: document.getElementById('sWhatsApp').value,
-            default_payment_amount: document.getElementById('sPayAmount').value
+            default_payment_amount: document.getElementById('sPayAmount').value,
+            auto_approve_payment: document.getElementById('sAutoApprovePayment')?.checked ? '1' : '0'
           })
         });
         showToast('Payment settings saved successfully!', 'success');

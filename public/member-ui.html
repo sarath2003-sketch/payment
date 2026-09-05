@@ -3183,17 +3183,24 @@ async function submitPayment() {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Upload failed');
-    showToast(t('submitSuccess'), 'success');
+
+    if (data.auto_approved) {
+      showToast('🎉 ' + (currentLang === 'ta' ? 'பணம் தானாக சரிபார்க்கப்பட்டு ₹500 உங்கள் கணக்கில் வரவு வைக்கப்பட்டது!' : 'Payment auto-verified and ₹500 credited to your account!'), 'success');
+    } else {
+      showToast(t('submitSuccess'), 'success');
+    }
+
     // Reset form
     document.getElementById('transactionRef').value = '';
     document.getElementById('screenshotFile').value = '';
     document.getElementById('screenshotPreview').classList.add('hidden');
     document.getElementById('uploadPrompt').style.display = '';
-    // Refresh
+
+    // Refresh history and active profile
     loadPaymentHistory();
     try {
       const profile = await api('/api/member-auth/profile');
-      updateDashboard(profile);
+      if (profile) updateDashboard(profile);
     } catch (e) {}
   } catch (e) { showToast(e.message || t('submitFailed'), 'error'); }
   finally { btn.disabled = false; btn.innerHTML = `<span>${t('submitPayment')}</span>`; }

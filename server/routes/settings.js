@@ -13,7 +13,7 @@ router.get('/public', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT key, value FROM app_settings
-      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','qr_version','admin_upi_id','admin_upi_name','whatsapp_link','default_payment_amount','payment_instructions_en','payment_instructions_ta')
+      WHERE key IN ('org_name','org_name_tamil','logo_path','qr_path','qr_version','admin_upi_id','admin_upi_name','whatsapp_link','default_payment_amount','auto_approve_payment','payment_instructions_en','payment_instructions_ta')
     `);
     const settings = {};
     result.rows.forEach(row => { settings[row.key] = row.value; });

@@ -3,11 +3,12 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { verifyPaymentRules, executePaymentApproval } = require('../services/payment-verifier');
 
 const router = express.Router();
 
 /**
- * Upload payment proof - creates PENDING record
+ * Upload payment proof - Auto-verifies or queues for admin
  * POST /api/payment-verification/upload-proof
  */
 router.post('/upload-proof', authenticateToken, async (req, res) => {
@@ -50,62 +51,57 @@ router.post('/upload-proof', authenticateToken, async (req, res) => {
 
     await proofFile.mv(filePath);
 
-    // Check if auto-approve payments is enabled
-    let autoApprove = false;
-    try {
-      const sRes = await pool.query("SELECT value FROM app_settings WHERE key = 'auto_approve_payment'");
-      if (sRes.rows.length > 0 && (sRes.rows[0].value === '1' || sRes.rows[0].value === 'true')) {
-        autoApprove = true;
-      }
-    } catch (e) {}
+    // Run Amount Auto-Verification Rules
+    const verification = await verifyPaymentRules({
+      member_id: memberId,
+      amount,
+      transaction_reference
+    });
 
-    const finalStatus = autoApprove ? 'APPROVED' : 'PENDING';
+    const isAutoApproved = verification.autoApprove;
+    const initialStatus = isAutoApproved ? 'APPROVED' : 'PENDING';
+    const flagReason = !isAutoApproved ? verification.reason : null;
 
     const proof = await pool.query(
-      `INSERT INTO payment_proofs (member_id, amount, transaction_reference, payment_date, proof_file_path, proof_file_name, status, verified_at, verified_by) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, ${autoApprove ? 'CURRENT_TIMESTAMP' : 'NULL'}, ${autoApprove ? '1' : 'NULL'}) RETURNING *`,
-      [memberId, amount, transaction_reference || null, payment_date, webPath, fileName, finalStatus]
+      `INSERT INTO payment_proofs (member_id, amount, transaction_reference, payment_date, proof_file_path, proof_file_name, status, rejection_reason, verified_at, verified_by) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${isAutoApproved ? 'CURRENT_TIMESTAMP' : 'NULL'}, ${isAutoApproved ? '1' : 'NULL'}) RETURNING *`,
+      [memberId, amount, transaction_reference || null, payment_date, webPath, fileName, initialStatus, flagReason]
     );
 
     const newProof = proof.rows[0];
-
-    if (autoApprove) {
-      // Instantly credit member balance and set payment_status to 'PAID'
-      await pool.query(
-        "UPDATE members SET balance = balance + $1, payment_status = 'PAID', updated_at = CURRENT_TIMESTAMP WHERE id = $2",
-        [amount, memberId]
-      );
-
-      // Record transaction
-      const pDate = new Date(payment_date);
-      const monthStr = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
-      try {
-        await pool.query(`
-          INSERT INTO transactions (member_id, transaction_date, transaction_time, month, transaction_type, amount, description, reference_type, reference_id, status)
-          VALUES ($1, CURRENT_DATE, '12:00:00', $2, 'PAYMENT', $3, $4, 'PAYMENT_PROOF', $5, 'COMPLETED')
-        `, [memberId, monthStr, amount, `Auto-Verified Payment (Ref: ${transaction_reference || 'N/A'})`, newProof.id]);
-      } catch (e) {}
-    }
-
     const io = req.app.get('io');
-    if (io) {
-      io.emit('payment:new-proof', { proof: newProof });
-      if (autoApprove) {
-        io.emit('payment:approved', { proof_id: newProof.id, member_id: memberId, amount, status: 'APPROVED' });
-        io.emit('member:balance-updated', { member_id: memberId, amount, payment_status: 'PAID' });
-      }
-      io.emit('notification:broadcast', {
-        title: autoApprove ? '✅ Payment Auto-Approved & Credited' : '💳 New Payment Proof Uploaded',
-        body: `Payment for Member ID ${memberId} (Amount: ₹${amount}) ${autoApprove ? 'verified and ₹500 credited!' : 'submitted for admin verification.'}`
+
+    if (isAutoApproved) {
+      // Execute complete approval: balance credit, transaction ledger, socket broadcasts
+      await executePaymentApproval({
+        payment_id: newProof.id,
+        member_id: memberId,
+        amount: parseFloat(amount),
+        transaction_reference,
+        payment_date,
+        verified_by: 1,
+        io
       });
+    } else {
+      if (io) {
+        io.emit('payment:new-proof', { proof: newProof });
+        io.emit('notification:broadcast', {
+          title: '💳 New Payment Proof Uploaded',
+          body: `Payment for Member ID ${memberId} (Amount: ₹${amount}) submitted for admin review (${flagReason || 'Pending'}).`
+        });
+      }
     }
 
     res.json({
-      message: autoApprove ? 'Payment auto-verified and ₹500 credited to your account!' : 'Payment proof uploaded successfully',
+      message: isAutoApproved 
+        ? 'Payment auto-verified and ₹500 credited to your account!' 
+        : 'Payment proof uploaded successfully and queued for admin verification',
       proof_id: newProof.id,
-      status: finalStatus,
-      auto_approved: autoApprove,
-      note: autoApprove ? 'Your balance has been credited with ₹500 immediately.' : 'Your payment proof has been submitted for admin verification.'
+      status: isAutoApproved ? 'APPROVED' : 'PENDING',
+      auto_approved: isAutoApproved,
+      note: isAutoApproved 
+        ? 'Your monthly payment has been auto-verified and credited immediately.' 
+        : (flagReason || 'Your payment proof has been submitted for admin verification.')
     });
 
   } catch (error) {

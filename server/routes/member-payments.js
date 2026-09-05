@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { verifyPaymentRules, executePaymentApproval } = require('../services/payment-verifier');
 
 const router = express.Router();
 
@@ -68,36 +69,65 @@ router.post('/upload', authenticateToken, async (req, res) => {
     // Save file
     await proofFile.mv(filePath);
 
+    // Run Amount Auto-Verification Rules
+    const verification = await verifyPaymentRules({
+      member_id: memberId,
+      amount: amountNum,
+      transaction_reference
+    });
+
+    const isAutoApproved = verification.autoApprove;
+    const initialStatus = isAutoApproved ? 'APPROVED' : 'PENDING';
+    const flagReason = !isAutoApproved ? verification.reason : null;
+
     // Insert payment proof record
     const result = await pool.query(
       `INSERT INTO payment_proofs (
         member_id, amount, transaction_reference, payment_date, 
-        proof_file_path, proof_file_name, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
+        proof_file_path, proof_file_name, status, rejection_reason,
+        verified_at, verified_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${isAutoApproved ? 'CURRENT_TIMESTAMP' : 'NULL'}, ${isAutoApproved ? '1' : 'NULL'})
       RETURNING id, member_id, amount, transaction_reference, payment_date, status, created_at`,
-      [memberId, amountNum, transaction_reference, payment_date, webPath, fileName]
+      [memberId, amountNum, transaction_reference, payment_date, webPath, fileName, initialStatus, flagReason]
     );
 
     const proof = result.rows[0];
-
     const io = req.app.get('io');
-    if (io) {
-      io.emit('payment:new-proof', { proof });
-      io.emit('notification:broadcast', {
-        title: '💳 New Payment Proof Uploaded',
-        body: `Payment proof submitted for Member ID ${memberId} (Amount: ₹${amountNum})`
+
+    if (isAutoApproved) {
+      await executePaymentApproval({
+        payment_id: proof.id,
+        member_id: memberId,
+        amount: amountNum,
+        transaction_reference,
+        payment_date,
+        verified_by: 1,
+        io
       });
+    } else {
+      if (io) {
+        io.emit('payment:new-proof', { proof });
+        io.emit('notification:broadcast', {
+          title: '💳 New Payment Proof Uploaded',
+          body: `Payment proof submitted for Member ID ${memberId} (Amount: ₹${amountNum}) - queued for admin review.`
+        });
+      }
     }
 
     res.json({
-      message: 'Payment proof uploaded successfully',
+      message: isAutoApproved 
+        ? 'Payment auto-verified and ₹500 credited to your account!' 
+        : 'Payment proof uploaded successfully',
       proof_id: proof.id,
       amount: proof.amount,
       transaction_reference: proof.transaction_reference,
       payment_date: proof.payment_date,
-      status: proof.status,
+      status: isAutoApproved ? 'APPROVED' : 'PENDING',
+      auto_approved: isAutoApproved,
       created_at: proof.created_at,
-      note: 'Your payment is pending verification by admin. You will be notified once it is processed.'
+      note: isAutoApproved 
+        ? 'Your monthly contribution has been auto-verified and credited immediately.' 
+        : (flagReason || 'Your payment is pending verification by admin.')
     });
 
   } catch (error) {
