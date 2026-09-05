@@ -306,19 +306,19 @@ router.get('/profile', authenticateToken, async (req, res) => {
 });
 
 /**
- * POST /api/members/photo & POST /api/member-auth/photo
- * Upload, change, or remove member profile photo
+ * POST /api/member-auth/photo & POST /api/member-auth/profile-photo
+ * Upload, change, or remove member profile photo (supports Multipart, Base64 image_data, or photo_url)
  */
-router.post('/photo', authenticateToken, async (req, res) => {
+router.post(['/photo', '/profile-photo'], authenticateToken, async (req, res) => {
   const io = req.app.get('io');
   try {
     const memberId = req.admin.id;
     let photoUrl = null;
 
-    if (req.files && req.files.photo) {
-      const file = req.files.photo;
+    if (req.files && (req.files.photo || req.files.profile_photo || req.files.image)) {
+      const file = req.files.photo || req.files.profile_photo || req.files.image;
       const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
-      const ext = path.extname(file.name).toLowerCase();
+      const ext = (path.extname(file.name) || '.png').toLowerCase();
       if (!allowedExts.includes(ext)) {
         return res.status(400).json({ success: false, message: 'Invalid format. Allowed: JPG, PNG, WEBP' });
       }
@@ -334,10 +334,24 @@ router.post('/photo', authenticateToken, async (req, res) => {
 
       await file.mv(filePath);
       photoUrl = `/uploads/${fileName}`;
-    } else if (req.body.photo_url) {
+    } else if (req.body && req.body.image_data) {
+      // Base64 Data URL upload
+      const dataStr = req.body.image_data;
+      const extMatch = dataStr.match(/^data:image\/(\w+);base64,/);
+      const ext = extMatch ? (extMatch[1] === 'jpeg' ? '.jpg' : `.${extMatch[1]}`) : '.png';
+      const base64Data = dataStr.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const fileName = `profile_${memberId}_${Date.now()}${ext}`;
+      const uploadsDir = path.join(__dirname, '../../uploads');
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+      
+      const filePath = path.join(uploadsDir, fileName);
+      fs.writeFileSync(filePath, buffer);
+      photoUrl = `/uploads/${fileName}`;
+    } else if (req.body && req.body.photo_url) {
       photoUrl = req.body.photo_url.trim();
     } else {
-      return res.status(400).json({ success: false, message: 'No photo file or photo URL provided' });
+      return res.status(400).json({ success: false, message: 'No photo file, image_data, or photo URL provided' });
     }
 
     await pool.query('UPDATE members SET profile_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [photoUrl, memberId]);
@@ -353,15 +367,20 @@ router.post('/photo', authenticateToken, async (req, res) => {
   }
 });
 
-router.delete('/photo', authenticateToken, async (req, res) => {
+router.delete(['/photo', '/profile-photo'], authenticateToken, async (req, res) => {
+  const io = req.app.get('io');
   try {
     const memberId = req.admin.id;
     await pool.query('UPDATE members SET profile_photo = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1', [memberId]);
+    if (io) {
+      io.emit('member:profile-updated', { member_id: memberId, profile_photo: null });
+    }
     res.json({ success: true, message: 'Profile photo removed' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to remove profile photo' });
   }
 });
+
 
 /**
  * PUT /api/member-auth/profile
@@ -396,50 +415,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-/**
- * POST /api/member-auth/profile-photo
- * Upload profile photo for logged-in member (Base64 data or Multipart)
- */
-router.post('/profile-photo', authenticateToken, async (req, res) => {
-  try {
-    const memberId = req.admin.id;
-    const fs = require('fs');
-    const path = require('path');
 
-    let photoUrl = '';
-
-    if (req.body && req.body.image_data) {
-      // Base64 Data URL upload
-      const base64Data = req.body.image_data.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Buffer.from(base64Data, 'base64');
-      const filename = `profile_${memberId}_${Date.now()}.png`;
-      const uploadsDir = path.join(__dirname, '../../uploads');
-      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-      
-      const filePath = path.join(uploadsDir, filename);
-      fs.writeFileSync(filePath, buffer);
-      photoUrl = `/uploads/${filename}`;
-    } else if (req.files && (req.files.photo || req.files.profile_photo || req.files.image)) {
-      const file = req.files.photo || req.files.profile_photo || req.files.image;
-      const ext = path.extname(file.name) || '.png';
-      const filename = `profile_${memberId}_${Date.now()}${ext}`;
-      const uploadsDir = path.join(__dirname, '../../uploads');
-      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-      const filePath = path.join(uploadsDir, filename);
-      await file.mv(filePath);
-      photoUrl = `/uploads/${filename}`;
-    } else {
-      return res.status(400).json({ error: 'No image file or image_data provided.' });
-    }
-
-    await pool.query('UPDATE members SET profile_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [photoUrl, memberId]);
-    res.json({ message: 'Profile photo uploaded successfully!', profile_photo: photoUrl });
-  } catch (error) {
-    console.error('Error uploading profile photo:', error);
-    res.status(500).json({ error: error.message || 'Failed to upload profile photo' });
-  }
-});
 
 /**
  * FORGOT PASSWORD - REQUEST OTP

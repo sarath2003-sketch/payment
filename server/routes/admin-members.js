@@ -8,7 +8,7 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 function saveBase64Image(dataStr, prefix = 'profile') {
   if (!dataStr || typeof dataStr !== 'string' || !dataStr.startsWith('data:image/')) return dataStr;
   try {
-    const uploadDir = path.join(__dirname, '../../public/uploads');
+    const uploadDir = path.join(__dirname, '../../uploads');
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
     const extMatch = dataStr.match(/^data:image\/(\w+);base64,/);
     const ext = extMatch ? extMatch[1].replace('jpeg', 'jpg') : 'png';
