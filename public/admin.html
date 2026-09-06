@@ -2077,13 +2077,12 @@
     const API_BASE = (window.location.protocol === 'file:' || !window.location.host) ? 'http://localhost:5000' : '';
 
     function navigatePortal(target) {
-      const isFile = window.location.protocol === 'file:' || !window.location.host;
       if (target === 'public') {
-        window.location.href = isFile ? 'public-dashboard.html' : '/public-dashboard';
-      } else if (target === 'member') {
-        window.location.href = isFile ? 'index.html' : '/';
+        window.location.href = 'public-dashboard.html';
+      } else if (target === 'member' || target === 'login') {
+        window.location.href = 'index.html';
       } else if (target === 'admin') {
-        window.location.href = isFile ? 'admin.html' : '/admin';
+        window.location.href = 'admin.html';
       }
     }
 

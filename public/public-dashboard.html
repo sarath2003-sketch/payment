@@ -1367,20 +1367,16 @@
   }
   const BASE = getPortalBase();
 
-  // Smart portal navigation helper (works seamlessly in both HTTP and file://)
+  // Smart portal navigation helper (works seamlessly in HTTP, HTTPS, Netlify, and file://)
   function navigatePortal(target) {
-    const isFile = window.location.protocol === 'file:' || !window.location.host;
-    if (isFile) {
-      if (target === 'admin') window.location.href = 'admin.html';
-      else if (target === 'member' || target === 'login') window.location.href = 'index.html';
-      else if (target === 'public') window.location.href = 'public-dashboard.html';
-      else window.location.href = 'index.html';
+    if (target === 'admin') {
+      window.location.href = 'admin.html';
+    } else if (target === 'member' || target === 'login') {
+      window.location.href = 'index.html';
+    } else if (target === 'public') {
+      window.location.href = 'public-dashboard.html';
     } else {
-      const origin = window.location.origin;
-      if (target === 'admin') window.location.href = origin + '/admin';
-      else if (target === 'member' || target === 'login') window.location.href = origin + '/';
-      else if (target === 'public') window.location.href = origin + '/public-dashboard';
-      else window.location.href = origin + '/';
+      window.location.href = 'index.html';
     }
   }
 

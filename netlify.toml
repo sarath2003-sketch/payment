@@ -1,0 +1,37 @@
+﻿[build]
+  publish = "public"
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/member"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/member/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/public-dashboard"
+  to = "/public-dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/public"
+  to = "/public-dashboard.html"
+  status = 200

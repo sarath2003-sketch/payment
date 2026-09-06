@@ -1,0 +1,7 @@
+﻿/admin               /admin.html           200
+/admin/*             /admin.html           200
+/member              /index.html           200
+/member/*            /index.html           200
+/login               /index.html           200
+/public              /public-dashboard.html 200
+/public-dashboard    /public-dashboard.html 200
