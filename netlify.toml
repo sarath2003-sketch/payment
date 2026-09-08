@@ -1,5 +1,10 @@
-﻿[build]
+[build]
   publish = "public"
+
+[[redirects]]
+  from = "/"
+  to = "/public-dashboard.html"
+  status = 200
 
 [[redirects]]
   from = "/admin"

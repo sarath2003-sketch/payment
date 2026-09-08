@@ -544,10 +544,10 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================
-// Routes: / serves Member Portal, /admin serves Admin Portal
+// Routes: / serves Public Transparency Portal, /member serves Member Portal, /admin serves Admin Portal
 // ============================================================
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
 });
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
