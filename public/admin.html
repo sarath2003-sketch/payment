@@ -10,7 +10,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap"
     rel="stylesheet">
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <style>
     /* ============================================================
        THEME SYSTEM (Light / Dark / Indigo Professional)
@@ -1288,7 +1288,8 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">🌿 Seed Fund Distributions / Loans</div>
-              <div style="display:flex;gap:10px;align-items:center">
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <button class="btn-secondary btn-sm" onclick="exportAdminLoanStatement()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;font-weight:700">📥 Export Statement (CSV)</button>
                 <button class="btn-danger btn-sm" onclick="triggerClearAllSeedFunds()" style="background:rgba(239,68,68,0.15)">🗑️ Clear All Loans (Reset to ₹0)</button>
                 <button class="btn-primary" onclick="showNewDistributionModal()">+ Create Fund Distribution</button>
               </div>
@@ -1299,6 +1300,7 @@
                   <tr>
                     <th>ID</th>
                     <th>Member</th>
+                    <th>Nominee (நாமினி)</th>
                     <th>Group</th>
                     <th>Principal</th>
                     <th>Interest %</th>
@@ -1312,7 +1314,7 @@
                   </tr>
                 </thead>
                 <tbody id="seedFundTableBody">
-                  <tr><td colspan="12" style="text-align:center;padding:30px">Loading distributions...</td></tr>
+                  <tr><td colspan="13" style="text-align:center;padding:30px">Loading distributions...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1832,7 +1834,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Principal Amount (₹) *</label>
-          <input type="number" id="distPrincipal" value="10000" oninput="recalcDistInterest()">
+          <input type="number" id="distPrincipal" value="5000" oninput="recalcDistInterest()">
         </div>
         <div class="form-group">
           <label>Interest Percentage (%) *</label>
@@ -1841,14 +1843,14 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Number of Months *</label>
+          <label>Loan Duration (கடன் தவணை) *</label>
           <select id="distMonths" onchange="recalcDistInterest()">
-            <option value="1">1 Month</option>
+            <option value="1" selected>1 Month (1 மாதம் / அடுத்த மாதம்)</option>
             <option value="2">2 Months</option>
             <option value="3">3 Months</option>
             <option value="6">6 Months</option>
             <option value="9">9 Months</option>
-            <option value="12" selected>12 Months</option>
+            <option value="12">12 Months</option>
             <option value="18">18 Months</option>
             <option value="24">24 Months</option>
             <option value="custom">Custom Months</option>
@@ -1856,43 +1858,43 @@
         </div>
         <div class="form-group hidden" id="customMonthsGroup">
           <label>Custom Months *</label>
-          <input type="number" id="distCustomMonths" value="12" min="1" oninput="recalcDistInterest()">
+          <input type="number" id="distCustomMonths" value="1" min="1" oninput="recalcDistInterest()">
         </div>
       </div>
 
       <!-- AUTO-CALCULATION SUMMARY PREVIEW -->
       <div style="background:var(--primary-light);border:1px solid var(--border-accent);padding:14px;border-radius:10px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
         <div>
-          <div style="font-size:11px;color:var(--text-muted)">Interest Amount</div>
-          <strong style="color:var(--gold);font-size:15px" id="distCalcInterest">₹500</strong>
+          <div style="font-size:11px;color:var(--text-muted)">5% Interest (வட்டி)</div>
+          <strong style="color:var(--gold);font-size:15px" id="distCalcInterest">₹250</strong>
         </div>
         <div>
-          <div style="font-size:11px;color:var(--text-muted)">Total Payable</div>
-          <strong style="color:var(--green);font-size:15px" id="distCalcTotal">₹10,500</strong>
+          <div style="font-size:11px;color:var(--text-muted)">Total Due (மொத்தம்)</div>
+          <strong style="color:var(--green);font-size:15px" id="distCalcTotal">₹5,250</strong>
         </div>
         <div>
-          <div style="font-size:11px;color:var(--text-muted)">Monthly Payment</div>
-          <strong style="color:var(--primary);font-size:15px" id="distCalcMonthly">₹875</strong>
+          <div style="font-size:11px;color:var(--text-muted)">Monthly Due (மாத தவணை)</div>
+          <strong style="color:var(--primary);font-size:15px" id="distCalcMonthly">₹5,250</strong>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Start Date *</label>
+          <label>Date Taken (கடன் வழங்கிய தேதி) *</label>
           <input type="date" id="distStartDate" onchange="updateNextPaymentDate()">
         </div>
         <div class="form-group">
-          <label>Next Payment Date *</label>
+          <label>Due Date (கட்ட வேண்டிய தேதி) *</label>
           <input type="date" id="distNextPayDate">
         </div>
       </div>
       <div class="form-group">
-        <label>Nominee Name</label>
-        <input type="text" id="distNominee" placeholder="Full name of nominee">
+        <label>Nominee Name & Phone (நாமினி பெயர் & போன் எண்) *</label>
+        <input type="text" id="distNominee" placeholder="எ.கா: Murugan - 9876543210">
       </div>
       <div class="form-group">
-        <label>Notes / Purpose</label>
-        <input type="text" id="distNotes" placeholder="Optional details">
+        <label>Notes / Purpose (விவரம்)</label>
+        <input type="text" id="distNotes" placeholder="Optional details / குறிப்பு">
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('newDistributionModal')">Cancel</button>
@@ -2269,28 +2271,33 @@
         if (!tbody) return;
 
         if (cachedDistributions.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--text-muted)">No seed fund distributions recorded yet. Click "+ Create Fund Distribution" to add one.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text-muted)">No seed fund distributions recorded yet. Click "+ Create Fund Distribution" to add one.</td></tr>';
           return;
         }
 
         tbody.innerHTML = cachedDistributions.map(d => {
-          const statusBadge = d.payment_status === 'PAID' ? '<span class="badge badge-active">PAID</span>' :
-            (d.payment_status === 'PARTIALLY_PAID' ? '<span class="badge badge-pending">PARTIAL</span>' : '<span class="badge badge-rejected">PENDING</span>');
+          const isPaid = d.payment_status === 'PAID' || (parseFloat(d.remaining_amount) || 0) <= 0;
+          const statusBadge = isPaid ? '<span class="badge badge-active">✅ PAID</span>' :
+            (d.payment_status === 'PARTIALLY_PAID' ? '<span class="badge badge-pending">PARTIAL</span>' : '<span class="badge badge-rejected">⏳ PENDING</span>');
           return `
             <tr>
               <td><strong>#${d.id}</strong></td>
-              <td><strong>${esc(d.member_name)}</strong> <span style="font-size:11px;color:var(--text-muted)">(${d.member_code})</span></td>
+              <td><strong>${esc(d.member_name)}</strong> <span style="font-size:11px;color:var(--text-muted)">(${d.member_code || d.member_id})</span></td>
+              <td style="color:var(--gold);font-weight:600">${esc(d.nominee_name || '—')}</td>
               <td>${esc(d.group_name || 'General')}</td>
               <td>₹${parseFloat(d.principal_amount).toLocaleString('en-IN')}</td>
               <td>${d.interest_percentage}%</td>
               <td style="color:var(--gold);font-weight:700">₹${parseFloat(d.interest_amount).toLocaleString('en-IN')}</td>
               <td style="font-weight:800;color:var(--green)">₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</td>
               <td>₹${parseFloat(d.total_repaid || 0).toLocaleString('en-IN')}</td>
-              <td style="font-weight:700;color:var(--red)">₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')}</td>
-              <td style="font-size:12px">${d.next_payment_date || d.due_date || '—'}</td>
+              <td style="font-weight:700;color:${isPaid ? 'var(--green)' : 'var(--red)'}">₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')}</td>
+              <td style="font-size:12px">${d.due_date || d.next_payment_date || '—'}</td>
               <td>${statusBadge}</td>
               <td style="white-space:nowrap">
-                ${parseFloat(d.remaining_amount) > 0 ? `<button class="btn-success btn-sm" onclick="openRepayForDist(${d.id})" style="margin-right:4px">💵 Pay</button>` : ''}
+                ${!isPaid ? `
+                  <button class="btn-primary btn-sm" onclick="quickMarkPaid(${d.id})" style="margin-right:4px;background:linear-gradient(135deg,#16a34a,#15803d);border:none" title="Quick Mark as Fully Paid">⚡ Mark Paid</button>
+                  <button class="btn-success btn-sm" onclick="openRepayForDist(${d.id})" style="margin-right:4px">💵 Pay</button>
+                ` : '<span style="color:var(--green);font-weight:700;font-size:12px;margin-right:6px">✅ Fully Paid</span>'}
                 <button class="btn-secondary btn-sm" onclick="openEditDistModal(${d.id})" style="margin-right:4px" title="Edit Distribution Amount">✏️ Edit</button>
                 <button class="btn-danger btn-sm" onclick="deleteDist(${d.id})" title="Delete Distribution">🗑️</button>
               </td>
@@ -2317,6 +2324,11 @@
 
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('distStartDate').value = today;
+        document.getElementById('distPrincipal').value = '5000';
+        document.getElementById('distInterestPct').value = '5.0';
+        document.getElementById('distMonths').value = '1';
+        document.getElementById('distNominee').value = '';
+        document.getElementById('distNotes').value = '';
         updateNextPaymentDate();
 
         recalcDistInterest();
@@ -2787,6 +2799,86 @@
       } catch (err) {
         showToast(err.message || 'Failed to update distribution', 'error');
       }
+    }
+
+    async function quickMarkPaid(distId) {
+      const dist = cachedDistributions.find(d => String(d.id) === String(distId));
+      if (!dist) return;
+      const rem = parseFloat(dist.remaining_amount) || 0;
+      if (!confirm(`Confirm full repayment of ₹${rem.toLocaleString('en-IN')} for ${dist.member_name}?\n\nகடன் முழு தொகையும் செலுத்தப்பட்டுவிட்டதாக மாற்றி "PAID" என குறிக்கவா?`)) return;
+
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        await api('/api/repayments', {
+          method: 'POST',
+          body: JSON.stringify({
+            distribution_id: dist.id,
+            payment_amount: rem,
+            payment_date: today,
+            payment_method: 'CASH',
+            transaction_ref: 'QUICK-SETTLE-' + Date.now().toString().slice(-6),
+            notes: 'Full loan settlement recorded by admin / கடன் முழுமையாக செலுத்தப்பட்டது'
+          })
+        });
+        showToast(`Loan #${dist.id} for ${dist.member_name} marked as PAID!`, 'success');
+        loadSeedFundDistributions();
+        if (typeof loadRepayments === 'function') loadRepayments();
+      } catch (e) {
+        showToast('Failed to record repayment: ' + e.message, 'error');
+      }
+    }
+
+    function exportAdminLoanStatement() {
+      if (!cachedDistributions || cachedDistributions.length === 0) {
+        showToast('No loan distribution records available to export.', 'error');
+        return;
+      }
+
+      const headers = [
+        'Loan ID', 'Member ID', 'Member Name', 'Nominee Name', 'Group',
+        'Principal Amount (Rs)', 'Interest Rate (%)', 'Interest Amount (Rs)',
+        'Total Payable (Rs)', 'Total Repaid (Rs)', 'Remaining Due (Rs)',
+        'Date Taken', 'Due Date', 'Status', 'Notes'
+      ];
+
+      const rows = cachedDistributions.map(d => {
+        const remaining = parseFloat(d.remaining_amount) || 0;
+        const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+        return [
+          d.id,
+          d.member_code || d.member_id || '',
+          d.member_name || '',
+          d.nominee_name || '',
+          d.group_name || 'General',
+          d.principal_amount || 0,
+          d.interest_percentage || 5,
+          d.interest_amount || 0,
+          d.total_payable || 0,
+          d.total_repaid || 0,
+          remaining,
+          (d.distribution_date || d.start_date || '').split('T')[0],
+          (d.due_date || d.next_payment_date || '').split('T')[0],
+          isPaid ? 'PAID' : 'PENDING',
+          (d.notes || '').replace(/"/g, '""')
+        ];
+      });
+
+      let csvContent = '\uFEFF';
+      csvContent += headers.map(h => `"${h}"`).join(',') + '\r\n';
+      rows.forEach(r => {
+        csvContent += r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',') + '\r\n';
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `PF_Admin_Loan_Statement_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('Loan statement exported successfully!', 'success');
     }
 
     async function deleteDist(id) {

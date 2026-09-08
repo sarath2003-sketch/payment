@@ -5,6 +5,34 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * GET PUBLIC SEED FUND LOANS & DISTRIBUTIONS (NO AUTH REQUIRED)
+ * GET /api/seed-fund/public-distributions
+ */
+router.get('/public-distributions', async (req, res) => {
+  try {
+    const sql = `
+      SELECT d.id, d.member_id, d.principal_amount, d.interest_percentage, d.interest_amount,
+             d.total_payable, d.total_repaid, d.remaining_amount, d.monthly_amount, d.number_of_months,
+             d.distribution_date, d.start_date, d.due_date, d.next_payment_date, d.nominee_name,
+             d.payment_status, d.notes,
+             COALESCE(m.name, d.nominee_name, 'Member #' || d.member_id) as member_name, 
+             COALESCE(m.member_id, '' || d.member_id) as member_code,
+             COALESCE(m.phone, '—') as member_phone,
+             g.group_name
+      FROM seed_fund_distributions d
+      LEFT JOIN members m ON d.member_id = m.id
+      LEFT JOIN groups g ON d.group_id = g.id
+      ORDER BY d.id DESC
+    `;
+    const result = await pool.query(sql);
+    res.json({ distributions: result.rows });
+  } catch (err) {
+    console.error('Error fetching public distributions:', err);
+    res.status(500).json({ error: 'Failed to fetch public distributions' });
+  }
+});
+
+/**
  * GET ALL SEED FUND DISTRIBUTIONS
  * GET /api/seed-fund/distributions
  */
@@ -181,6 +209,12 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
     ]);
 
     await client.query('COMMIT');
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('seed_fund:updated', { distributionId: distribution.id });
+      io.emit('stats:updated');
+    }
 
     res.status(201).json({
       message: 'Seed fund distribution and payment schedule created successfully!',

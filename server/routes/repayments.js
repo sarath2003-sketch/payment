@@ -138,6 +138,13 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 
     await client.query('COMMIT');
 
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('seed_fund:updated', { distribution_id, status: newStatus });
+      io.emit('stats:updated');
+      io.emit('payment:approved');
+    }
+
     res.status(201).json({
       message: 'Repayment recorded successfully!',
       repayment: repayRes.rows[0],

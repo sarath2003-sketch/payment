@@ -10,7 +10,7 @@
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Tamil:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   
   <style>
     :root {
@@ -1287,6 +1287,89 @@
           </tr>
         </tbody>
       </table>
+  <!-- ============================================================ -->
+  <!-- MONTHLY SEED FUND LOANS & REPAYMENT TRANSPARENCY LEDGER      -->
+  <!-- ============================================================ -->
+  <section class="live-feed-section" id="seedFundLoansSection" style="margin-bottom:30px">
+    <div class="feed-header-row">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid var(--border);font-size:11px;font-weight:800;padding:3px 10px;border-radius:12px;margin-bottom:6px">
+          <span>🌿 PUBLIC LOAN TRANSPARENCY</span>
+        </div>
+        <h2 class="feed-title" style="margin-bottom:4px" id="txtLoansSectionTitle">
+          💰 Monthly Fund Loans & Repayment Status
+        </h2>
+        <div style="font-size:13px;color:var(--text3)" id="txtLoansSectionSub">
+          உறுப்பினர்கள் பெற்ற கடன், 5% வட்டி, நாமினி & மறுசெலுத்துகை நிலை (நிலுவை / செலுத்தப்பட்டது)
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <!-- Download Statement Button -->
+        <button type="button" class="nav-link-btn" onclick="downloadLoanStatement()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-weight:700;padding:7px 14px;border:none;border-radius:8px;box-shadow:0 4px 12px rgba(37,99,235,0.3);cursor:pointer">
+          📥 <span id="txtDownloadStatement">Download Statement (Excel/CSV)</span>
+        </button>
+        <button type="button" class="nav-link-btn" onclick="printLoanStatement()" style="background:var(--surface2);color:var(--text);font-weight:600;padding:7px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+          🖨️ <span id="txtPrintStatement">Print / PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Search Controls -->
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="filter-chip active" id="loanFilterAll" onclick="setLoanFilter('ALL', this)">
+          📋 <span id="lblLoanFilterAll">All Loans</span> (<span id="cntAllLoans">0</span>)
+        </button>
+        <button class="filter-chip" id="loanFilterPending" onclick="setLoanFilter('PENDING', this)" style="border-color:rgba(239,68,68,0.4)">
+          ⏳ <span id="lblLoanFilterPending" style="color:#f87171">Pending Repayments</span> (<span id="cntPendingLoans">0</span>)
+        </button>
+        <button class="filter-chip" id="loanFilterPaid" onclick="setLoanFilter('PAID', this)" style="border-color:rgba(34,197,94,0.4)">
+          ✅ <span id="lblLoanFilterPaid" style="color:var(--green-light)">Fully Paid</span> (<span id="cntPaidLoans">0</span>)
+        </button>
+      </div>
+      <div style="min-width:220px;flex:1;max-width:320px">
+        <input type="text" id="loanSearchInput" placeholder="🔍 Search Member / Nominee..." oninput="renderLoansTable()" style="width:100%;padding:8px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+      </div>
+    </div>
+
+    <!-- Loan Summary Cards for easy understanding by anyone -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:18px">
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase" id="lblSumTotalDisbursed">Total Loans Given</div>
+        <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px" id="sumTotalDisbursed">₹0</div>
+      </div>
+      <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:#fca5a5;font-weight:600;text-transform:uppercase" id="lblSumPendingRepay">Pending Repayment (5% Inc.)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--red);margin-top:4px" id="sumPendingRepay">₹0</div>
+      </div>
+      <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:var(--green-light);font-weight:600;text-transform:uppercase" id="lblSumTotalRepaid">Total Repaid Back</div>
+        <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="sumTotalRepaid">₹0</div>
+      </div>
+    </div>
+
+    <!-- Loans Table -->
+    <div class="table-responsive">
+      <table class="feed-table" style="width:100%" id="loansTableElement">
+        <thead>
+          <tr>
+            <th>Member (உறுப்பினர்)</th>
+            <th>Date Taken (எடுத்த தேதி)</th>
+            <th>Principal (அசல்)</th>
+            <th>Interest (5% வட்டி)</th>
+            <th>Total Due (மொத்த தொகை)</th>
+            <th>Nominee (நாமினி)</th>
+            <th>Due Date (கடைசி தேதி)</th>
+            <th>Status (நிலை)</th>
+          </tr>
+        </thead>
+        <tbody id="loansTableBody">
+          <tr>
+            <td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">Loading loan distributions...</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -1439,7 +1522,17 @@
       filterAll: "All",
       filterPaid: "Paid Members",
       filterLoans: "Loans Taken",
-      emptyFeed: "No transactions recorded yet."
+      emptyFeed: "No transactions recorded yet.",
+      txtLoansSectionTitle: "💰 Monthly Fund Loans & Repayment Status",
+      txtLoansSectionSub: "Transparent record of member loans, 5% interest, nominee & repayment status (Pending / Paid)",
+      txtDownloadStatement: "Download Statement (Excel/CSV)",
+      txtPrintStatement: "Print / PDF",
+      lblLoanFilterAll: "All Loans",
+      lblLoanFilterPending: "Pending Repayments",
+      lblLoanFilterPaid: "Fully Paid",
+      lblSumTotalDisbursed: "Total Loans Given",
+      lblSumPendingRepay: "Pending Repayment (5% Inc.)",
+      lblSumTotalRepaid: "Total Repaid Back"
     },
     ta: {
       upbPublic: "பொதுப் பலகை",
@@ -1480,7 +1573,17 @@
       filterAll: "அனைத்தும்",
       filterPaid: "பணம் செலுத்தியவர்கள்",
       filterLoans: "கடன் பெற்றவர்கள்",
-      emptyFeed: "இதுவரை பரிவர்த்தனைகள் ஏதுமில்லை."
+      emptyFeed: "இதுவரை பரிவர்த்தனைகள் ஏதுமில்லை.",
+      txtLoansSectionTitle: "💰 மாதாந்திர நிதி கடன்கள் & மறுசெலுத்துகை நிலை",
+      txtLoansSectionSub: "உறுப்பினர்கள் பெற்ற கடன், 5% வட்டி, நாமினி & மறுசெலுத்துகை நிலை (நிலுவை / செலுத்தப்பட்டது)",
+      txtDownloadStatement: "கடன் அறிக்கை பதிவிறக்கு (Excel/CSV)",
+      txtPrintStatement: "அச்சிடுக / PDF",
+      lblLoanFilterAll: "அனைத்து கடன்கள்",
+      lblLoanFilterPending: "நிலுவையில் உள்ளவை",
+      lblLoanFilterPaid: "செலுத்தப்பட்டவை",
+      lblSumTotalDisbursed: "மொத்தம் வழங்கிய கடன்",
+      lblSumPendingRepay: "செலுத்த வேண்டிய நிலுவை (5% வட்டி உட்பட)",
+      lblSumTotalRepaid: "மொத்தம் திரும்பப் பெற்ற தொகை"
     }
   };
 
@@ -1556,7 +1659,30 @@
     const fl = document.getElementById('txtFilterLoans');
     if (fl) fl.textContent = t.filterLoans;
 
+    // Loan transparency labels
+    const ltitle = document.getElementById('txtLoansSectionTitle');
+    if (ltitle) ltitle.textContent = t.txtLoansSectionTitle;
+    const lsub = document.getElementById('txtLoansSectionSub');
+    if (lsub) lsub.textContent = t.txtLoansSectionSub;
+    const ldown = document.getElementById('txtDownloadStatement');
+    if (ldown) ldown.textContent = t.txtDownloadStatement;
+    const lprint = document.getElementById('txtPrintStatement');
+    if (lprint) lprint.textContent = t.txtPrintStatement;
+    const lfall = document.getElementById('lblLoanFilterAll');
+    if (lfall) lfall.textContent = t.lblLoanFilterAll;
+    const lfpending = document.getElementById('lblLoanFilterPending');
+    if (lfpending) lfpending.textContent = t.lblLoanFilterPending;
+    const lfpaid = document.getElementById('lblLoanFilterPaid');
+    if (lfpaid) lfpaid.textContent = t.lblLoanFilterPaid;
+    const lsdisb = document.getElementById('lblSumTotalDisbursed');
+    if (lsdisb) lsdisb.textContent = t.lblSumTotalDisbursed;
+    const lspend = document.getElementById('lblSumPendingRepay');
+    if (lspend) lspend.textContent = t.lblSumPendingRepay;
+    const lsrepaid = document.getElementById('lblSumTotalRepaid');
+    if (lsrepaid) lsrepaid.textContent = t.lblSumTotalRepaid;
+
     renderLiveFeed();
+    renderLoansTable();
   }
 
   function formatINR(val) {
@@ -1890,6 +2016,305 @@
     if (modal) modal.classList.add('hidden');
   }
 
+  // ============================================================
+  // PUBLIC LOAN TRANSPARENCY & REPAYMENT TRACKING
+  // ============================================================
+  let rawLoansData = [];
+  let activeLoanFilter = 'ALL';
+
+  function setLoanFilter(filter, btn) {
+    activeLoanFilter = filter;
+    document.querySelectorAll('#seedFundLoansSection .filter-chip').forEach(c => c.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderLoansTable();
+  }
+
+  async function fetchPublicLoans() {
+    try {
+      const res = await fetch(`${BASE}/api/seed-fund/public-distributions`);
+      if (!res.ok) throw new Error('Failed to load loans');
+      const data = await res.json();
+      rawLoansData = data.distributions || [];
+
+      // Calculate totals
+      const totalAll = rawLoansData.length;
+      let totalDisbursed = 0;
+      let totalPendingRepay = 0;
+      let totalRepaid = 0;
+      let pendingCount = 0;
+      let paidCount = 0;
+
+      rawLoansData.forEach(d => {
+        const principal = parseFloat(d.principal_amount) || 0;
+        const remaining = parseFloat(d.remaining_amount) || 0;
+        const repaid = parseFloat(d.total_repaid) || 0;
+        const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+
+        totalDisbursed += principal;
+        totalPendingRepay += remaining;
+        totalRepaid += repaid;
+
+        if (isPaid) {
+          paidCount++;
+        } else {
+          pendingCount++;
+        }
+      });
+
+      const cntAllEl = document.getElementById('cntAllLoans');
+      const cntPendingEl = document.getElementById('cntPendingLoans');
+      const cntPaidEl = document.getElementById('cntPaidLoans');
+      if (cntAllEl) cntAllEl.textContent = totalAll;
+      if (cntPendingEl) cntPendingEl.textContent = pendingCount;
+      if (cntPaidEl) cntPaidEl.textContent = paidCount;
+
+      const sumDisbursedEl = document.getElementById('sumTotalDisbursed');
+      const sumPendingEl = document.getElementById('sumPendingRepay');
+      const sumRepaidEl = document.getElementById('sumTotalRepaid');
+      if (sumDisbursedEl) sumDisbursedEl.textContent = formatINR(totalDisbursed);
+      if (sumPendingEl) sumPendingEl.textContent = formatINR(totalPendingRepay);
+      if (sumRepaidEl) sumRepaidEl.textContent = formatINR(totalRepaid);
+
+      renderLoansTable();
+    } catch (e) {
+      console.warn('Error fetching public loans:', e.message);
+      const tbody = document.getElementById('loansTableBody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">Unable to load loan distributions at the moment.</td></tr>`;
+      }
+    }
+  }
+
+  function renderLoansTable() {
+    const tbody = document.getElementById('loansTableBody');
+    if (!tbody) return;
+
+    const query = (document.getElementById('loanSearchInput')?.value || '').toLowerCase().trim();
+
+    const filtered = rawLoansData.filter(d => {
+      const isPaid = d.payment_status === 'PAID' || (parseFloat(d.remaining_amount) || 0) <= 0;
+      if (activeLoanFilter === 'PENDING' && isPaid) return false;
+      if (activeLoanFilter === 'PAID' && !isPaid) return false;
+
+      if (query) {
+        const memName = (d.member_name || '').toLowerCase();
+        const memCode = (d.member_code || '').toLowerCase();
+        const nominee = (d.nominee_name || '').toLowerCase();
+        const notes = (d.notes || '').toLowerCase();
+        if (!memName.includes(query) && !memCode.includes(query) && !nominee.includes(query) && !notes.includes(query)) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">No loan records found matching criteria.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(d => {
+      const remaining = parseFloat(d.remaining_amount) || 0;
+      const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+      const principal = parseFloat(d.principal_amount) || 0;
+      const interest = parseFloat(d.interest_amount) || 0;
+      const totalDue = parseFloat(d.total_payable) || (principal + interest);
+      const repaid = parseFloat(d.total_repaid) || 0;
+
+      const statusBadge = isPaid
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:12px">✅ PAID / செலுத்தப்பட்டது</span>`
+        : `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:12px">⏳ PENDING / நிலுவை</span>`;
+
+      let distDateStr = '—';
+      if (d.distribution_date || d.start_date) {
+        const rawDate = d.distribution_date || d.start_date;
+        distDateStr = rawDate.split('T')[0];
+      }
+
+      let dueDateStr = '—';
+      if (d.due_date || d.next_payment_date) {
+        const rawDue = d.due_date || d.next_payment_date;
+        dueDateStr = rawDue.split('T')[0];
+      }
+
+      return `
+        <tr>
+          <td>
+            <div style="font-weight:700;color:var(--gold);font-size:14px">${esc(d.member_name)}</div>
+            <div style="font-size:11px;color:var(--text3)">ID: ${esc(d.member_code || '—')}</div>
+          </td>
+          <td style="white-space:nowrap;font-size:13px;color:var(--text2)">
+            📅 ${esc(distDateStr)}
+          </td>
+          <td style="font-weight:700;color:var(--text);font-size:14px">
+            ${formatINR(principal)}
+          </td>
+          <td style="color:var(--gold);font-weight:700;font-size:13px">
+            +${formatINR(interest)} <span style="font-size:11px;opacity:0.8">(${d.interest_percentage || 5}%)</span>
+          </td>
+          <td>
+            <div style="font-weight:800;color:${isPaid ? 'var(--green-light)' : '#f87171'};font-size:14px">
+              ${formatINR(totalDue)}
+            </div>
+            ${!isPaid && repaid > 0 ? `<div style="font-size:11px;color:var(--text3)">Repaid: ${formatINR(repaid)}</div>` : ''}
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text);font-size:13px">
+              ${esc(d.nominee_name || '—')}
+            </div>
+            <div style="font-size:11px;color:var(--text3)">நாமினி</div>
+          </td>
+          <td style="white-space:nowrap;font-size:13px;color:${isPaid ? 'var(--text2)' : '#fca5a5'};font-weight:600">
+            ⏰ ${esc(dueDateStr)}
+          </td>
+          <td>
+            ${statusBadge}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Export Loan Statement as CSV / Excel
+  function downloadLoanStatement() {
+    if (!rawLoansData || rawLoansData.length === 0) {
+      alert('No loan statements to download currently.');
+      return;
+    }
+
+    const headers = [
+      'Loan ID',
+      'Member Code',
+      'Member Name',
+      'Phone',
+      'Distribution Date',
+      'Principal Amount (Rs)',
+      'Interest Rate (%)',
+      'Interest Amount (Rs)',
+      'Total Payable (Rs)',
+      'Total Repaid (Rs)',
+      'Remaining Balance (Rs)',
+      'Nominee Name',
+      'Due Date',
+      'Payment Status',
+      'Notes'
+    ];
+
+    const rows = rawLoansData.map(d => {
+      const remaining = parseFloat(d.remaining_amount) || 0;
+      const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+      return [
+        d.id,
+        d.member_code || '',
+        d.member_name || '',
+        d.member_phone || '',
+        (d.distribution_date || d.start_date || '').split('T')[0],
+        d.principal_amount || 0,
+        d.interest_percentage || 5,
+        d.interest_amount || 0,
+        d.total_payable || 0,
+        d.total_repaid || 0,
+        remaining,
+        d.nominee_name || '',
+        (d.due_date || d.next_payment_date || '').split('T')[0],
+        isPaid ? 'PAID' : 'PENDING',
+        (d.notes || '').replace(/"/g, '""')
+      ];
+    });
+
+    let csvContent = '\uFEFF';
+    csvContent += headers.map(h => `"${h}"`).join(',') + '\r\n';
+    rows.forEach(r => {
+      csvContent += r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',') + '\r\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `PF_Chit_Fund_Loan_Statement_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  // Print Loan Statement / Export PDF
+  function printLoanStatement() {
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const rowsHtml = (rawLoansData || []).map(d => {
+      const remaining = parseFloat(d.remaining_amount) || 0;
+      const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+      return `
+        <tr>
+          <td><strong>${esc(d.member_name)}</strong><br><small>${esc(d.member_code || '')}</small></td>
+          <td>${(d.distribution_date || d.start_date || '—').split('T')[0]}</td>
+          <td>₹${parseFloat(d.principal_amount || 0).toLocaleString('en-IN')}</td>
+          <td>₹${parseFloat(d.interest_amount || 0).toLocaleString('en-IN')} (${d.interest_percentage || 5}%)</td>
+          <td><strong>₹${parseFloat(d.total_payable || 0).toLocaleString('en-IN')}</strong></td>
+          <td>${esc(d.nominee_name || '—')}</td>
+          <td>${(d.due_date || d.next_payment_date || '—').split('T')[0]}</td>
+          <td><span style="font-weight:bold;color:${isPaid ? '#15803d' : '#b91c1c'}">${isPaid ? 'PAID / செலுத்தப்பட்டது' : 'PENDING / நிலுவை'}</span></td>
+        </tr>
+      `;
+    }).join('');
+
+    const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>PF Chit Fund Club - Loan & Repayment Ledger</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
+          .header { text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 16px; }
+          h1 { margin: 0 0 6px 0; font-size: 22px; color: #b45309; }
+          .sub { font-size: 13px; color: #555; }
+          table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+          th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
+          th { background: #f3f4f6; }
+          @media print {
+            button { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>PF Chit Fund Club (புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்)</h1>
+          <div class="sub">Official Seed Fund Loans & Repayment Transparency Statement · Generated on ${todayStr}</div>
+        </div>
+        <div style="margin-bottom:12px;text-align:right">
+          <button onclick="window.print()" style="padding:6px 14px;font-weight:bold;cursor:pointer;background:#2563eb;color:#fff;border:none;border-radius:6px">🖨️ Print / Save as PDF</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Member (உறுப்பினர்)</th>
+              <th>Date Taken (எடுத்த தேதி)</th>
+              <th>Principal (அசல்)</th>
+              <th>Interest (5% வட்டி)</th>
+              <th>Total Due (மொத்த தொகை)</th>
+              <th>Nominee (நாமினி)</th>
+              <th>Due Date (கடைசி தேதி)</th>
+              <th>Status (நிலை)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || '<tr><td colspan="8" style="text-align:center">No records available</td></tr>'}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
   // Socket.IO Real-time Connection
   function initRealtimeSocket() {
     if (typeof io !== 'undefined') {
@@ -1898,6 +2323,7 @@
         socket.on('payment:approved', () => {
           fetchSummaryData();
           fetchLiveFeed();
+          fetchPublicLoans();
         });
         socket.on('settings:updated', () => {
           loadPublicSettings();
@@ -1906,14 +2332,17 @@
         socket.on('stats:updated', () => {
           fetchSummaryData();
           fetchLiveFeed();
+          fetchPublicLoans();
         });
         socket.on('seed_fund:updated', () => {
           fetchSummaryData();
           fetchLiveFeed();
+          fetchPublicLoans();
         });
         socket.on('member:deleted', () => {
           fetchSummaryData();
           fetchLiveFeed();
+          fetchPublicLoans();
         });
       } catch (e) {
         console.warn('Public dashboard socket notice:', e.message);
@@ -1925,11 +2354,14 @@
   window.addEventListener('DOMContentLoaded', () => {
     fetchSummaryData();
     fetchLiveFeed();
+    fetchPublicLoans();
     loadPublicSettings();
     initRealtimeSocket();
 
     // Fast 6-second polling for transactions ticker
     setInterval(fetchLiveFeed, 6000);
+    // 15-second polling for loan ledger
+    setInterval(fetchPublicLoans, 15000);
     // 25-second polling for summary cards
     setInterval(fetchSummaryData, 25000);
   });
