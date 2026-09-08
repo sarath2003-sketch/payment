@@ -476,17 +476,12 @@
     .auction-header .a-title { font-size: 16px; font-weight: 700; color: var(--gold); }
     .auction-header .a-sub { font-size: 12px; color: var(--text3); }
     .auction-body { padding: 16px; max-width: 600px; margin: 0 auto; }
-    /* Timer */
+    /* Timer — hidden as requested for 5% seed fund model */
     .timer-card {
-      background: linear-gradient(135deg, #1a0800, #2d1200);
-      border: 1px solid var(--border2);
-      border-radius: 20px;
-      padding: 24px;
-      text-align: center;
-      margin-bottom: 16px;
-      position: relative;
-      overflow: hidden;
+      display: none !important;
     }
+    @keyframes spin360 { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .spin-refresh { animation: spin360 0.8s linear infinite; display: inline-block; }
     .timer-card::before {
       content: '';
       position: absolute;
@@ -1471,8 +1466,9 @@
     </button>
   </div>
   <div class="uhb-lang">
-    <button type="button" class="uhb-lang-btn active" id="hubBtnLangEn" onclick="setLang('en')">EN</button>
-    <button type="button" class="uhb-lang-btn" id="hubBtnLangTa" onclick="setLang('ta')">தமிழ்</button>
+    <button type="button" class="uhb-lang-btn active" id="hubBtnLangEn" onclick="setLang('en')" title="100% English">🇬🇧 EN</button>
+    <button type="button" class="uhb-lang-btn" id="hubBtnLangTa" onclick="setLang('ta')" title="100% தமிழ்">🇮🇳 தமிழ்</button>
+    <button type="button" class="uhb-lang-btn" id="hubBtnLangTanglish" onclick="setLang('tanglish')" title="தமிழ் + English (தங்கிலீஷ்)">🔄 தங்கிலீஷ்</button>
   </div>
 </div>
 
@@ -1595,9 +1591,10 @@
         </div>
     <!-- Language -->
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-      <div class="auth-tabs" style="max-width:120px;margin-bottom:0">
-        <button class="auth-tab active" onclick="setLang('en')" id="langBtnEn">EN</button>
-        <button class="auth-tab" onclick="setLang('ta')" id="langBtnTa">தமிழ்</button>
+      <div class="auth-tabs" style="max-width:240px;margin-bottom:0">
+        <button class="auth-tab active" onclick="setLang('en')" id="langBtnEn" title="100% English">🇬🇧 EN</button>
+        <button class="auth-tab" onclick="setLang('ta')" id="langBtnTa" title="100% தமிழ்">🇮🇳 தமிழ்</button>
+        <button class="auth-tab" onclick="setLang('tanglish')" id="langBtnTanglish" title="தமிழ் + English">🔄 தங்கிலீஷ்</button>
       </div>
     </div>
     <!-- Member Portal Info Header -->
@@ -1795,12 +1792,13 @@
       <div class="member-id" id="headerMemberId">Member ID: —</div>
     </div>
     <div class="header-actions">
+      <button class="icon-btn" onclick="triggerAppRefresh()" id="refreshBtn" title="🔄 Refresh Data / புதுப்பி" style="font-size:16px">🔄</button>
       <button class="icon-btn" onclick="toggleNotifPanel()" id="notifBell" title="Notifications">
         🔔
         <span class="badge-count hidden" id="notifBadge">0</span>
       </button>
       <button class="icon-btn" onclick="showPage('settings')" title="Settings">⚙️</button>
-      <button class="icon-btn" onclick="doLogout()" title="Logout" style="font-size:15px" aria-label="Logout">🚪</button>
+      <button class="icon-btn" onclick="confirmLogout()" title="Logout" style="font-size:15px" aria-label="Logout">🚪</button>
     </div>
   </header>
 
@@ -2271,9 +2269,10 @@
               <div class="setting-sub" id="currentLangLabel">English</div>
             </div>
           </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="setLang('en')">EN</button>
-            <button class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="setLang('ta')">தமிழ்</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn-secondary" style="padding:6px 10px;font-size:12px" onclick="setLang('en')">🇬🇧 EN</button>
+            <button class="btn-secondary" style="padding:6px 10px;font-size:12px" onclick="setLang('ta')">🇮🇳 தமிழ்</button>
+            <button class="btn-secondary" style="padding:6px 10px;font-size:12px" onclick="setLang('tanglish')">🔄 தங்கிலீஷ்</button>
           </div>
         </div>
       </div>
@@ -2576,6 +2575,25 @@
   </div>
 </div>
 
+<!-- GLOBAL SAFE CONFIRMATION MODAL -->
+<div id="confirmModal" class="modal-overlay hidden" style="z-index:99999;display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;padding:16px">
+  <div class="modal" style="max-width:440px;width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:24px">⚠️</span>
+      <h3 id="confirmTitle" style="font-size:17px;font-weight:700;color:var(--text)">உறுதிப்படுத்தல் / Confirmation</h3>
+    </div>
+    <div id="confirmBody" style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px;white-space:pre-wrap;background:rgba(255,255,255,0.03);padding:14px;border-radius:10px;border:1px solid var(--border)"></div>
+    <div class="modal-actions" style="display:flex;gap:12px;justify-content:flex-end">
+      <button type="button" class="btn-secondary" id="confirmCancelBtn" onclick="closeConfirmModal()" style="padding:10px 18px;font-weight:600">
+        ❌ வேண்டாம் / No, Cancel
+      </button>
+      <button type="button" class="btn-danger" id="confirmOkBtn" style="padding:10px 20px;font-weight:700">
+        ✅ ஆம், உறுதிசெய் / Yes, Confirm
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Audio elements for sound notifications -->
 <audio id="bidSound" preload="auto">
   <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbxp..." type="audio/wav">
@@ -2685,78 +2703,138 @@ const i18n = {
     chatFailed: 'செய்தி அனுப்புவதில் தோல்வி', micError: 'மைக்ரோஃபோன் கிடைக்கவில்லை',
     uploadError: 'பதிவேற்றம் தோல்வி. மீண்டும் முயற்சிக்கவும்.',
     fileTypeError: 'JPG, PNG, WebP மட்டும் அனுமதி', fileSizeError: 'கோப்பு 10MB க்கும் குறைவாக இருக்க வேண்டும்',
+  },
+  tanglish: {
+    login: 'உள்நுழைவு (Login)', register: 'பதிவு (Register)', loginBtn: 'உள்நுழைக (Login to Portal)',
+    registerBtn: 'கணக்கு உருவாக்கு (Register)', memberId: 'உறுப்பினர் ID / Mobile / Email',
+    password: 'கடவுச்சொல் (Password)', fullName: 'முழு பெயர் (Full Name)', phone: 'தொலைபேசி (Phone)',
+    confirmPassword: 'கடவுச்சொல் உறுதி (Confirm Password)', forgotPassword: 'கடவுச்சொல் மறந்ததா? (Forgot?)',
+    sendOtp: 'OTP அனுப்பு (Send OTP)', enterOtp: 'OTP உள்ளிடுக (Enter OTP)', verifyOtp: 'OTP சரிபார் (Verify)',
+    newPassword: 'புதிய கடவுச்சொல் (New Password)', resetPassword: 'மீட்டமை (Reset)',
+    backToLogin: 'உள்நுழைவுக்கு செல்', home: 'முகப்பு (Home)', payment: 'கட்டணம் (Payment)',
+    history: 'வரலாறு (History)', auction: 'விதை நிதி உதவி (Seed Fund)', settings: 'அமைப்புகள் (Settings)',
+    notifications: 'அறிவிப்புகள் (Notifications)', totalPaid: 'மொத்தம் செலுத்தியது (Total Paid)',
+    balance: 'இருப்பு (Balance)', pendingReq: 'நிலுவை (Pending)', thisMonth: 'இந்த மாதம் (This Month)',
+    makePayment: 'கட்டணம் செலுத்து (Make Payment)', selectMonth: 'செலுத்தும் மாதம் (Payment Month)',
+    transactionRef: 'பரிவர்த்தனை ID (UTR / Ref ID)',
+    uploadScreenshot: 'ரசீது பதிவேற்று (Upload Screenshot)',
+    tapToUpload: 'ரசீது தேர்ந்தெடுக்க தட்டவும் (Tap to Upload)',
+    submitPayment: 'கட்டணத்தை சமர்ப்பி (Submit Payment)',
+    paymentNote: 'நிர்வாகி சரிபார்த்தவுடன் கணக்கில் வரவு வைக்கப்படும் (Credit after Admin verification).',
+    paymentHistory: 'கட்டண வரலாறு (Payment History)', activeStatus: 'செயலில் உள்ள உறுப்பினர் (Active Member)',
+    language: 'மொழி (Language)', sound: 'ஒலி (Sound)', profile: 'சுயவிவரம் (Profile)',
+    changePassword: 'கடவுச்சொல் மாற்று (Change Password)', logout: 'வெளியேறு (Logout)',
+    markAllRead: 'படித்ததாக குறி (Mark Read)', liveAuction: 'விதை நிதி உதவி (Seed Fund)',
+    joinWhatsApp: 'WhatsApp குழு (WhatsApp Group)', recentPayments: 'சமீபத்திய கட்டணங்கள் (Recent Payments)',
+    currentPassword: 'தற்போதைய கடவுச்சொல் (Current Password)', cancel: 'ரத்து (Cancel)', save: 'சேமி (Save)',
+    loading: 'ஏற்றுகிறது (Loading)...', noData: 'தரவு இல்லை (No Data)',
+    bidNow: 'விண்ணப்பி (Apply)', auctionEnded: 'முடிந்தது (Ended)',
+    winner: 'பெற்றவர் (Beneficiary)', congratulations: 'வாழ்த்துக்கள் (Congratulations)!',
+    auctionNotLive: 'செயலில் இல்லை (Not Active)', auctionWaiting: 'காத்திருக்கிறது (Waiting)',
+    noAuction: 'விண்ணப்பம் இல்லை (No Request)', enterBid: 'தொகை உள்ளிடுக (Amount)',
+    minBid: 'குறைந்தபட்சம் (Minimum)', sendMessage: 'செய்தி அனுப்பு (Send Message)',
+    voiceMessage: 'குரல் செய்தி (Voice)', startRecording: 'பதிவு தொடங்கு (Record)',
+    stopRecording: 'பதிவு நிறுத்து (Stop)', highestBid: 'தொகை (Amount)',
+    bidHistory: 'விவரம் (History)', liveChat: 'கலந்துரையாடல் (Live Chat)',
+    placeBid: 'சமர்ப்பி (Submit)', connecting: 'இணைக்கிறது...', connected: 'இணைக்கப்பட்டது (Connected)',
+    scheduled: 'திட்டமிட்டது (Scheduled)', live: 'நேரலை (Live)', paused: 'இடைநிறுத்தம் (Paused)',
+    ended: 'முடிந்தது (Ended)', cancelled: 'ரத்து (Cancelled)',
+    auctionScheduled: 'திட்டமிடப்பட்டது', auctionStarts: 'தொடங்கும் நேரம்',
+    increment: 'கூடுதல் தொகை', starting: 'தொடக்க தொகை',
+    noHistory: 'கட்டண வரலாறு இல்லை', noNotifications: 'அறிவிப்புகள் இல்லை',
+    verified: 'சரிபார்க்கப்பட்டது (PAID)', pending: 'நிலுவையில் (PENDING)', rejected: 'நிராகரிக்கப்பட்டது (REJECTED)',
+    amount: 'தொகை (Amount)', month: 'மாதம் (Month)', date: 'தேதி (Date)', status: 'நிலை (Status)',
+    transRef: 'பரிவர்த்தனை குறிப்பு (UTR)', verifiedBy: 'சரிபார்த்தவர் (Verifier)', verifiedOn: 'சரிபார்த்த தேதி',
+    rejectedReason: 'நிராகரிப்பு காரணம்', submitSuccess: 'கட்டணம் வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது! (Submitted)',
+    submitFailed: 'சமர்ப்பிப்பதில் தோல்வி (Submission Failed).', loginFailed: 'உள்நுழைவு தோல்வி (Login Failed)',
+    regSuccess: 'பதிவு வெற்றிகரமாக முடிந்தது! (Registration Success)', regFailed: 'பதிவு தோல்வி (Failed)',
+    passwordChanged: 'கடவுச்சொல் மாற்றப்பட்டது (Password Changed)', passwordChangeFailed: 'தோல்வி (Failed)',
+    bidPlaced: 'விண்ணப்பம் ஏற்கப்பட்டது!', bidFailed: 'தோல்வி (Failed)', chatSent: 'செய்தி அனுப்பப்பட்டது (Sent)',
+    chatFailed: 'செய்தி அனுப்புவதில் தோல்வி', micError: 'மைக் கிடைக்கவில்லை (No Mic)',
+    uploadError: 'பதிவேற்றம் தோல்வி (Upload Failed)', fileTypeError: 'JPG, PNG, WebP மட்டும் அனுமதி',
+    fileSizeError: 'கோப்பு 10MB க்கும் குறைவாக இருக்க வேண்டும்',
   }
 };
 let currentLang = localStorage.getItem('lang') || 'en';
-function t(key) { return (i18n[currentLang] && i18n[currentLang][key]) || i18n.en[key] || key; }
+function t(key) { return (i18n[currentLang] && i18n[currentLang][key]) || (i18n.en && i18n.en[key]) || key; }
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
-    if (key && i18n[currentLang][key]) el.textContent = i18n[currentLang][key];
+    if (key && i18n[currentLang] && i18n[currentLang][key]) el.textContent = i18n[currentLang][key];
   });
 }
 function setLang(lang) {
+  if (!['en', 'ta', 'tanglish'].includes(lang)) lang = 'en';
   currentLang = lang;
   localStorage.setItem('lang', lang);
   document.documentElement.setAttribute('data-lang', lang);
-  const lEn = document.getElementById('langBtnEn');
-  if (lEn) lEn.classList.toggle('active', lang === 'en');
-  const lTa = document.getElementById('langBtnTa');
-  if (lTa) lTa.classList.toggle('active', lang === 'ta');
-  const hEn = document.getElementById('hubBtnLangEn');
-  if (hEn) hEn.classList.toggle('active', lang === 'en');
-  const hTa = document.getElementById('hubBtnLangTa');
-  if (hTa) hTa.classList.toggle('active', lang === 'ta');
+
+  // Sync active language buttons
+  const btnPairs = [
+    { en: 'langBtnEn', ta: 'langBtnTa', tanglish: 'langBtnTanglish' },
+    { en: 'hubBtnLangEn', ta: 'hubBtnLangTa', tanglish: 'hubBtnLangTanglish' }
+  ];
+  btnPairs.forEach(p => {
+    const elEn = document.getElementById(p.en);
+    const elTa = document.getElementById(p.ta);
+    const elTanglish = document.getElementById(p.tanglish);
+    if (elEn) elEn.classList.toggle('active', lang === 'en');
+    if (elTa) elTa.classList.toggle('active', lang === 'ta');
+    if (elTanglish) elTanglish.classList.toggle('active', lang === 'tanglish');
+  });
+
   const cll = document.getElementById('currentLangLabel');
-  if (cll) cll.textContent = lang === 'ta' ? 'தமிழ்' : 'English';
+  if (cll) {
+    cll.textContent = lang === 'ta' ? 'தமிழ் (Pure Tamil)' : (lang === 'tanglish' ? 'தமிழ் + English (தங்கிலீஷ்)' : 'English (100% Pure)');
+  }
 
   // Universal Hub Bar labels
   const up = document.getElementById('txtUhbPublic');
-  if (up) up.textContent = lang === 'ta' ? 'பொதுப் பார்வை' : 'Public Overview';
+  if (up) up.textContent = lang === 'ta' ? 'பொதுப் பார்வை' : (lang === 'tanglish' ? 'பொதுப் பார்வை (Public Overview)' : 'Public Overview');
   const um = document.getElementById('txtUhbMember');
-  if (um) um.textContent = lang === 'ta' ? 'உறுப்பினர் பகுதி' : 'Member Portal';
+  if (um) um.textContent = lang === 'ta' ? 'உறுப்பினர் பகுதி' : (lang === 'tanglish' ? 'உறுப்பினர் பகுதி (Member Portal)' : 'Member Portal');
   const ua = document.getElementById('txtUhbAdmin');
-  if (ua) ua.textContent = lang === 'ta' ? 'நிர்வாகி பகுதி' : 'Admin Portal';
+  if (ua) ua.textContent = lang === 'ta' ? 'நிர்வாகி பகுதி' : (lang === 'tanglish' ? 'நிர்வாகி பகுதி (Admin Portal)' : 'Admin Portal');
 
   const apl = document.getElementById('txtAuthPublicLink');
-  if (apl) apl.textContent = lang === 'ta' ? 'பொது நிதி புள்ளிவிவரங்கள்' : 'Public Fund Overview';
+  if (apl) apl.textContent = lang === 'ta' ? 'பொது நிதி புள்ளிவிவரங்கள்' : (lang === 'tanglish' ? 'பொது நிதி புள்ளிவிவரங்கள் (Public Overview)' : 'Public Fund Overview');
   const aal = document.getElementById('txtAuthAdminLink');
-  if (aal) aal.textContent = lang === 'ta' ? 'நிர்வாகி பகுதி' : 'Admin Portal';
+  if (aal) aal.textContent = lang === 'ta' ? 'நிர்வாகி பகுதி' : (lang === 'tanglish' ? 'நிர்வாகி பகுதி (Admin Portal)' : 'Admin Portal');
 
   // Hub Overview Screen labels
   const htt = document.getElementById('txtHubTickerTitle');
-  if (htt) htt.textContent = lang === 'ta' ? 'நேரலை செயல்பாடுகள்' : 'LIVE ACTIVITY';
+  if (htt) htt.textContent = lang === 'ta' ? 'நேரலை செயல்பாடுகள்' : (lang === 'tanglish' ? 'நேரலை செயல்பாடுகள் (LIVE ACTIVITY)' : 'LIVE ACTIVITY');
   const hht = document.getElementById('txtHubHeroTitle');
-  if (hht) hht.textContent = lang === 'ta' ? 'புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப் — பொதுப் பார்வை' : 'PF Chit Fund Club — Public Overview';
+  if (hht) hht.textContent = lang === 'ta' ? 'புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப் — பொதுப் பார்வை' : (lang === 'tanglish' ? 'புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப் (PF Chit Fund Club)' : 'PF Chit Fund Club — Public Overview');
   const hhs = document.getElementById('txtHubHeroSub');
-  if (hhs) hhs.textContent = lang === 'ta' ? 'நேரலை சீட்டு நிதி புள்ளிவிவரங்கள், வெளிப்படையான வரவு-செலவு மற்றும் ஆன்லைன் தவணை செலுத்துதல்' : 'Real-time Public Seed Fund Statistics, Transparency Feed & Online Payments';
+  if (hhs) hhs.textContent = lang === 'ta' ? 'நேரலை சீட்டு நிதி புள்ளிவிவரங்கள், வெளிப்படையான வரவு-செலவு மற்றும் ஆன்லைன் தவணை செலுத்துதல்' : (lang === 'tanglish' ? 'நேரலை சீட்டு நிதி புள்ளிவிவரங்கள் & ஆன்லைன் தவணை (Real-time Transparency & Payments)' : 'Real-time Public Seed Fund Statistics, Transparency Feed & Online Payments');
 
   const bml = document.getElementById('txtHubBtnMemberLogin');
-  if (bml) bml.textContent = lang === 'ta' ? 'உறுப்பினர் உள்நுழைவு / பதிவு' : 'Member Login / Register';
+  if (bml) bml.textContent = lang === 'ta' ? 'உறுப்பினர் உள்நுழைவு / பதிவு' : (lang === 'tanglish' ? 'உறுப்பினர் உள்நுழைவு (Member Login / Register)' : 'Member Login / Register');
   const bal = document.getElementById('txtHubBtnAdminLogin');
-  if (bal) bal.textContent = lang === 'ta' ? 'நிர்வாகி கட்டுப்பாட்டு அறை' : 'Admin Control Panel';
+  if (bal) bal.textContent = lang === 'ta' ? 'நிர்வாகி கட்டுப்பாட்டு அறை' : (lang === 'tanglish' ? 'நிர்வாகி பகுதி (Admin Control Panel)' : 'Admin Control Panel');
   const brf = document.getElementById('txtHubBtnRefresh');
-  if (brf) brf.textContent = lang === 'ta' ? 'புள்ளிவிவரங்களை புதுப்பி' : 'Refresh Data';
+  if (brf) brf.textContent = lang === 'ta' ? 'புள்ளிவிவரங்களை புதுப்பி' : (lang === 'tanglish' ? 'புதுப்பி (Refresh Data)' : 'Refresh Data');
   const bfs = document.getElementById('txtHubBtnFullScreen');
-  if (bfs) bfs.textContent = lang === 'ta' ? 'முழு திரை பொதுப் பலகை' : 'Full Screen Dashboard';
+  if (bfs) bfs.textContent = lang === 'ta' ? 'முழு திரை பொதுப் பலகை' : (lang === 'tanglish' ? 'முழு திரை (Full Screen)' : 'Full Screen Dashboard');
 
   const ltf = document.getElementById('lblHubTotalFund');
-  if (ltf) ltf.textContent = lang === 'ta' ? 'மொத்த நிதி மதிப்பு' : 'Total Fund Amount';
+  if (ltf) ltf.textContent = lang === 'ta' ? 'மொத்த நிதி மதிப்பு' : (lang === 'tanglish' ? 'மொத்த நிதி மதிப்பு (Total Fund)' : 'Total Fund Amount');
   const ltc = document.getElementById('lblHubTotalCollected');
-  if (ltc) ltc.textContent = lang === 'ta' ? 'மொத்தம் வரப்பெற்றது' : 'Total Amount Received';
+  if (ltc) ltc.textContent = lang === 'ta' ? 'மொத்தம் வரப்பெற்றது' : (lang === 'tanglish' ? 'மொத்தம் வரப்பெற்றது (Total Collected)' : 'Total Amount Received');
   const ltd = document.getElementById('lblHubTotalDistributed');
-  if (ltd) ltd.textContent = lang === 'ta' ? 'வழங்கப்பட்ட சீட்டு கடன்' : 'Total Distributed';
+  if (ltd) ltd.textContent = lang === 'ta' ? 'வழங்கப்பட்ட சீட்டு கடன்' : (lang === 'tanglish' ? 'வழங்கப்பட்ட சீட்டு கடன் (Distributed)' : 'Total Distributed');
   const lcb = document.getElementById('lblHubCurrentBalance');
-  if (lcb) lcb.textContent = lang === 'ta' ? 'தற்போதைய இருப்பு' : 'Available Cash Balance';
+  if (lcb) lcb.textContent = lang === 'ta' ? 'தற்போதைய இருப்பு' : (lang === 'tanglish' ? 'தற்போதைய இருப்பு (Available Balance)' : 'Available Cash Balance');
 
   const hfh = document.getElementById('txtHubFeedHeader');
-  if (hfh) hfh.textContent = lang === 'ta' ? 'சமீபத்திய உறுப்பினர் பங்களிப்புகள்' : 'Recent Member Contributions';
+  if (hfh) hfh.textContent = lang === 'ta' ? 'சமீபத்திய உறுப்பினர் பங்களிப்புகள்' : (lang === 'tanglish' ? 'சமீபத்திய பங்களிப்புகள் (Recent Payments)' : 'Recent Member Contributions');
   const hqh = document.getElementById('txtHubQrHeader');
-  if (hqh) hqh.textContent = lang === 'ta' ? 'அதிகாரப்பூர்வ QR & UPI கட்டணம்' : 'Club Official QR & UPI Payment';
+  if (hqh) hqh.textContent = lang === 'ta' ? 'அதிகாரப்பூர்வ QR & UPI கட்டணம்' : (lang === 'tanglish' ? 'அதிகாரப்பூர்வ QR & UPI கட்டணம் (Official Payment)' : 'Club Official QR & UPI Payment');
   const hqs = document.getElementById('txtHubQrSub');
-  if (hqs) hqs.textContent = lang === 'ta' ? 'ரூ.500 மாதாந்திர சீட்டு தவணை அல்லது கடன் தொகையை செலுத்த ஸ்கேன் செய்யவும்' : 'Scan to pay monthly ₹500 chit installment or loan repayment';
+  if (hqs) hqs.textContent = lang === 'ta' ? 'ரூ.500 மாதாந்திர சீட்டு தவணை அல்லது கடன் தொகையை செலுத்த ஸ்கேன் செய்யவும்' : (lang === 'tanglish' ? 'ரூ.500 மாதாந்திர சீட்டு அல்லது கடன் தொகை செலுத்த ஸ்கேன் செய்யவும் (Scan to Pay)' : 'Scan to pay monthly ₹500 chit installment or loan repayment');
   const hlp = document.getElementById('txtHubLoginPrompt');
-  if (hlp) hlp.textContent = lang === 'ta' ? 'UTR ஆதாரத்தை சமர்ப்பிக்க உறுப்பினர் உள்நுழையவும்' : 'Login as Member to Submit UTR Proof';
+  if (hlp) hlp.textContent = lang === 'ta' ? 'UTR ஆதாரத்தை சமர்ப்பிக்க உறுப்பினர் உள்நுழையவும்' : (lang === 'tanglish' ? 'UTR ஆதாரத்தை சமர்ப்பிக்க உள்நுழையவும் (Login to Submit Proof)' : 'Login as Member to Submit UTR Proof');
 
   applyI18n();
   renderHubLiveFeed();
@@ -3258,6 +3336,49 @@ async function doResetPassword() {
     setTimeout(() => switchAuthTab('login'), 2000);
   } catch (e) { showAuthAlert(e.message); }
 }
+let appConfirmCb = null;
+function openAppConfirm(title, body, cb) {
+  const tEl = document.getElementById('confirmTitle');
+  const bEl = document.getElementById('confirmBody');
+  if (tEl) tEl.textContent = title;
+  if (bEl) bEl.textContent = body;
+  appConfirmCb = cb;
+  const m = document.getElementById('confirmModal');
+  if (m) {
+    m.classList.remove('hidden');
+    m.style.display = 'flex';
+  }
+}
+function closeConfirmModal() {
+  const m = document.getElementById('confirmModal');
+  if (m) {
+    m.classList.add('hidden');
+    m.style.display = 'none';
+  }
+  appConfirmCb = null;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const okBtn = document.getElementById('confirmOkBtn');
+  if (okBtn) {
+    okBtn.onclick = () => {
+      const cb = appConfirmCb;
+      closeConfirmModal();
+      if (cb) cb();
+    };
+  }
+});
+
+function confirmLogout() {
+  openAppConfirm(
+    '🚪 வெளியேற விரும்புகிறீர்களா? / Confirm Logout',
+    'உங்கள் கணக்கிலிருந்து வெளியேற விரும்புகிறீர்களா?\n\n(Are you sure you want to log out of your member account?)',
+    () => {
+      doLogout();
+      showToast('வெளியேற்றப்பட்டீர்கள் / Logged out successfully', 'info');
+    }
+  );
+}
+
 function doLogout() {
   authToken = null; currentUser = null;
   localStorage.removeItem('memberToken');
@@ -3266,6 +3387,33 @@ function doLogout() {
   document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('authScreen').style.display = '';
   switchAuthTab('login');
+}
+
+async function triggerAppRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) btn.classList.add('spin-refresh');
+  showToast('🔄 நேரலை தரவு புதுப்பிக்கப்படுகிறது... / Updating live data...', 'info');
+  try {
+    if (currentUser) {
+      if (typeof loadDashboardData === 'function') await loadDashboardData();
+      if (typeof loadPaymentHistory === 'function') await loadPaymentHistory();
+      if (typeof loadMemberLoanRequests === 'function') await loadMemberLoanRequests();
+      if (typeof loadMemberActiveLoans === 'function') await loadMemberActiveLoans();
+    }
+    if (typeof loadPublicOverviewStats === 'function') await loadPublicOverviewStats();
+    if (typeof loadChatGroups === 'function' && currentPage === 'chat-rooms') await loadChatGroups();
+    if (typeof refreshChatRoom === 'function' && currentPage === 'chat-room-detail' && currentChatGroupId) {
+      await refreshChatRoom(currentChatGroupId);
+      await loadGroupMessages(currentChatGroupId);
+    }
+    showToast('✅ புதுப்பிக்கப்பட்டது! / Updated successfully!', 'success');
+  } catch (e) {
+    showToast('Refresh error: ' + e.message, 'error');
+  } finally {
+    if (btn) {
+      setTimeout(() => btn.classList.remove('spin-refresh'), 600);
+    }
+  }
 }
 
 function initSocket() {
@@ -4303,13 +4451,16 @@ function renderAuction() {
         </div>
       </div>
       <div class="auction-body">
-        <!-- Timer -->
-        <div class="timer-card">
-          <div class="timer-status">
-            ${auction.status === 'PAUSED' ? `<span class="badge badge-${statusMap[auction.status]}">⏸ ${statusLabel[auction.status]}</span>` : ''}
+        <!-- 5% Seed Fund Schedule Banner (Auction countdown removed) -->
+        <div style="background:linear-gradient(135deg,rgba(245,200,66,0.12),rgba(34,197,94,0.08));border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center">
+          <div style="font-size:24px;margin-bottom:4px">🌱</div>
+          <div style="font-size:15px;font-weight:700;color:var(--gold)">5% விதை நிதி உதவி & மாதாந்திர சீட்டு முறை</div>
+          <div style="font-size:12.5px;color:var(--text2);margin-top:4px">
+            மாதந்தோறும் 10-ஆம் தேதிக்குள் சீட்டு தவணை செலுத்தப்பட வேண்டும். மாலை 5% வட்டியில் கடன் உதவி வழங்கப்படும். (Due: 10th of every month)
           </div>
+        </div>
+        <div class="timer-card" style="display:none !important">
           <div class="timer-display" id="auctionTimer">00:00</div>
-          <div class="timer-label" data-i18n="timeRemaining">TIME REMAINING</div>
         </div>
         <!-- Current Bid -->
         <div class="bid-card">

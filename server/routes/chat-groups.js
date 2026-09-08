@@ -6,13 +6,8 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Middleware: Members only
-router.use(authenticateToken, (req, res, next) => {
-  if (req.admin?.type === 'admin') {
-    return res.status(403).json({ error: 'Members only' });
-  }
-  next();
-});
+// Middleware: Authenticated users (Members or Admin)
+router.use(authenticateToken);
 
 /**
  * GET /api/chat-groups
@@ -20,7 +15,19 @@ router.use(authenticateToken, (req, res, next) => {
  */
 router.get('/', async (req, res) => {
   try {
-    const memberId = req.admin.id;
+    const isAdmin = req.admin?.type === 'admin';
+    const memberId = isAdmin ? 0 : req.admin.id;
+
+    // Ensure default general discussion room exists
+    const existing = await pool.query('SELECT id FROM chat_groups WHERE status IN (\'APPROVED\', \'ACTIVE\') LIMIT 1');
+    if (existing.rows.length === 0) {
+      try {
+        await pool.query(`
+          INSERT INTO chat_groups (group_name, created_by, group_admin_id, max_members, status)
+          VALUES ('📢 PF Chit Fund General Discussion / பொது அரட்டை', 1, 1, 12, 'ACTIVE')
+        `);
+      } catch (e) {}
+    }
 
     const result = await pool.query(`
       SELECT 
@@ -43,20 +50,23 @@ router.get('/', async (req, res) => {
     `, [memberId]);
 
     // User's pending requests
-    const userRequests = await pool.query(`
-      SELECT id, group_name, status, created_at
-      FROM chat_group_requests
-      WHERE requested_by = $1
-      ORDER BY created_at DESC
-    `, [memberId]);
+    let userRequests = { rows: [] };
+    if (!isAdmin) {
+      userRequests = await pool.query(`
+        SELECT id, group_name, status, created_at
+        FROM chat_group_requests
+        WHERE requested_by = $1
+        ORDER BY created_at DESC
+      `, [memberId]);
+    }
 
     const formattedGroups = result.rows.map(r => ({
       ...r,
       total_member_count: parseInt(r.total_member_count || 0),
       speaker_count: parseInt(r.speaker_count || 0),
       max_members: 12, // 12 Speaker Slots max
-      is_member: !!r.user_role,
-      is_owner: parseInt(r.group_admin_id) === memberId
+      is_member: isAdmin ? true : !!r.user_role,
+      is_owner: isAdmin ? true : parseInt(r.group_admin_id) === memberId
     }));
 
     res.json({
@@ -112,7 +122,8 @@ router.post('/request', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const groupId = parseInt(req.params.id);
-    const memberId = req.admin.id;
+    const isAdmin = req.admin?.type === 'admin';
+    const memberId = isAdmin ? 0 : req.admin.id;
 
     const groupRes = await pool.query(`
       SELECT 
@@ -142,11 +153,11 @@ router.get('/:id', async (req, res) => {
 
     const activeMembers = membersRes.rows;
     const currentMemberObj = activeMembers.find(m => m.member_id_pk === memberId);
-    const isMember = !!currentMemberObj;
-    const isOwner = group.group_admin_id === memberId;
-    const isSpeaker = currentMemberObj ? (currentMemberObj.is_speaker === true || currentMemberObj.is_speaker === 1) : false;
-    const userRole = currentMemberObj?.role || null;
-    const userMuted = currentMemberObj?.is_muted || false;
+    const isMember = isAdmin ? true : !!currentMemberObj;
+    const isOwner = isAdmin ? true : (group.group_admin_id === memberId);
+    const isSpeaker = isAdmin ? true : (currentMemberObj ? (currentMemberObj.is_speaker === true || currentMemberObj.is_speaker === 1) : false);
+    const userRole = isAdmin ? 'ADMIN' : (currentMemberObj?.role || null);
+    const userMuted = isAdmin ? false : (currentMemberObj?.is_muted || false);
 
     // Filter speakers vs audience
     const speakers = activeMembers.filter(m => m.is_speaker === true || m.is_speaker === 1);
@@ -401,14 +412,31 @@ router.post('/:id/messages', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
-    const memberId = req.admin.id;
+    const isAdmin = req.admin?.type === 'admin';
+    let memberId = null;
+    let senderName = 'Admin / தலைவர்';
+    let senderMemberId = 'ADMIN';
 
-    const memCheck = await pool.query('SELECT is_muted FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
-    if (memCheck.rows.length === 0) {
-      return res.status(403).json({ error: 'You are not a member of this chat room' });
-    }
-    if (memCheck.rows[0].is_muted) {
-      return res.status(403).json({ error: 'You have been muted by the Group Admin' });
+    if (isAdmin) {
+      memberId = null;
+    } else {
+      memberId = req.admin.id;
+      const memCheck = await pool.query('SELECT is_muted FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
+      if (memCheck.rows.length === 0) {
+        // Auto-join member so they can participate immediately
+        try {
+          await pool.query(`
+            INSERT INTO chat_group_members (group_id, member_id, role, is_speaker, is_muted)
+            VALUES ($1, $2, 'AUDIENCE', 0, 0)
+          `, [groupId, memberId]);
+        } catch (e) {}
+      } else if (memCheck.rows[0].is_muted) {
+        return res.status(403).json({ error: 'You have been muted by the Group Admin' });
+      }
+
+      const mRes = await pool.query('SELECT name, member_id FROM members WHERE id = $1', [memberId]);
+      senderName = mRes.rows[0]?.name || 'Member';
+      senderMemberId = mRes.rows[0]?.member_id || ('#' + memberId);
     }
 
     let messageType = 'text';
@@ -442,10 +470,6 @@ router.post('/:id/messages', async (req, res) => {
       return res.status(400).json({ error: 'Message cannot be empty' });
     }
 
-    const mRes = await pool.query('SELECT name, member_id FROM members WHERE id = $1', [memberId]);
-    const senderName = mRes.rows[0]?.name || 'Member';
-    const senderMemberId = mRes.rows[0]?.member_id || '';
-
     const insRes = await pool.query(`
       INSERT INTO chat_group_messages (group_id, member_id, sender_name, sender_member_id, message_type, message, media_url)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -456,12 +480,13 @@ router.post('/:id/messages', async (req, res) => {
 
     if (io) {
       io.to(`group_${groupId}`).emit('group:new-message', msgData);
+      io.emit('group:new-message', msgData);
     }
 
     res.json({ message: 'Sent', chat: msgData });
   } catch (err) {
     console.error('Error sending group message:', err);
-    res.status(500).json({ error: 'Failed to send message' });
+    res.status(500).json({ error: 'Failed to send message: ' + err.message });
   }
 });
 

@@ -699,6 +699,8 @@
     .toast-info {
       background: var(--blue);
     }
+    @keyframes spin360 { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .spin-refresh { animation: spin360 0.8s linear infinite; display: inline-block; }
 
     /* MODAL */
     .modal-overlay {
@@ -938,6 +940,16 @@
           <div class="topbar-title" id="topbarTitle">Dashboard</div>
         </div>
         <div class="topbar-right">
+          <!-- 🔄 IN-APP QUICK REFRESH -->
+          <button class="btn-primary" onclick="triggerAdminRefresh()" id="adminRefreshBtn" style="padding:6px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer" title="🔄 Refresh live data / புதுப்பி">
+            <span id="adminRefreshIcon">🔄</span> <span id="txtAdminRefresh">Refresh</span>
+          </button>
+          <!-- 🌐 3-WAY LANGUAGE SELECTOR -->
+          <select class="theme-select" id="adminLangSelect" onchange="setAdminLang(this.value)" style="font-weight:600">
+            <option value="en">🇬🇧 English</option>
+            <option value="ta">🇮🇳 தமிழ்</option>
+            <option value="tanglish">🔄 தமிழ் + English</option>
+          </select>
           <button class="btn-secondary" onclick="navigatePortal('public')" style="padding:5px 10px;font-size:12px;cursor:pointer" title="Open Public Transparency Portal">🌐 Public</button>
           <button class="btn-secondary" onclick="navigatePortal('member')" style="padding:5px 10px;font-size:12px;cursor:pointer" title="Open Member Portal">👤 Member</button>
           <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
@@ -2191,12 +2203,38 @@
 
   <!-- CONFIRMATION MODAL -->
   <div id="confirmModal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:400px">
-      <div class="modal-title" id="confirmTitle">Confirm Action</div>
-      <div id="confirmBody" style="color:var(--text-muted);font-size:14px;margin-bottom:16px"></div>
-      <div class="modal-actions">
-        <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
-        <button class="btn-danger" id="confirmOkBtn">Confirm</button>
+    <div class="modal" style="max-width:440px;border:1px solid var(--border-accent);box-shadow:var(--shadow)">
+      <div class="modal-title" id="confirmTitle" style="display:flex;align-items:center;gap:8px">
+        <span>⚠️</span> <span id="confirmTitleText">Confirm Action / உறுதிப்படுத்தல்</span>
+      </div>
+      <div id="confirmBody" style="color:var(--text);font-size:14px;line-height:1.6;margin:16px 0;white-space:pre-wrap;background:var(--bg-surface-hover);padding:14px;border-radius:10px;border:1px solid var(--border)"></div>
+      <div class="modal-actions" style="display:flex;gap:12px;justify-content:flex-end">
+        <button type="button" class="btn-secondary" id="confirmCancelBtn" onclick="closeModal('confirmModal')" style="padding:10px 18px;font-weight:600">
+          ❌ வேண்டாம் / No, Cancel
+        </button>
+        <button type="button" class="btn-danger" id="confirmOkBtn" style="padding:10px 20px;font-weight:700">
+          ✅ ஆம், உறுதிசெய் / Yes, Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN CHAT & MODERATION MODAL -->
+  <div id="adminChatModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:600px;width:100%;height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg-surface)">
+        <div>
+          <h3 id="adminChatRoomTitle" style="font-size:16px;color:var(--primary);margin-bottom:2px">💬 Chat Room</h3>
+          <div id="adminChatRoomSub" style="font-size:12px;color:var(--text-muted)">Live conversation with members</div>
+        </div>
+        <button class="btn-secondary btn-sm" onclick="closeModal('adminChatModal')">✕ Close</button>
+      </div>
+      <div id="adminChatMessagesBox" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)">
+        <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading messages...</div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);background:var(--bg-surface);display:flex;gap:8px;align-items:center">
+        <input type="text" id="adminChatInput" placeholder="Type message as Admin (Enter to send)..." style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendAdminChatMessage()">
+        <button class="btn-primary" onclick="sendAdminChatMessage()" style="padding:10px 18px;font-weight:700">Send ➤</button>
       </div>
     </div>
   </div>
@@ -3832,14 +3870,18 @@
     }
 
     function confirmDeleteMember(id, name) {
-      openConfirm('Delete Member', `Are you sure you want to permanently delete member "${name}"? This action cannot be undone.`, async () => {
-        try {
-          await api(`/api/admin/members/${id}`, { method: 'DELETE' });
-          showToast('Member permanently deleted', 'info');
-          loadMembers();
-          loadDashboard();
-        } catch (e) { showToast(e.message, 'error'); }
-      });
+      openConfirm(
+        '⚠️ உறுப்பினர் இன்ஆக்டிவ் / Inactivate Member',
+        `உறுப்பினர் "${name}"-ஐ நீக்க / இன்ஆக்டிவ் செய்ய விரும்புகிறீர்களா?\n\n🛡️ குறிப்பு: இவரின் முந்தைய அனைத்து கட்டணங்கள், கடன் பதிவுகள் மற்றும் கணக்கு விவரங்கள் பாதுகாப்பாக இருக்கும். (All past payment and loan records will be safely preserved in statements.)`,
+        async () => {
+          try {
+            await api(`/api/admin/members/${id}`, { method: 'DELETE' });
+            showToast('உறுப்பினர் இன்ஆக்டிவ் செய்யப்பட்டார் (Member safely inactivated)', 'info');
+            loadMembers();
+            loadDashboard();
+          } catch (e) { showToast(e.message, 'error'); }
+        }
+      );
     }
 
     // Seettu Cycles Management
@@ -4852,6 +4894,7 @@
                     <td><span class="badge badge-${g.status.toLowerCase()}">${g.status}</span></td>
                     <td>${new Date(g.created_at).toLocaleDateString()}</td>
                     <td style="display:flex;gap:6px">
+                      <button class="btn-primary btn-sm" onclick="openAdminChatModal(${g.id}, '${esc(g.group_name)}')">💬 Chat</button>
                       ${g.status === 'ACTIVE' || g.status === 'FULL' ? `<button class="btn-warning btn-sm" onclick="deactivateGroup(${g.id})">Deactivate</button>` : ''}
                       <button class="btn-danger btn-sm" onclick="deleteGroup(${g.id}, '${esc(g.group_name)}')">🗑 Delete</button>
                     </td>
@@ -4913,7 +4956,204 @@
       } catch(e) { showToast(e.message, 'error'); }
     }
 
+    // Admin Chat & Moderation Handlers
+    let currentAdminChatGroupId = null;
+
+    async function openAdminChatModal(groupId, groupName) {
+      currentAdminChatGroupId = groupId;
+      const titleEl = document.getElementById('adminChatRoomTitle');
+      if (titleEl) titleEl.textContent = `💬 ${groupName} (#${groupId})`;
+      const m = document.getElementById('adminChatModal');
+      if (m) m.classList.remove('hidden');
+      await loadAdminChatMessages(groupId);
+    }
+
+    async function loadAdminChatMessages(groupId) {
+      const box = document.getElementById('adminChatMessagesBox');
+      if (!box) return;
+      try {
+        const d = await api(`/api/chat-groups/${groupId}/messages`);
+        const msgs = d.messages || [];
+        if (!msgs.length) {
+          box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No messages in this chat room yet. Send a message below!</div>';
+          return;
+        }
+        box.innerHTML = msgs.map(m => {
+          const isAdm = m.sender_member_id === 'ADMIN' || m.member_id === null;
+          return `
+            <div style="display:flex;flex-direction:column;align-items:${isAdm ? 'flex-end' : 'flex-start'};margin-bottom:8px">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">
+                <strong>${esc(m.sender_name)}</strong> (${esc(m.sender_member_id || '')}) · ${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <div style="background:${isAdm ? 'var(--primary)' : 'var(--bg-surface-hover)'};color:${isAdm ? '#fff' : 'var(--text)'};padding:8px 14px;border-radius:12px;max-width:80%;box-shadow:var(--shadow);border:1px solid var(--border)">
+                ${m.message_type === 'image' && m.media_url ? `<img src="${m.media_url}" style="max-width:200px;border-radius:8px">` : esc(m.message)}
+              </div>
+            </div>
+          `;
+        }).join('');
+        box.scrollTop = box.scrollHeight;
+      } catch (e) {
+        box.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Error loading messages: ${esc(e.message)}</div>`;
+      }
+    }
+
+    async function sendAdminChatMessage() {
+      const input = document.getElementById('adminChatInput');
+      const text = (input?.value || '').trim();
+      if (!text || !currentAdminChatGroupId) return;
+      input.value = '';
+      try {
+        await api(`/api/chat-groups/${currentAdminChatGroupId}/messages`, {
+          method: 'POST',
+          body: JSON.stringify({ message: text })
+        });
+        await loadAdminChatMessages(currentAdminChatGroupId);
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // In-App Quick Refresh for Admin Portal
+    async function triggerAdminRefresh() {
+      const btn = document.getElementById('adminRefreshBtn');
+      const icon = document.getElementById('adminRefreshIcon');
+      if (icon) icon.classList.add('spin-refresh');
+      showToast('🔄 Refreshing live data... / புதுப்பிக்கப்படுகிறது...', 'info');
+      try {
+        await loadDashboard();
+        const activePage = document.querySelector('.page.active')?.id || 'dashboard';
+        if (activePage === 'members') await loadMembers();
+        else if (activePage === 'payments') await loadAdminPayments();
+        else if (activePage === 'seed-fund') { await loadSeedFundDistributions(); await loadAdminLoanRequests(); }
+        else if (activePage === 'seettu') await loadSeettuCycles();
+        else if (activePage === 'admin-chat-groups') { await loadAdminGroupRequests(); await loadAdminGroups(); }
+        else if (activePage === 'audit-log') await loadAuditLogs();
+        else if (activePage === 'settings') await loadSettings();
+        else if (activePage === 'reports') await loadFinancialReports();
+        else if (activePage === 'transactions') await loadTransactionLedger();
+        showToast('✅ Live admin data refreshed! / புள்ளிவிவரங்கள் புதுப்பிக்கப்பட்டன!', 'success');
+      } catch (e) {
+        showToast('Refresh error: ' + e.message, 'error');
+      } finally {
+        if (icon) {
+          setTimeout(() => icon.classList.remove('spin-refresh'), 600);
+        }
+      }
+    }
+
+    // 3-Way Language System for Admin Portal
+    let currentAdminLang = localStorage.getItem('adminLang') || 'en';
+
+    function setAdminLang(lang) {
+      if (!['en', 'ta', 'tanglish'].includes(lang)) lang = 'en';
+      currentAdminLang = lang;
+      localStorage.setItem('adminLang', lang);
+
+      const select = document.getElementById('adminLangSelect');
+      if (select) select.value = lang;
+
+      const translations = {
+        en: {
+          refresh: 'Refresh',
+          dashboard: 'Dashboard',
+          allMembers: 'All Members',
+          addMember: 'Add Member',
+          duplicates: 'Possible Duplicates',
+          seettu: 'Seettu Cycles',
+          payments: 'Payments',
+          activation: 'Activation Status',
+          auction: 'Live Auction',
+          chatGroups: 'Chat Groups',
+          seedFund: 'Seed Fund Distributions',
+          groups: 'Group Management',
+          repayments: 'Repayment Tracking',
+          proofVerification: 'Proof Verification',
+          noticeBoard: 'Notice Board',
+          transactions: 'Transaction Ledger',
+          reports: 'Financial Reports',
+          auditLog: 'Audit Logs',
+          settings: 'Settings'
+        },
+        ta: {
+          refresh: 'புதுப்பி',
+          dashboard: 'முகப்பு பலகை',
+          allMembers: 'அனைத்து உறுப்பினர்கள்',
+          addMember: 'உறுப்பினர் சேர்',
+          duplicates: 'போலி பதிவுகள்',
+          seettu: 'சீட்டு சுழற்சிகள்',
+          payments: 'கட்டணங்கள்',
+          activation: 'செயல்பாட்டு நிலை',
+          auction: 'நேரடி ஏலம்',
+          chatGroups: 'குழு அரட்டை',
+          seedFund: 'விதை நிதி உதவி',
+          groups: 'குழு மேலாண்மை',
+          repayments: 'கடன் தவணை பட்டியல்',
+          proofVerification: 'ரசீது சரிபார்ப்பு',
+          noticeBoard: 'அறிவிப்பு பலகை',
+          transactions: 'கணக்கு பதிவேடு',
+          reports: 'நிதி அறிக்கைகள்',
+          auditLog: 'தணிக்கை பதிவு',
+          settings: 'அமைப்புகள்'
+        },
+        tanglish: {
+          refresh: 'புதுப்பி (Refresh)',
+          dashboard: 'முகப்பு (Dashboard)',
+          allMembers: 'உறுப்பினர்கள் (All Members)',
+          addMember: 'உறுப்பினர் சேர் (Add Member)',
+          duplicates: 'போலி பதிவுகள் (Duplicates)',
+          seettu: 'சீட்டு சுழற்சிகள் (Seettu)',
+          payments: 'கட்டணங்கள் (Payments)',
+          activation: 'செயல்பாட்டு நிலை (Activation)',
+          auction: 'ஏலம் (Live Auction)',
+          chatGroups: 'குழு அரட்டை (Chat Groups)',
+          seedFund: 'விதை நிதி உதவி (Seed Fund)',
+          groups: 'குழு மேலாண்மை (Groups)',
+          repayments: 'கடன் தவணை (Repayments)',
+          proofVerification: 'ரசீது சரிபார்ப்பு (Proofs)',
+          noticeBoard: 'அறிவிப்பு (Notice Board)',
+          transactions: 'பதிவேடு (Transactions)',
+          reports: 'அறிக்கைகள் (Reports)',
+          auditLog: 'தணிக்கை பதிவு (Audit Logs)',
+          settings: 'அமைப்புகள் (Settings)'
+        }
+      };
+
+      const t = translations[lang] || translations.en;
+      const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+      setTxt('txtAdminRefresh', t.refresh);
+
+      const navMap = {
+        'nav-dashboard': t.dashboard,
+        'nav-members': t.allMembers,
+        'nav-duplicates': t.duplicates,
+        'nav-seettu': t.seettu,
+        'nav-payments': t.payments,
+        'nav-activation': t.activation,
+        'nav-auction-control': t.auction,
+        'nav-admin-chat-groups': t.chatGroups,
+        'nav-seed-fund': t.seedFund,
+        'nav-groups': t.groups,
+        'nav-repayments': t.repayments,
+        'nav-proof-verification': t.proofVerification,
+        'nav-notice-board': t.noticeBoard,
+        'nav-transactions': t.transactions,
+        'nav-reports': t.reports,
+        'nav-audit-log': t.auditLog,
+        'nav-settings': t.settings
+      };
+
+      Object.entries(navMap).forEach(([id, text]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const icon = el.querySelector('.nav-icon')?.outerHTML || '';
+        const badge = el.querySelector('.nav-badge')?.outerHTML || '';
+        el.innerHTML = `${icon} ${text} ${badge}`;
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+      setAdminLang(currentAdminLang);
       if (adminToken) initAdminApp();
     });
   </script>

@@ -940,8 +940,9 @@
       </button>
     </div>
     <div class="upb-lang">
-      <button class="upb-lang-btn active" onclick="setLang('en')" id="btnTopLangEn">EN</button>
-      <button class="upb-lang-btn" onclick="setLang('ta')" id="btnTopLangTa">தமிழ்</button>
+      <button class="upb-lang-btn active" onclick="setLang('en')" id="btnTopLangEn">🇬🇧 EN</button>
+      <button class="upb-lang-btn" onclick="setLang('ta')" id="btnTopLangTa">🇮🇳 தமிழ்</button>
+      <button class="upb-lang-btn" onclick="setLang('tanglish')" id="btnTopLangTanglish">🔄 தங்கிலீஷ்</button>
     </div>
   </div>
 
@@ -959,8 +960,9 @@
       <div class="public-badge" id="txtLiveStatus">🌐 PUBLIC ACCESS — LIVE</div>
 
       <div class="lang-toggle">
-        <button class="lang-btn active" onclick="setLang('en')" id="btnLangEn">EN</button>
-        <button class="lang-btn" onclick="setLang('ta')" id="btnLangTa">தமிழ்</button>
+        <button class="lang-btn active" onclick="setLang('en')" id="btnLangEn">🇬🇧 EN</button>
+        <button class="lang-btn" onclick="setLang('ta')" id="btnLangTa">🇮🇳 தமிழ்</button>
+        <button class="lang-btn" onclick="setLang('tanglish')" id="btnLangTanglish">🔄 தங்கிலீஷ்</button>
       </div>
 
       <button type="button" class="nav-link-btn" onclick="fetchSummaryData()">
@@ -1540,7 +1542,7 @@
     window.location.href = upiUrl;
   }
 
-  // Bilingual Translations
+  // 3-Way Trilingual Translations (Pure English, Pure Tamil, Tanglish)
   const i18n = {
     en: {
       upbPublic: "Public Portal",
@@ -1628,7 +1630,7 @@
       lblBarOutside: "வெளியே உள்ளது",
       tickerBadge: "நேரலை செயல்பாடுகள்",
       liveFeedTitle: "நேரலை உறுப்பினர் பரிவர்த்தனைகள் & வரவு செலவு பட்டியல்",
-      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (₹500 PAID) மற்றும் சீட்டு நிதி கடன்கள். அட்மின் சரிபார்த்தவுடன் உடனடியாக நேரலையில் புதுப்பிக்கப்படும்.",
+      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (₹500 செலுத்தப்பட்டது) மற்றும் சீட்டு நிதி கடன்கள். அட்மின் சரிபார்த்தவுடன் உடனடியாக நேரலையில் புதுப்பிக்கப்படும்.",
       filterAll: "அனைத்தும்",
       filterPaid: "பணம் செலுத்தியவர்கள்",
       filterLoans: "கடன் பெற்றவர்கள்",
@@ -1643,6 +1645,57 @@
       lblSumTotalDisbursed: "மொத்தம் வழங்கிய கடன்",
       lblSumPendingRepay: "செலுத்த வேண்டிய நிலுவை (5% வட்டி உட்பட)",
       lblSumTotalRepaid: "மொத்தம் திரும்பப் பெற்ற தொகை"
+    },
+    tanglish: {
+      upbPublic: "பொதுப் பலகை (Public Portal)",
+      upbMember: "உறுப்பினர் (Member Portal)",
+      upbAdmin: "நிர்வாகி (Admin Portal)",
+      modalLoginBtn: "உறுப்பினர் உள்நுழைவு (Member Login)",
+      modalCloseBtn: "மூடு (Close)",
+      orgName: "புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப் (PF Chit Fund)",
+      orgSub: "பொது சீட்டு நிதி விவரங்கள் (Public Dashboard)",
+      mainTitle: "மொத்த சீட்டு நிதி புள்ளிவிவரங்கள் (Seed Fund Statistics)",
+      liveStatus: "🌐 பொது பார்வை நேரலை (PUBLIC ACCESS - LIVE)",
+      refresh: "புதுப்பி (Refresh)",
+      memberLogin: "உறுப்பினர் உள்நுழைவு (Member Login)",
+      adminLogin: "நிர்வாகி பகுதி (Admin Portal)",
+      lblTotalFund: "மொத்த நிதி (Total Fund)",
+      lblTotalCollected: "வரப்பெற்ற தொகை (Total Received)",
+      lblTotalDistributed: "வழங்கப்பட்ட தொகை (Total Distributed)",
+      lblCurrentBalance: "தற்போதைய இருப்பு (Current Balance)",
+      lblTotalMembers: "மொத்த உறுப்பினர்கள் (Total Members)",
+      lblMembersReceived: "நிதி பெற்றவர்கள் (Received Fund)",
+      lblMembersNotReceived: "நிதி பெறாதவர்கள் (Not Received)",
+      lblAmountOutside: "வெளியே உள்ள தொகை (Outside Fund)",
+      lblMemberCoverage: "உறுப்பினர் வரம்பு (Member Coverage)",
+      lblRecoveryRate: "திரும்பப் பெற்ற விகிதம் (Recovery Rate)",
+      lblChartTitle: "சீட்டு நிதி வரைபடம் (Financial Overview Chart)",
+      lblTableTitle: "விரிவான நிதிப் பகுப்பாய்வு (Detailed Breakdown)",
+      lgdReceived: "வரவு (Received)",
+      lgdDistributed: "வழங்கல் (Distributed)",
+      lgdAvailable: "இருப்பு (Available)",
+      lgdOutside: "வெளியே (Outside)",
+      lblBarReceived: "மொத்த வரவு (Total Received)",
+      lblBarDistributed: "வழங்கப்பட்டது (Distributed)",
+      lblBarAvailable: "இருப்பு (Balance)",
+      lblBarOutside: "வெளியே (Outside Fund)",
+      tickerBadge: "நேரலை (LIVE ACTIVITY)",
+      liveFeedTitle: "நேரலை பரிவர்த்தனைகள் (Live Transactions Feed)",
+      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (₹500 PAID) & சீட்டு கடன்கள் நேரலையில் புதுப்பிக்கப்படும்.",
+      filterAll: "அனைத்தும் (All)",
+      filterPaid: "கட்டியவர்கள் (Paid)",
+      filterLoans: "கடன் பெற்றவர்கள் (Loans)",
+      emptyFeed: "பரிவர்த்தனைகள் ஏதுமில்லை (No transactions yet).",
+      txtLoansSectionTitle: "💰 மாதாந்திர கடன்கள் & நிலுவை (Loans & Repayments)",
+      txtLoansSectionSub: "உறுப்பினர்கள் பெற்ற கடன், 5% வட்டி, நாமினி & நிலை (Pending / Paid)",
+      txtDownloadStatement: "அறிக்கை பதிவிறக்கு (Download CSV)",
+      txtPrintStatement: "அச்சிடுக (Print / PDF)",
+      lblLoanFilterAll: "அனைத்து கடன்கள் (All Loans)",
+      lblLoanFilterPending: "நிலுவையில் உள்ளவை (Pending)",
+      lblLoanFilterPaid: "செலுத்தப்பட்டவை (Fully Paid)",
+      lblSumTotalDisbursed: "வழங்கிய கடன் (Total Loans Given)",
+      lblSumPendingRepay: "செலுத்த வேண்டிய நிலுவை (Pending Due 5%)",
+      lblSumTotalRepaid: "திரும்பப் பெற்ற தொகை (Total Repaid)"
     }
   };
 
@@ -1652,15 +1705,24 @@
 
   function setLang(lang) {
     currentLang = lang;
+    localStorage.setItem('pf_lang', lang);
     document.body.setAttribute('data-lang', lang);
-    document.getElementById('btnLangEn').classList.toggle('active', lang === 'en');
-    document.getElementById('btnLangTa').classList.toggle('active', lang === 'ta');
+
+    const btnEn = document.getElementById('btnLangEn');
+    const btnTa = document.getElementById('btnLangTa');
+    const btnTanglish = document.getElementById('btnLangTanglish');
+    if (btnEn) btnEn.classList.toggle('active', lang === 'en');
+    if (btnTa) btnTa.classList.toggle('active', lang === 'ta');
+    if (btnTanglish) btnTanglish.classList.toggle('active', lang === 'tanglish');
+
     const topEn = document.getElementById('btnTopLangEn');
     const topTa = document.getElementById('btnTopLangTa');
+    const topTanglish = document.getElementById('btnTopLangTanglish');
     if (topEn) topEn.classList.toggle('active', lang === 'en');
     if (topTa) topTa.classList.toggle('active', lang === 'ta');
+    if (topTanglish) topTanglish.classList.toggle('active', lang === 'tanglish');
 
-    const t = i18n[lang];
+    const t = i18n[lang] || i18n['en'];
     const up = document.getElementById('txtUpbPublic');
     if (up) up.textContent = t.upbPublic;
     const um = document.getElementById('txtUpbMember');
@@ -1740,6 +1802,7 @@
     const lsrepaid = document.getElementById('lblSumTotalRepaid');
     if (lsrepaid) lsrepaid.textContent = t.lblSumTotalRepaid;
 
+    renderLiveTicker();
     renderLiveFeed();
     renderLoansTable();
   }
@@ -1856,9 +1919,24 @@
     container.innerHTML = recent.map(item => {
       const isPaid = item.type === 'PAYMENT';
       const tagClass = isPaid ? 'tag-paid' : 'tag-taken';
-      const actionText = isPaid
-        ? `paid <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (PAID ✅)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`
-        : `received <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} Seed Fund Loan 💰</span>`;
+      let actionText = '';
+      if (isPaid) {
+        if (currentLang === 'ta') {
+          actionText = `செலுத்தியுள்ளார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (செலுத்தப்பட்டது ✅)</span>${item.month_label ? ` - ${esc(item.month_label)}` : ''}`;
+        } else if (currentLang === 'tanglish') {
+          actionText = `கட்டணம் செலுத்தினார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (PAID ✅)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`;
+        } else {
+          actionText = `paid <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (PAID ✅)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`;
+        }
+      } else {
+        if (currentLang === 'ta') {
+          actionText = `பெற்றுள்ளார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} விதை நிதி கடன் உதவி 💰</span>`;
+        } else if (currentLang === 'tanglish') {
+          actionText = `பெற்றார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} Seed Fund Loan 💰</span>`;
+        } else {
+          actionText = `received <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} Seed Fund Loan 💰</span>`;
+        }
+      }
 
       return `
         <span class="ticker-item" style="cursor:pointer" onclick="openMemberTransparencyModal('${esc(item.member_code)}', '${esc(item.member_name)}')">
@@ -1909,9 +1987,24 @@
         ? `<span class="amount-paid">+ ₹${item.amount.toLocaleString('en-IN')}</span>`
         : `<span class="amount-taken">₹${item.amount.toLocaleString('en-IN')}</span>`;
 
-      const badgeHtml = isPaid
-        ? `<span class="badge-paid">✅ PAID</span>`
-        : `<span class="badge-taken">💰 LOAN GIVEN</span>`;
+      let badgeHtml = '';
+      if (isPaid) {
+        if (currentLang === 'ta') {
+          badgeHtml = `<span class="badge-paid">✅ செலுத்தப்பட்டது</span>`;
+        } else if (currentLang === 'tanglish') {
+          badgeHtml = `<span class="badge-paid">✅ PAID / செலுத்தப்பட்டது</span>`;
+        } else {
+          badgeHtml = `<span class="badge-paid">✅ PAID</span>`;
+        }
+      } else {
+        if (currentLang === 'ta') {
+          badgeHtml = `<span class="badge-taken">💰 கடன் வழங்கப்பட்டது</span>`;
+        } else if (currentLang === 'tanglish') {
+          badgeHtml = `<span class="badge-taken">💰 LOAN GIVEN / கடன்</span>`;
+        } else {
+          badgeHtml = `<span class="badge-taken">💰 LOAN GIVEN</span>`;
+        }
+      }
 
       return `
         <tr class="clickable-member" onclick="openMemberTransparencyModal('${esc(item.member_code)}', '${esc(item.member_name)}')">
@@ -2267,11 +2360,29 @@
 
       let statusBadge = '';
       if (isPaid) {
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ FULLY PAID / செலுத்தப்பட்டது</span>`;
+        if (currentLang === 'ta') {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ முழுமையாக செலுத்தப்பட்டது</span>`;
+        } else if (currentLang === 'tanglish') {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ FULLY PAID / செலுத்தப்பட்டது</span>`;
+        } else {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ FULLY PAID</span>`;
+        }
       } else if (isPartial) {
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.4);border-radius:20px;font-weight:700;font-size:11.5px">🟡 PARTIAL / பகுதி செலுத்தப்பட்டது</span>`;
+        if (currentLang === 'ta') {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.4);border-radius:20px;font-weight:700;font-size:11.5px">🟡 பகுதி செலுத்தப்பட்டது</span>`;
+        } else if (currentLang === 'tanglish') {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.4);border-radius:20px;font-weight:700;font-size:11.5px">🟡 PARTIAL / பகுதி செலுத்தப்பட்டது</span>`;
+        } else {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.4);border-radius:20px;font-weight:700;font-size:11.5px">🟡 PARTIAL</span>`;
+        }
       } else {
-        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ PENDING / நிலுவை</span>`;
+        if (currentLang === 'ta') {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ நிலுவை</span>`;
+        } else if (currentLang === 'tanglish') {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ PENDING / நிலுவை</span>`;
+        } else {
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ PENDING</span>`;
+        }
       }
 
       let distDateStr = '—';
@@ -2285,6 +2396,8 @@
         const rawDue = d.due_date || d.next_payment_date;
         dueDateStr = rawDue.split('T')[0];
       }
+
+      const nomineeLabel = currentLang === 'ta' ? 'நாமினி' : (currentLang === 'tanglish' ? 'நாமினி (Nominee)' : 'Nominee');
 
       return `
         <tr>
@@ -2318,7 +2431,7 @@
             <div style="font-weight:700;color:var(--text);font-size:13px">
               ${esc(d.nominee_name || '—')}
             </div>
-            <div style="font-size:11px;color:var(--text3)">நாமினி</div>
+            <div style="font-size:11px;color:var(--text3)">${nomineeLabel}</div>
           </td>
           <td style="white-space:nowrap;font-size:13px;color:${isPaid ? 'var(--text2)' : '#fca5a5'};font-weight:700">
             ⏰ ${esc(dueDateStr)}
@@ -2583,6 +2696,9 @@
 
   // Auto-init on page load & refresh cycles
   window.addEventListener('DOMContentLoaded', () => {
+    const savedLang = localStorage.getItem('pf_lang') || 'en';
+    setLang(savedLang);
+
     fetchSummaryData();
     fetchLiveFeed();
     fetchPublicLoans();

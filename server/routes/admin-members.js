@@ -553,40 +553,86 @@ router.patch('/:id/restore', async (req, res) => {
 });
 
 /**
- * DELETE /api/admin/members/:id (Permanent Delete)
+ * DELETE /api/admin/members/:id (Safe Inactivate / Soft Delete)
+ * PRESERVES all payment proofs, transactions, and distributions for financial integrity!
  */
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const { permanent } = req.query;
     const checkRes = await pool.query('SELECT id, member_id, name FROM members WHERE id = $1', [id]);
     if (checkRes.rows.length === 0) return res.status(404).json({ error: 'Member not found' });
 
     const member = checkRes.rows[0];
 
-    // Cascade delete all dependent records
-    await pool.query('DELETE FROM payment_schedules WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM repayments WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM transactions WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM seed_fund_distributions WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM payment_proofs WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM monthly_payments WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM notice_board WHERE target_id = $1', [id]);
-    await pool.query('DELETE FROM nominees WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM group_members WHERE member_id = $1', [id]);
-    await pool.query('DELETE FROM members WHERE id = $1', [id]);
+    if (permanent === 'true') {
+      // ONLY if explicitly requested for test data cleanup:
+      await pool.query('DELETE FROM payment_schedules WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM repayments WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM transactions WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM seed_fund_distributions WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM payment_proofs WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM monthly_payments WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM notice_board WHERE target_id = $1', [id]);
+      await pool.query('DELETE FROM nominees WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM group_members WHERE member_id = $1', [id]);
+      await pool.query('DELETE FROM members WHERE id = $1', [id]);
 
-    await logAudit(req, 'DELETE_MEMBER_PERMANENT', 'MEMBER', id, { member_id: member.member_id, name: member.name });
+      await logAudit(req, 'DELETE_MEMBER_PERMANENT', 'MEMBER', id, { member_id: member.member_id, name: member.name });
+      return res.json({ message: 'Member and associated records permanently deleted' });
+    }
+
+    // SAFE SOFT-DELETE: Inactivate member, NEVER delete historical payments or ledger records!
+    await pool.query(`
+      UPDATE members 
+      SET status = 'INACTIVE', 
+          activation_status = 'INACTIVE', 
+          deleted_at = CURRENT_TIMESTAMP, 
+          updated_at = CURRENT_TIMESTAMP 
+      WHERE id = $1
+    `, [id]);
+
+    await logAudit(req, 'INACTIVATE_MEMBER', 'MEMBER', id, { member_id: member.member_id, name: member.name });
 
     const io = req.app.get('io');
     if (io) {
-      io.emit('member:deleted', { id, member_code: member.member_id });
+      io.emit('member:inactivated', { id, member_code: member.member_id, name: member.name });
       io.emit('stats:updated');
     }
 
-    res.json({ message: 'Member and all associated records permanently deleted' });
+    res.json({ 
+      success: true, 
+      message: 'Member inactivated successfully. All past payment history and financial records are safely preserved.' 
+    });
   } catch (err) {
-    console.error('Delete member error:', err);
-    res.status(500).json({ error: 'Failed to delete member: ' + err.message });
+    console.error('Delete/inactivate member error:', err);
+    res.status(500).json({ error: 'Failed to inactivate member: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/admin/members/:id/restore (Reactivate Member)
+ */
+router.post('/:id/restore', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query(`
+      UPDATE members 
+      SET status = 'ACTIVE', 
+          activation_status = 'ACTIVE', 
+          deleted_at = NULL, 
+          updated_at = CURRENT_TIMESTAMP 
+      WHERE id = $1
+    `, [id]);
+
+    await logAudit(req, 'RESTORE_MEMBER', 'MEMBER', id, {});
+    const io = req.app.get('io');
+    if (io) io.emit('stats:updated');
+
+    res.json({ success: true, message: 'Member reactivated successfully.' });
+  } catch (err) {
+    console.error('Restore member error:', err);
+    res.status(500).json({ error: 'Failed to reactivate member: ' + err.message });
   }
 });
 

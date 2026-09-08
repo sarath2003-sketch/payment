@@ -72,6 +72,7 @@ router.post('/:auction_id/send', authenticateToken, async (req, res) => {
 
     if (io) {
       io.to(`auction_${req.params.auction_id}`).emit('auction:new-chat', msgData);
+      io.emit('auction:new-chat', msgData);
     }
 
     res.json({ message: 'Sent', chat: msgData });
