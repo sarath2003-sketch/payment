@@ -78,8 +78,8 @@ router.post('/generate/:year/:month', authenticateToken, adminOnly, async (req, 
             if (existingDue.rows.length > 0) {
                 existedCount++;
             } else {
-                // Insert a new due record
-                const dueDate = new Date(year, month - 1, 15); // Set due date to the 15th of the month
+                // Insert a new due record - Due on the 10th of the month as fixed schedule
+                const dueDate = new Date(year, month - 1, 10); // Set due date to the 10th of the month
                 await client.query(
                     `INSERT INTO monthly_payments (member_id, year, month, amount_due, status, due_date)
                      VALUES ($1, $2, $3, $4, 'DUE', $5)`,

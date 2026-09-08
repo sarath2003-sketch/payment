@@ -239,6 +239,7 @@ function initSQLiteFallback() {
         ['admin_upi_id', 'sarath9025@cnrb'],
         ['admin_upi_name', 'Canara Bank · Sarathkumar'],
         ['default_payment_amount', '500'],
+        ['monthly_due_day', '10'],
         ['auto_approve_payment', '1'],
         ['auto_verify_amount', '500'],
         ['payment_instructions_en', 'Scan the QR code to make payment via UPI. Enter your transaction reference ID and upload a screenshot as proof.'],
@@ -553,6 +554,24 @@ function initSQLiteFallback() {
           notice_date TEXT NOT NULL,
           status TEXT DEFAULT 'PUBLISHED',
           created_by INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS loan_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          member_id INTEGER NOT NULL,
+          requested_amount REAL NOT NULL,
+          nominee_name TEXT NOT NULL,
+          nominee_phone TEXT,
+          nominee_relation TEXT,
+          purpose TEXT,
+          status TEXT DEFAULT 'PENDING',
+          admin_notes TEXT,
+          reviewed_by INTEGER,
+          reviewed_at DATETIME,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );

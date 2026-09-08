@@ -116,6 +116,7 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
     
     const nextPayObj = new Date(startDateObj);
     nextPayObj.setMonth(nextPayObj.getMonth() + 1);
+    nextPayObj.setDate(10); // Standard fixed 10th of the month schedule
     const nextPaymentDate = due_date || nextPayObj.toISOString().split('T')[0];
 
     // Auto-fetch nominee if not provided
@@ -410,4 +411,243 @@ router.post('/distributions/clear-all', authenticateToken, requireAdmin, async (
   }
 });
 
+/**
+ * SUBMIT A LOAN REQUEST (MEMBER OR ADMIN)
+ * POST /api/seed-fund/requests
+ */
+router.post('/requests', authenticateToken, async (req, res) => {
+  try {
+    let { requested_amount, nominee_name, nominee_phone, nominee_relation, purpose, member_id } = req.body || {};
+    
+    // Determine target member ID
+    const targetMemberId = (req.admin && req.admin.type === 'member') ? req.admin.id : (member_id || (req.admin && req.admin.id));
+    const amount = parseFloat(requested_amount);
+
+    if (!targetMemberId || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'Valid member and positive requested amount are required.' });
+    }
+    if (!nominee_name || !nominee_name.trim()) {
+      return res.status(400).json({ error: 'Nominee Name is required (நாமினி பெயர் அவசியம்).' });
+    }
+
+    const memRes = await pool.query('SELECT name, member_id, phone FROM members WHERE id = $1', [targetMemberId]);
+    if (memRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Member not found.' });
+    }
+    const mem = memRes.rows[0];
+
+    const result = await pool.query(`
+      INSERT INTO loan_requests (
+        member_id, requested_amount, nominee_name, nominee_phone, nominee_relation, purpose, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
+      RETURNING *
+    `, [
+      targetMemberId,
+      amount,
+      nominee_name.trim(),
+      nominee_phone ? nominee_phone.trim() : null,
+      nominee_relation ? nominee_relation.trim() : null,
+      purpose ? purpose.trim() : null
+    ]);
+
+    const loanReq = result.rows[0];
+
+    // Emit Socket notification to Admin
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('loan:new_request', {
+        id: loanReq.id,
+        member_id: targetMemberId,
+        member_name: mem.name,
+        member_code: mem.member_id,
+        amount,
+        nominee_name: nominee_name.trim()
+      });
+      io.emit('notification:broadcast', {
+        title: '🌿 New Loan Request Received',
+        body: `${mem.name} (${mem.member_id}) requested ₹${amount.toLocaleString('en-IN')} Seed Fund Loan with Nominee: ${nominee_name.trim()}`
+      });
+    }
+
+    res.status(201).json({
+      message: 'Loan request submitted successfully! Pending admin approval. (விண்ணப்பம் வெற்றிகரமாக அனுப்பப்பட்டது)',
+      request: loanReq
+    });
+  } catch (err) {
+    console.error('Error submitting loan request:', err);
+    res.status(500).json({ error: 'Failed to submit loan request: ' + err.message });
+  }
+});
+
+/**
+ * GET LOAN REQUESTS
+ * GET /api/seed-fund/requests
+ */
+router.get('/requests', authenticateToken, async (req, res) => {
+  try {
+    let sql = `
+      SELECT r.*,
+             COALESCE(m.name, 'Member #' || r.member_id) as member_name,
+             COALESCE(m.member_id, '' || r.member_id) as member_code,
+             COALESCE(m.phone, '—') as member_phone
+      FROM loan_requests r
+      LEFT JOIN members m ON r.member_id = m.id
+    `;
+    const params = [];
+
+    // Members only see their own requests
+    if (req.admin && req.admin.type === 'member') {
+      sql += ` WHERE r.member_id = $1`;
+      params.push(req.admin.id);
+    }
+
+    sql += ` ORDER BY r.id DESC`;
+
+    const result = await pool.query(sql, params);
+    res.json({ requests: result.rows });
+  } catch (err) {
+    console.error('Error fetching loan requests:', err);
+    res.status(500).json({ error: 'Failed to fetch loan requests' });
+  }
+});
+
+/**
+ * APPROVE A LOAN REQUEST (ADMIN ONLY)
+ * POST /api/seed-fund/requests/:id/approve
+ */
+router.post('/requests/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+    const reqRes = await client.query('SELECT * FROM loan_requests WHERE id = $1', [id]);
+    if (reqRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Loan request not found.' });
+    }
+    const loanReq = reqRes.rows[0];
+
+    if (loanReq.status !== 'PENDING') {
+      return res.status(400).json({ error: `Request is already ${loanReq.status}.` });
+    }
+
+    await client.query('BEGIN');
+
+    const principal = parseFloat(loanReq.requested_amount);
+    const interestPct = 5.0; // 5% default interest
+    const interestAmt = Math.round((principal * (interestPct / 100)) * 100) / 100;
+    const totalPayable = Math.round((principal + interestAmt) * 100) / 100;
+    const distDate = new Date().toISOString().split('T')[0];
+
+    // Default due date: 10th of next month (fixed 10th schedule)
+    const dueDateObj = new Date();
+    dueDateObj.setMonth(dueDateObj.getMonth() + 1);
+    dueDateObj.setDate(10);
+    const dueDateStr = dueDateObj.toISOString().split('T')[0];
+
+    // Nominee info
+    const nomineeDisplay = [loanReq.nominee_name, loanReq.nominee_relation, loanReq.nominee_phone].filter(Boolean).join(' · ');
+
+    // 1. Create seed_fund_distributions record
+    const distRes = await client.query(`
+      INSERT INTO seed_fund_distributions (
+        group_id, member_id, principal_amount, interest_percentage, interest_amount,
+        total_payable, total_repaid, remaining_amount, monthly_amount, number_of_months,
+        distribution_date, start_date, due_date, next_payment_date, nominee_name, payment_status, notes
+      ) VALUES (NULL, $1, $2, $3, $4, $5, 0.00, $5, $5, 1, $6, $6, $7, $7, $8, 'PENDING', $9)
+      RETURNING *
+    `, [
+      loanReq.member_id,
+      principal,
+      interestPct,
+      interestAmt,
+      totalPayable,
+      distDate,
+      dueDateStr,
+      nomineeDisplay,
+      loanReq.purpose ? `Loan Purpose: ${loanReq.purpose}` : 'Approved member loan request'
+    ]);
+
+    const distribution = distRes.rows[0];
+
+    // 2. Create single-month payment schedule
+    await client.query(`
+      INSERT INTO payment_schedules (
+        distribution_id, member_id, schedule_number, due_date, amount_due, amount_paid, status
+      ) VALUES ($1, $2, 1, $3, $4, 0.00, 'PENDING')
+    `, [distribution.id, loanReq.member_id, dueDateStr, totalPayable]);
+
+    // 3. Mark request as APPROVED
+    await client.query(`
+      UPDATE loan_requests
+      SET status = 'APPROVED', reviewed_by = $1, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+    `, [req.admin.id || 1, id]);
+
+    // 4. Record transaction in ledger
+    const monthStr = distDate.substring(0, 7);
+    await client.query(`
+      INSERT INTO transactions (
+        member_id, transaction_date, month, transaction_type, amount, description, reference_type, reference_id, status
+      ) VALUES ($1, $2, $3, 'FUND_DISTRIBUTION', $4, $5, 'SEED_FUND', $6, 'COMPLETED')
+    `, [
+      loanReq.member_id,
+      distDate,
+      monthStr,
+      principal,
+      `Seed Fund Loan #${distribution.id} Approved (Nominee: ${nomineeDisplay}, 5% Int: ₹${interestAmt})`,
+      distribution.id
+    ]);
+
+    await client.query('COMMIT');
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('seed_fund:updated', { distributionId: distribution.id });
+      io.emit('stats:updated');
+      io.emit('loan:approved', { requestId: id, distributionId: distribution.id });
+    }
+
+    res.json({
+      message: `Loan request #${id} approved successfully! Loan #${distribution.id} is now active.`,
+      distribution
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error approving loan request:', err);
+    res.status(500).json({ error: 'Failed to approve loan request: ' + err.message });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * REJECT A LOAN REQUEST (ADMIN ONLY)
+ * POST /api/seed-fund/requests/:id/reject
+ */
+router.post('/requests/:id/reject', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { admin_notes } = req.body || {};
+
+    const checkRes = await pool.query('SELECT * FROM loan_requests WHERE id = $1', [id]);
+    if (checkRes.rows.length === 0) return res.status(404).json({ error: 'Request not found' });
+
+    await pool.query(`
+      UPDATE loan_requests
+      SET status = 'REJECTED', admin_notes = $1, reviewed_by = $2, reviewed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3
+    `, [admin_notes || 'Loan request declined by administrator', req.admin.id || 1, id]);
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('loan:rejected', { requestId: id });
+    }
+
+    res.json({ message: `Loan request #${id} rejected.` });
+  } catch (err) {
+    console.error('Error rejecting loan request:', err);
+    res.status(500).json({ error: 'Failed to reject loan request' });
+  }
+});
+
 module.exports = router;
+

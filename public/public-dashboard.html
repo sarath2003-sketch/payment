@@ -1287,89 +1287,148 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </section>
+
   <!-- ============================================================ -->
-  <!-- MONTHLY SEED FUND LOANS & REPAYMENT TRANSPARENCY LEDGER      -->
+  <!-- MONTHLY FINANCIAL STATEMENT & LOAN TRANSPARENCY LEDGER        -->
   <!-- ============================================================ -->
   <section class="live-feed-section" id="seedFundLoansSection" style="margin-bottom:30px">
     <div class="feed-header-row">
       <div>
         <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid var(--border);font-size:11px;font-weight:800;padding:3px 10px;border-radius:12px;margin-bottom:6px">
-          <span>🌿 PUBLIC LOAN TRANSPARENCY</span>
+          <span>📊 TRANSPARENT MONTHLY STATEMENT</span>
         </div>
         <h2 class="feed-title" style="margin-bottom:4px" id="txtLoansSectionTitle">
-          💰 Monthly Fund Loans & Repayment Status
+          💰 Monthly Statement & Loan Transparency
         </h2>
         <div style="font-size:13px;color:var(--text3)" id="txtLoansSectionSub">
-          உறுப்பினர்கள் பெற்ற கடன், 5% வட்டி, நாமினி & மறுசெலுத்துகை நிலை (நிலுவை / செலுத்தப்பட்டது)
+          மாதாந்திர வரவு (தேதி/நேரத்துடன்), 5% வட்டிக் கடன் (நாமினி விபரம்), தவணை செலுத்துகை & நிகர இருப்பு அறிக்கை
         </div>
       </div>
       
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <!-- Month Selector Dropdown -->
+        <div style="display:flex;align-items:center;gap:6px;background:var(--dark2);border:1px solid var(--gold);padding:4px 10px;border-radius:8px">
+          <span style="font-size:12px;font-weight:700;color:var(--gold)">📅 மாதம்:</span>
+          <select id="pubStatementMonthSelect" onchange="loadPublicMonthlyStatement(this.value)" style="background:transparent;border:none;color:#fff;font-weight:700;font-size:13px;outline:none;cursor:pointer">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
         <!-- Download Statement Button -->
-        <button type="button" class="nav-link-btn" onclick="downloadLoanStatement()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-weight:700;padding:7px 14px;border:none;border-radius:8px;box-shadow:0 4px 12px rgba(37,99,235,0.3);cursor:pointer">
+        <button type="button" class="nav-link-btn" onclick="downloadMonthlyStatementPublic()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-weight:700;padding:7px 14px;border:none;border-radius:8px;box-shadow:0 4px 12px rgba(37,99,235,0.3);cursor:pointer">
           📥 <span id="txtDownloadStatement">Download Statement (Excel/CSV)</span>
         </button>
-        <button type="button" class="nav-link-btn" onclick="printLoanStatement()" style="background:var(--surface2);color:var(--text);font-weight:600;padding:7px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
+        <button type="button" class="nav-link-btn" onclick="printMonthlyStatementPublic()" style="background:var(--surface2);color:var(--text);font-weight:600;padding:7px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
           🖨️ <span id="txtPrintStatement">Print / PDF</span>
         </button>
       </div>
     </div>
 
-    <!-- Filter & Search Controls -->
-    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="filter-chip active" id="loanFilterAll" onclick="setLoanFilter('ALL', this)">
-          📋 <span id="lblLoanFilterAll">All Loans</span> (<span id="cntAllLoans">0</span>)
-        </button>
-        <button class="filter-chip" id="loanFilterPending" onclick="setLoanFilter('PENDING', this)" style="border-color:rgba(239,68,68,0.4)">
-          ⏳ <span id="lblLoanFilterPending" style="color:#f87171">Pending Repayments</span> (<span id="cntPendingLoans">0</span>)
-        </button>
-        <button class="filter-chip" id="loanFilterPaid" onclick="setLoanFilter('PAID', this)" style="border-color:rgba(34,197,94,0.4)">
-          ✅ <span id="lblLoanFilterPaid" style="color:var(--green-light)">Fully Paid</span> (<span id="cntPaidLoans">0</span>)
-        </button>
+    <!-- Monthly Summary 4 KPI Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:20px">
+      <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:var(--green-light);font-weight:700;text-transform:uppercase">📥 Monthly Inflow (மாத வரவு)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="pubStmtInflow">₹0</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px" id="pubStmtInflowCount">0 payments received</div>
       </div>
-      <div style="min-width:220px;flex:1;max-width:320px">
-        <input type="text" id="loanSearchInput" placeholder="🔍 Search Member / Nominee..." oninput="renderLoansTable()" style="width:100%;padding:8px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:#fca5a5;font-weight:700;text-transform:uppercase">📤 Monthly Loans (கடன் பட்டுவாடா)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--red);margin-top:4px" id="pubStmtOutflow">₹0</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px" id="pubStmtOutflowCount">0 loans disbursed</div>
       </div>
-    </div>
-
-    <!-- Loan Summary Cards for easy understanding by anyone -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:18px">
-      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:14px">
-        <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase" id="lblSumTotalDisbursed">Total Loans Given</div>
-        <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px" id="sumTotalDisbursed">₹0</div>
+      <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:#93c5fd;font-weight:700;text-transform:uppercase">⚖️ Net Monthly Flow (நிகர வரவு/செலவு)</div>
+        <div style="font-size:20px;font-weight:800;color:#60a5fa;margin-top:4px" id="pubStmtNetFlow">₹0</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Inflow - Outflow</div>
       </div>
-      <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px">
-        <div style="font-size:11px;color:#fca5a5;font-weight:600;text-transform:uppercase" id="lblSumPendingRepay">Pending Repayment (5% Inc.)</div>
-        <div style="font-size:20px;font-weight:800;color:var(--red);margin-top:4px" id="sumPendingRepay">₹0</div>
-      </div>
-      <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:14px">
-        <div style="font-size:11px;color:var(--green-light);font-weight:600;text-transform:uppercase" id="lblSumTotalRepaid">Total Repaid Back</div>
-        <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="sumTotalRepaid">₹0</div>
+      <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase">🏦 Total Pool Balance (மொத்த இருப்பு)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px" id="pubStmtClosingBalance">₹0</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Available in Club Pool</div>
       </div>
     </div>
 
-    <!-- Loans Table -->
-    <div class="table-responsive">
-      <table class="feed-table" style="width:100%" id="loansTableElement">
-        <thead>
-          <tr>
-            <th>Member (உறுப்பினர்)</th>
-            <th>Date Taken (எடுத்த தேதி)</th>
-            <th>Principal (அசல்)</th>
-            <th>Interest (5% வட்டி)</th>
-            <th>Total Due (மொத்த தொகை)</th>
-            <th>Nominee (நாமினி)</th>
-            <th>Due Date (கடைசி தேதி)</th>
-            <th>Status (நிலை)</th>
-          </tr>
-        </thead>
-        <tbody id="loansTableBody">
-          <tr>
-            <td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">Loading loan distributions...</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Toggle Tabs: Inflows vs Loans -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap">
+      <button class="filter-chip active" id="tabBtnPubInflows" onclick="switchPubStatementTab('inflows', this)">
+        📥 <span style="font-weight:700">மாதாந்திர உள்வரவு (Inflows)</span> (<span id="cntPubInflows">0</span>)
+      </button>
+      <button class="filter-chip" id="tabBtnPubLoans" onclick="switchPubStatementTab('loans', this)">
+        💰 <span style="font-weight:700">கடன் & மறுசெலுத்துகை (Loans & Repayments)</span> (<span id="cntPubLoans">0</span>)
+      </button>
+    </div>
+
+    <!-- TAB 1: INFLOWS VIEW -->
+    <div id="pubStatementInflowsView">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">
+        ℹ️ இம்முறையில் உறுப்பினர்கள் கட்டிய மாதாந்திர சந்தா & கடன் மறுசெலுத்துகை சரியான தேதி மற்றும் நேரத்துடன் (Exact Date & Time) பதியப்பட்டுள்ளது.
+      </div>
+      <div class="table-responsive">
+        <table class="feed-table" style="width:100%" id="pubInflowsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Member (உறுப்பினர்)</th>
+              <th>Date & Time (தேதி & நேரம்)</th>
+              <th>Category (வகை)</th>
+              <th>Amount (தொகை)</th>
+              <th>UTR / Reference</th>
+            </tr>
+          </thead>
+          <tbody id="pubStmtInflowsTableBody">
+            <tr>
+              <td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Loading monthly inflows...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: LOANS VIEW -->
+    <div id="pubStatementLoansView" style="display:none">
+      <!-- Filter & Search Controls for Loans -->
+      <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="filter-chip active" id="loanFilterAll" onclick="setLoanFilter('ALL', this)">
+            📋 <span>All Loans</span> (<span id="cntAllLoans">0</span>)
+          </button>
+          <button class="filter-chip" id="loanFilterPending" onclick="setLoanFilter('PENDING', this)" style="border-color:rgba(239,68,68,0.4)">
+            ⏳ <span style="color:#f87171">Pending / Partial</span> (<span id="cntPendingLoans">0</span>)
+          </button>
+          <button class="filter-chip" id="loanFilterPaid" onclick="setLoanFilter('PAID', this)" style="border-color:rgba(34,197,94,0.4)">
+            ✅ <span style="color:var(--green-light)">Fully Paid</span> (<span id="cntPaidLoans">0</span>)
+          </button>
+        </div>
+        <div style="min-width:220px;flex:1;max-width:320px">
+          <input type="text" id="loanSearchInput" placeholder="🔍 Search Member / Nominee..." oninput="renderLoansTable()" style="width:100%;padding:8px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+        </div>
+      </div>
+
+      <!-- Loans Table -->
+      <div class="table-responsive">
+        <table class="feed-table" style="width:100%" id="loansTableElement">
+          <thead>
+            <tr>
+              <th>Member (உறுப்பினர்)</th>
+              <th>Date Taken (எடுத்த தேதி)</th>
+              <th>Principal (அசல்)</th>
+              <th>Interest (5% வட்டி)</th>
+              <th>Total Due (மொத்த தொகை)</th>
+              <th>Repaid so far (செலுத்தியது)</th>
+              <th>Balance (நிலுவை)</th>
+              <th>Nominee (நாமினி)</th>
+              <th>Due Date (கடைசி தேதி)</th>
+              <th>Status (நிலை)</th>
+            </tr>
+          </thead>
+          <tbody id="loansTableBody">
+            <tr>
+              <td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">Loading loan distributions...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -2017,16 +2076,117 @@
   }
 
   // ============================================================
-  // PUBLIC LOAN TRANSPARENCY & REPAYMENT TRACKING
+  // ============================================================
+  // PUBLIC MONTHLY STATEMENT & LOAN TRANSPARENCY TRACKING
   // ============================================================
   let rawLoansData = [];
   let activeLoanFilter = 'ALL';
+  let cachedPubMonthlyStatement = null;
+
+  function switchPubStatementTab(tab, btn) {
+    document.querySelectorAll('#seedFundLoansSection .filter-chip').forEach(c => {
+      if (c.id === 'tabBtnPubInflows' || c.id === 'tabBtnPubLoans') c.classList.remove('active');
+    });
+    if (btn) btn.classList.add('active');
+
+    const inView = document.getElementById('pubStatementInflowsView');
+    const outView = document.getElementById('pubStatementLoansView');
+    if (tab === 'inflows') {
+      if (inView) inView.style.display = 'block';
+      if (outView) outView.style.display = 'none';
+    } else {
+      if (inView) inView.style.display = 'none';
+      if (outView) outView.style.display = 'block';
+    }
+  }
 
   function setLoanFilter(filter, btn) {
     activeLoanFilter = filter;
-    document.querySelectorAll('#seedFundLoansSection .filter-chip').forEach(c => c.classList.remove('active'));
+    const btns = ['loanFilterAll', 'loanFilterPending', 'loanFilterPaid'];
+    btns.forEach(id => {
+      const b = document.getElementById(id);
+      if (b) b.classList.remove('active');
+    });
     if (btn) btn.classList.add('active');
     renderLoansTable();
+  }
+
+  async function loadPublicMonthlyStatement(selectedMonth) {
+    const curMonth = selectedMonth || (document.getElementById('pubStatementMonthSelect')?.value) || new Date().toISOString().substring(0, 7);
+    try {
+      const res = await fetch(`${BASE}/api/public-dashboard/monthly-statement?month=${curMonth}`);
+      if (!res.ok) throw new Error('Failed to load statement');
+      const data = await res.json();
+      if (!data || !data.success) throw new Error(data.error || 'Failed to load statement');
+      cachedPubMonthlyStatement = data;
+
+      // Populate month select dropdown if empty or options count <= 1
+      const sel = document.getElementById('pubStatementMonthSelect');
+      if (sel && data.available_months && sel.options.length <= 1) {
+        sel.innerHTML = data.available_months.map(m => `
+          <option value="${m}" ${m === data.month ? 'selected' : ''}>${m} (${new Date(m + '-01').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })})</option>
+        `).join('');
+      }
+
+      // Summary KPI
+      const s = data.summary || {};
+      const inflowEl = document.getElementById('pubStmtInflow');
+      const inflowCntEl = document.getElementById('pubStmtInflowCount');
+      const outflowEl = document.getElementById('pubStmtOutflow');
+      const outflowCntEl = document.getElementById('pubStmtOutflowCount');
+      const netFlowEl = document.getElementById('pubStmtNetFlow');
+      const closingBalEl = document.getElementById('pubStmtClosingBalance');
+
+      if (inflowEl) inflowEl.textContent = formatINR(s.total_inflow || 0);
+      if (inflowCntEl) inflowCntEl.textContent = `${s.inflow_count || 0} payments received`;
+      if (outflowEl) outflowEl.textContent = formatINR(s.total_outflow || 0);
+      if (outflowCntEl) outflowCntEl.textContent = `${s.outflow_count || 0} loans disbursed`;
+      if (netFlowEl) {
+        const net = s.net_monthly_flow || 0;
+        netFlowEl.textContent = `${net >= 0 ? '+' : ''}${formatINR(net)}`;
+        netFlowEl.style.color = net >= 0 ? 'var(--green-light)' : '#f87171';
+      }
+      if (closingBalEl) closingBalEl.textContent = formatINR(s.closing_pool_balance || 0);
+
+      // Inflows badge counter
+      const cntInEl = document.getElementById('cntPubInflows');
+      if (cntInEl) cntInEl.textContent = data.inflows ? data.inflows.length : 0;
+
+      // Inflows Table Rendering
+      const inTbody = document.getElementById('pubStmtInflowsTableBody');
+      if (inTbody) {
+        if (!data.inflows || data.inflows.length === 0) {
+          inTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">No payment inflows recorded for this month.</td></tr>';
+        } else {
+          inTbody.innerHTML = data.inflows.map((item, idx) => `
+            <tr>
+              <td><strong style="color:var(--text3)">#${idx + 1}</strong></td>
+              <td>
+                <div style="font-weight:700;color:var(--gold);font-size:14px">${esc(item.member_name)}</div>
+                <div style="font-size:11px;color:var(--text3)">ID: ${esc(item.member_code || '—')}</div>
+              </td>
+              <td style="white-space:nowrap;font-size:13px;color:var(--text)">
+                📅 <strong>${esc(item.payment_date)}</strong>
+                <div style="font-size:11px;color:var(--text3)">⏰ ${esc(item.payment_time || '—')}</div>
+              </td>
+              <td>
+                <span style="display:inline-flex;align-items:center;padding:3px 9px;background:rgba(245,200,66,0.12);color:var(--gold);border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:700">
+                  ${esc(item.category)}
+                </span>
+              </td>
+              <td style="color:var(--green-light);font-weight:800;font-size:15px">
+                +${formatINR(item.amount)}
+              </td>
+              <td>
+                <code style="font-size:12px;background:rgba(255,255,255,0.05);padding:3px 6px;border-radius:4px;color:var(--text2)">${esc(item.transaction_reference)}</code>
+              </td>
+            </tr>
+          `).join('');
+        }
+      }
+    } catch (e) {
+      console.warn('Error loading monthly statement:', e.message);
+    }
   }
 
   async function fetchPublicLoans() {
@@ -2036,51 +2196,33 @@
       const data = await res.json();
       rawLoansData = data.distributions || [];
 
-      // Calculate totals
+      // Update counters
       const totalAll = rawLoansData.length;
-      let totalDisbursed = 0;
-      let totalPendingRepay = 0;
-      let totalRepaid = 0;
       let pendingCount = 0;
       let paidCount = 0;
 
       rawLoansData.forEach(d => {
-        const principal = parseFloat(d.principal_amount) || 0;
         const remaining = parseFloat(d.remaining_amount) || 0;
-        const repaid = parseFloat(d.total_repaid) || 0;
         const isPaid = d.payment_status === 'PAID' || remaining <= 0;
-
-        totalDisbursed += principal;
-        totalPendingRepay += remaining;
-        totalRepaid += repaid;
-
-        if (isPaid) {
-          paidCount++;
-        } else {
-          pendingCount++;
-        }
+        if (isPaid) paidCount++;
+        else pendingCount++;
       });
 
       const cntAllEl = document.getElementById('cntAllLoans');
       const cntPendingEl = document.getElementById('cntPendingLoans');
       const cntPaidEl = document.getElementById('cntPaidLoans');
+      const cntLoansBadge = document.getElementById('cntPubLoans');
       if (cntAllEl) cntAllEl.textContent = totalAll;
       if (cntPendingEl) cntPendingEl.textContent = pendingCount;
       if (cntPaidEl) cntPaidEl.textContent = paidCount;
-
-      const sumDisbursedEl = document.getElementById('sumTotalDisbursed');
-      const sumPendingEl = document.getElementById('sumPendingRepay');
-      const sumRepaidEl = document.getElementById('sumTotalRepaid');
-      if (sumDisbursedEl) sumDisbursedEl.textContent = formatINR(totalDisbursed);
-      if (sumPendingEl) sumPendingEl.textContent = formatINR(totalPendingRepay);
-      if (sumRepaidEl) sumRepaidEl.textContent = formatINR(totalRepaid);
+      if (cntLoansBadge) cntLoansBadge.textContent = totalAll;
 
       renderLoansTable();
     } catch (e) {
       console.warn('Error fetching public loans:', e.message);
       const tbody = document.getElementById('loansTableBody');
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">Unable to load loan distributions at the moment.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">Unable to load loan distributions at the moment.</td></tr>`;
       }
     }
   }
@@ -2092,7 +2234,8 @@
     const query = (document.getElementById('loanSearchInput')?.value || '').toLowerCase().trim();
 
     const filtered = rawLoansData.filter(d => {
-      const isPaid = d.payment_status === 'PAID' || (parseFloat(d.remaining_amount) || 0) <= 0;
+      const remaining = parseFloat(d.remaining_amount) || 0;
+      const isPaid = d.payment_status === 'PAID' || remaining <= 0;
       if (activeLoanFilter === 'PENDING' && isPaid) return false;
       if (activeLoanFilter === 'PAID' && !isPaid) return false;
 
@@ -2109,21 +2252,27 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">No loan records found matching criteria.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">No loan records found matching criteria.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = filtered.map(d => {
       const remaining = parseFloat(d.remaining_amount) || 0;
-      const isPaid = d.payment_status === 'PAID' || remaining <= 0;
       const principal = parseFloat(d.principal_amount) || 0;
       const interest = parseFloat(d.interest_amount) || 0;
       const totalDue = parseFloat(d.total_payable) || (principal + interest);
       const repaid = parseFloat(d.total_repaid) || 0;
+      const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+      const isPartial = !isPaid && repaid > 0;
 
-      const statusBadge = isPaid
-        ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:12px">✅ PAID / செலுத்தப்பட்டது</span>`
-        : `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:12px">⏳ PENDING / நிலுவை</span>`;
+      let statusBadge = '';
+      if (isPaid) {
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ FULLY PAID / செலுத்தப்பட்டது</span>`;
+      } else if (isPartial) {
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.4);border-radius:20px;font-weight:700;font-size:11.5px">🟡 PARTIAL / பகுதி செலுத்தப்பட்டது</span>`;
+      } else {
+        statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ PENDING / நிலுவை</span>`;
+      }
 
       let distDateStr = '—';
       if (d.distribution_date || d.start_date) {
@@ -2153,18 +2302,25 @@
             +${formatINR(interest)} <span style="font-size:11px;opacity:0.8">(${d.interest_percentage || 5}%)</span>
           </td>
           <td>
-            <div style="font-weight:800;color:${isPaid ? 'var(--green-light)' : '#f87171'};font-size:14px">
+            <div style="font-weight:800;color:var(--text);font-size:14px">
               ${formatINR(totalDue)}
             </div>
-            ${!isPaid && repaid > 0 ? `<div style="font-size:11px;color:var(--text3)">Repaid: ${formatINR(repaid)}</div>` : ''}
+          </td>
+          <td style="color:var(--green-light);font-weight:700;font-size:13px">
+            ${formatINR(repaid)}
           </td>
           <td>
-            <div style="font-weight:600;color:var(--text);font-size:13px">
+            <div style="font-weight:800;color:${isPaid ? 'var(--green-light)' : (isPartial ? '#facc15' : '#f87171')};font-size:14px">
+              ${formatINR(remaining)}
+            </div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:var(--text);font-size:13px">
               ${esc(d.nominee_name || '—')}
             </div>
             <div style="font-size:11px;color:var(--text3)">நாமினி</div>
           </td>
-          <td style="white-space:nowrap;font-size:13px;color:${isPaid ? 'var(--text2)' : '#fca5a5'};font-weight:600">
+          <td style="white-space:nowrap;font-size:13px;color:${isPaid ? 'var(--text2)' : '#fca5a5'};font-weight:700">
             ⏰ ${esc(dueDateStr)}
           </td>
           <td>
@@ -2175,81 +2331,98 @@
     }).join('');
   }
 
-  // Export Loan Statement as CSV / Excel
-  function downloadLoanStatement() {
-    if (!rawLoansData || rawLoansData.length === 0) {
-      alert('No loan statements to download currently.');
+  // Export Monthly Statement as CSV / Excel
+  function downloadMonthlyStatementPublic() {
+    const data = cachedPubMonthlyStatement;
+    if (!data) {
+      alert('Monthly statement is loading, please try in a moment.');
       return;
     }
 
-    const headers = [
-      'Loan ID',
-      'Member Code',
-      'Member Name',
-      'Phone',
-      'Distribution Date',
-      'Principal Amount (Rs)',
-      'Interest Rate (%)',
-      'Interest Amount (Rs)',
-      'Total Payable (Rs)',
-      'Total Repaid (Rs)',
-      'Remaining Balance (Rs)',
-      'Nominee Name',
-      'Due Date',
-      'Payment Status',
-      'Notes'
-    ];
+    const s = data.summary || {};
+    const lines = [];
+    lines.push(`"PF CHIT FUND CLUB - OFFICIAL MONTHLY FINANCIAL STATEMENT"`);
+    lines.push(`"Statement Month","${data.month}"`);
+    lines.push(`"Generated Date","${new Date().toLocaleString('en-IN')}"`);
+    lines.push(`"Total Monthly Inflows (Rs)","${s.total_inflow || 0}"`);
+    lines.push(`"Total Monthly Outflows (Rs)","${s.total_outflow || 0}"`);
+    lines.push(`"Net Monthly Balance (Rs)","${s.net_monthly_flow || 0}"`);
+    lines.push(`"Total Pool Balance (Rs)","${s.closing_pool_balance || 0}"`);
+    lines.push(``);
 
-    const rows = rawLoansData.map(d => {
+    // Section 1: Inflows
+    lines.push(`"--- INFLOWS (உள்வரவு பட்டியல் - தேதி & நேரத்துடன்) ---"`);
+    lines.push(`"#","Member Code","Member Name","Date","Time","Category","Amount (Rs)","UTR / Transaction Reference"`);
+    (data.inflows || []).forEach((item, idx) => {
+      lines.push(`"${idx + 1}","${item.member_code}","${item.member_name.replace(/"/g, '""')}","${item.payment_date}","${item.payment_time}","${item.category}","${item.amount}","${item.transaction_reference}"`);
+    });
+
+    lines.push(``);
+    // Section 2: Outflows / Loans
+    lines.push(`"--- OUTFLOWS & LOANS (கடன் & மறுசெலுத்துகை விபரம்) ---"`);
+    lines.push(`"Loan ID","Member Code","Member Name","Distribution Date","Principal (Rs)","Interest %","Interest (Rs)","Total Due (Rs)","Total Repaid (Rs)","Remaining Balance (Rs)","Nominee Name","Due Date","Status"`);
+    const loansToExport = (data.outflows && data.outflows.length > 0) ? data.outflows : rawLoansData;
+    loansToExport.forEach(d => {
       const remaining = parseFloat(d.remaining_amount) || 0;
+      const repaid = parseFloat(d.total_repaid) || 0;
       const isPaid = d.payment_status === 'PAID' || remaining <= 0;
-      return [
-        d.id,
-        d.member_code || '',
-        d.member_name || '',
-        d.member_phone || '',
-        (d.distribution_date || d.start_date || '').split('T')[0],
-        d.principal_amount || 0,
-        d.interest_percentage || 5,
-        d.interest_amount || 0,
-        d.total_payable || 0,
-        d.total_repaid || 0,
-        remaining,
-        d.nominee_name || '',
-        (d.due_date || d.next_payment_date || '').split('T')[0],
-        isPaid ? 'PAID' : 'PENDING',
-        (d.notes || '').replace(/"/g, '""')
-      ];
+      const statusText = isPaid ? 'FULLY PAID' : (repaid > 0 ? 'PARTIALLY PAID' : 'PENDING');
+      lines.push(`"${d.id}","${d.member_code || ''}","${(d.member_name || '').replace(/"/g, '""')}","${(d.distribution_date || d.start_date || '').split('T')[0]}","${d.principal_amount || 0}","${d.interest_percentage || 5}","${d.interest_amount || 0}","${d.total_payable || 0}","${repaid}","${remaining}","${(d.nominee_name || '').replace(/"/g, '""')}","${(d.due_date || d.next_payment_date || '').split('T')[0]}","${statusText}"`);
     });
 
-    let csvContent = '\uFEFF';
-    csvContent += headers.map(h => `"${h}"`).join(',') + '\r\n';
-    rows.forEach(r => {
-      csvContent += r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',') + '\r\n';
-    });
-
+    const csvContent = '\uFEFF' + lines.join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `PF_Chit_Fund_Loan_Statement_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', `Monthly_Statement_${data.month}_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
 
-  // Print Loan Statement / Export PDF
-  function printLoanStatement() {
-    const printWindow = window.open('', '_blank', 'width=900,height=700');
+  // Alias for backwards compatibility
+  function downloadLoanStatement() {
+    downloadMonthlyStatementPublic();
+  }
+
+  // Print Monthly Statement / Export PDF
+  function printMonthlyStatementPublic() {
+    const data = cachedPubMonthlyStatement;
+    if (!data) {
+      window.print();
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
     if (!printWindow) {
       window.print();
       return;
     }
 
-    const rowsHtml = (rawLoansData || []).map(d => {
+    const s = data.summary || {};
+    const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    const inflowRows = (data.inflows || []).map((item, idx) => `
+      <tr>
+        <td>#${idx + 1}</td>
+        <td><strong>${esc(item.member_name)}</strong> (${esc(item.member_code)})</td>
+        <td>${esc(item.payment_date)} ${esc(item.payment_time)}</td>
+        <td>${esc(item.category)}</td>
+        <td style="color:#15803d;font-weight:bold">₹${parseFloat(item.amount || 0).toLocaleString('en-IN')}</td>
+        <td><code>${esc(item.transaction_reference)}</code></td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center">No inflows recorded for this month.</td></tr>';
+
+    const loansToPrint = (data.outflows && data.outflows.length > 0) ? data.outflows : rawLoansData;
+    const loanRows = loansToPrint.map(d => {
       const remaining = parseFloat(d.remaining_amount) || 0;
+      const repaid = parseFloat(d.total_repaid) || 0;
       const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+      const isPartial = !isPaid && repaid > 0;
+      const statusColor = isPaid ? '#15803d' : (isPartial ? '#b45309' : '#b91c1c');
+      const statusText = isPaid ? 'PAID / செலுத்தப்பட்டது' : (isPartial ? `PARTIAL (மீதம்: ₹${remaining.toLocaleString('en-IN')})` : 'PENDING / நிலுவை');
       return `
         <tr>
           <td><strong>${esc(d.member_name)}</strong><br><small>${esc(d.member_code || '')}</small></td>
@@ -2257,28 +2430,33 @@
           <td>₹${parseFloat(d.principal_amount || 0).toLocaleString('en-IN')}</td>
           <td>₹${parseFloat(d.interest_amount || 0).toLocaleString('en-IN')} (${d.interest_percentage || 5}%)</td>
           <td><strong>₹${parseFloat(d.total_payable || 0).toLocaleString('en-IN')}</strong></td>
+          <td>₹${repaid.toLocaleString('en-IN')}</td>
+          <td style="font-weight:bold;color:${statusColor}">₹${remaining.toLocaleString('en-IN')}</td>
           <td>${esc(d.nominee_name || '—')}</td>
           <td>${(d.due_date || d.next_payment_date || '—').split('T')[0]}</td>
-          <td><span style="font-weight:bold;color:${isPaid ? '#15803d' : '#b91c1c'}">${isPaid ? 'PAID / செலுத்தப்பட்டது' : 'PENDING / நிலுவை'}</span></td>
+          <td><span style="font-weight:bold;color:${statusColor}">${statusText}</span></td>
         </tr>
       `;
-    }).join('');
-
-    const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    }).join('') || '<tr><td colspan="10" style="text-align:center">No loans recorded for this month.</td></tr>';
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>PF Chit Fund Club - Loan & Repayment Ledger</title>
+        <title>PF Chit Fund Club - Monthly Statement (${data.month})</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
-          .header { text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 16px; }
-          h1 { margin: 0 0 6px 0; font-size: 22px; color: #b45309; }
+          body { font-family: Arial, sans-serif; padding: 24px; color: #111; line-height: 1.4; }
+          .header { text-align: center; border-bottom: 2px solid #b45309; padding-bottom: 12px; margin-bottom: 20px; }
+          h1 { margin: 0 0 6px 0; font-size: 24px; color: #b45309; }
           .sub { font-size: 13px; color: #555; }
-          table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
-          th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; }
-          th { background: #f3f4f6; }
+          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+          .kpi-box { border: 1px solid #ccc; border-radius: 8px; padding: 12px; text-align: center; background: #fafafa; }
+          .kpi-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: bold; }
+          .kpi-val { font-size: 18px; font-weight: bold; margin-top: 4px; }
+          h2 { font-size: 16px; margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 12px; }
+          th, td { border: 1px solid #ccc; padding: 7px 9px; text-align: left; }
+          th { background: #f3f4f6; font-weight: bold; }
           @media print {
             button { display: none; }
           }
@@ -2287,32 +2465,81 @@
       <body>
         <div class="header">
           <h1>PF Chit Fund Club (புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்)</h1>
-          <div class="sub">Official Seed Fund Loans & Repayment Transparency Statement · Generated on ${todayStr}</div>
+          <div class="sub">Official Monthly Transparency Statement · Month: <strong>${data.month}</strong> · Generated on ${todayStr}</div>
         </div>
-        <div style="margin-bottom:12px;text-align:right">
-          <button onclick="window.print()" style="padding:6px 14px;font-weight:bold;cursor:pointer;background:#2563eb;color:#fff;border:none;border-radius:6px">🖨️ Print / Save as PDF</button>
+        <div style="margin-bottom:16px;text-align:right">
+          <button onclick="window.print()" style="padding:8px 18px;font-weight:bold;cursor:pointer;background:#2563eb;color:#fff;border:none;border-radius:6px">🖨️ Print / Save as PDF</button>
         </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-box">
+            <div class="kpi-label">Monthly Inflows</div>
+            <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')}</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">Monthly Loans (Outflows)</div>
+            <div class="kpi-val" style="color:#b91c1c">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">Net Monthly Flow</div>
+            <div class="kpi-val" style="color:#1d4ed8">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-label">Club Pool Balance</div>
+            <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
+          </div>
+        </div>
+
+        <h2>📥 Monthly Inflows (உள்வரவு பட்டியல் - சரியான தேதி மற்றும் நேரத்துடன்)</h2>
         <table>
           <thead>
             <tr>
+              <th>#</th>
               <th>Member (உறுப்பினர்)</th>
-              <th>Date Taken (எடுத்த தேதி)</th>
-              <th>Principal (அசல்)</th>
-              <th>Interest (5% வட்டி)</th>
-              <th>Total Due (மொத்த தொகை)</th>
-              <th>Nominee (நாமினி)</th>
-              <th>Due Date (கடைசி தேதி)</th>
-              <th>Status (நிலை)</th>
+              <th>Date & Time</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>UTR / Reference</th>
             </tr>
           </thead>
           <tbody>
-            ${rowsHtml || '<tr><td colspan="8" style="text-align:center">No records available</td></tr>'}
+            ${inflowRows}
           </tbody>
         </table>
+
+        <h2>📤 Loans & Repayments (வழங்கப்பட்ட கடன், 5% வட்டி, நாமினி & மறுசெலுத்துகை)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Date Taken</th>
+              <th>Principal</th>
+              <th>Interest (5%)</th>
+              <th>Total Due</th>
+              <th>Repaid</th>
+              <th>Balance</th>
+              <th>Nominee</th>
+              <th>Due Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${loanRows}
+          </tbody>
+        </table>
+
+        <div style="font-size:11px;color:#666;border-top:1px solid #ddd;padding-top:12px;margin-top:20px;text-align:center">
+          This statement is an official computer-generated public transparency record of PF Chit Fund Club.
+        </div>
       </body>
       </html>
     `);
     printWindow.document.close();
+  }
+
+  // Alias for backwards compatibility
+  function printLoanStatement() {
+    printMonthlyStatementPublic();
   }
 
   // Socket.IO Real-time Connection
@@ -2324,6 +2551,7 @@
           fetchSummaryData();
           fetchLiveFeed();
           fetchPublicLoans();
+          loadPublicMonthlyStatement();
         });
         socket.on('settings:updated', () => {
           loadPublicSettings();
@@ -2333,16 +2561,19 @@
           fetchSummaryData();
           fetchLiveFeed();
           fetchPublicLoans();
+          loadPublicMonthlyStatement();
         });
         socket.on('seed_fund:updated', () => {
           fetchSummaryData();
           fetchLiveFeed();
           fetchPublicLoans();
+          loadPublicMonthlyStatement();
         });
         socket.on('member:deleted', () => {
           fetchSummaryData();
           fetchLiveFeed();
           fetchPublicLoans();
+          loadPublicMonthlyStatement();
         });
       } catch (e) {
         console.warn('Public dashboard socket notice:', e.message);
@@ -2355,13 +2586,17 @@
     fetchSummaryData();
     fetchLiveFeed();
     fetchPublicLoans();
+    loadPublicMonthlyStatement();
     loadPublicSettings();
     initRealtimeSocket();
 
     // Fast 6-second polling for transactions ticker
     setInterval(fetchLiveFeed, 6000);
-    // 15-second polling for loan ledger
-    setInterval(fetchPublicLoans, 15000);
+    // 15-second polling for loan ledger & statement
+    setInterval(() => {
+      fetchPublicLoans();
+      loadPublicMonthlyStatement();
+    }, 15000);
     // 25-second polling for summary cards
     setInterval(fetchSummaryData, 25000);
   });

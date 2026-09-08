@@ -1314,6 +1314,35 @@
               <div class="stat-label">Current Available Fund</div>
               <div class="stat-value green" id="sfAvailableFund">₹0</div>
             </div>
+          <!-- PENDING MEMBER LOAN REQUESTS REVIEW CARD -->
+          <div class="card" id="adminPendingLoansCard" style="border:1px solid rgba(245,200,66,0.3);background:linear-gradient(135deg,rgba(245,200,66,0.06),transparent);margin-bottom:18px">
+            <div class="card-header">
+              <div class="card-title" style="display:flex;align-items:center;gap:8px">
+                <span>📩 Pending Member Loan Requests (மெம்பர்களின் கடன் விண்ணப்பங்கள்)</span>
+                <span class="badge badge-pending" id="cntAdminPendingLoans" style="font-size:11px">0 Pending</span>
+              </div>
+              <button class="btn-secondary btn-sm" onclick="loadAdminLoanRequests()">🔄 Refresh Requests</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Req #</th>
+                    <th>Member</th>
+                    <th>Requested (₹)</th>
+                    <th>5% Interest</th>
+                    <th>Total Due</th>
+                    <th>Nominee Details (நாமினி)</th>
+                    <th>Purpose / Reason</th>
+                    <th>Requested On</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminLoanRequestsTableBody">
+                  <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Loading pending loan requests...</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div class="card">
@@ -1443,25 +1472,97 @@
           </div>
         </div>
 
-        <!-- ================= FINANCIAL REPORTS ================= -->
+        <!-- ================= FINANCIAL REPORTS & MONTHLY STATEMENT ================= -->
         <div id="reports" class="page">
           <div class="card">
-            <div class="card-header">
-              <div class="card-title">📈 Financial Reports & Summary</div>
-              <button class="btn-primary" onclick="exportReportsCSV()">📥 Export Full Report CSV</button>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
-              <div style="background:var(--bg-surface-hover);padding:16px;border-radius:12px">
-                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;font-weight:700;margin-bottom:6px">Net Monthly Balance</div>
-                <div style="font-size:24px;font-weight:800;color:var(--green)" id="repNetBalance">₹0</div>
+            <div class="card-header" style="flex-wrap:wrap;gap:12px">
+              <div>
+                <div class="card-title">📈 Monthly Financial Statement & Reports</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px">மாதாந்திர வரவு-செலவு கணக்கு அறிக்கை (PDF & CSV பதிவிறக்கம்)</div>
               </div>
-              <div style="background:var(--bg-surface-hover);padding:16px;border-radius:12px">
-                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;font-weight:700;margin-bottom:6px">Total Interest Earned</div>
-                <div style="font-size:24px;font-weight:800;color:var(--gold)" id="repTotalInterest">₹0</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <label style="font-size:12px;color:var(--text-muted);font-weight:700">Month:</label>
+                <select id="adminReportMonthSelect" onchange="loadMonthlyStatementAdmin(this.value)" style="padding:6px 12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-weight:700">
+                  <option value="">Current Month</option>
+                </select>
+                <button class="btn-secondary btn-sm" onclick="exportMonthlyStatementAdminCSV()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;font-weight:700">📥 Export Month CSV</button>
+                <button class="btn-primary btn-sm" onclick="printMonthlyStatementAdmin()">🖨️ Print / Save PDF</button>
               </div>
             </div>
-            <div id="reportsContainer">
-              <div style="text-align:center;padding:20px;color:var(--text-muted)">Generating report summary...</div>
+
+            <!-- 4 Monthly Summary KPI Cards -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px">
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Total Inflow (வரவு)</div>
+                <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px" id="admStmtInflow">₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px" id="admStmtInflowCount">0 payments</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Total Outflow / Loans (கடன்)</div>
+                <div style="font-size:22px;font-weight:800;color:var(--gold);margin-top:4px" id="admStmtOutflow">₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px" id="admStmtOutflowCount">0 loans given</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Net Monthly Flow (நிகர இருப்பு)</div>
+                <div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:4px" id="admStmtNetFlow">₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Inflow minus Outflow</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Available Pool Balance</div>
+                <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px" id="admStmtClosingBalance">₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Current Fund Pool</div>
+              </div>
+            </div>
+
+            <!-- Inflows Table -->
+            <div style="margin-bottom:24px">
+              <div style="font-size:15px;font-weight:800;color:var(--green);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                <span>📥 Member Inflows & Payments Received (உள்ளே வந்த தொகை விவரம்)</span>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Member</th>
+                      <th>Date & Time</th>
+                      <th>Type / Category</th>
+                      <th>Amount (₹)</th>
+                      <th>Transaction Ref / UTR</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admStmtInflowsTableBody">
+                    <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Loading monthly statement...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Outflows Table -->
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                <span>📤 Loans Disbursed & Outflows (வழங்கப்பட்ட கடன்கள் & பட்டுவாடா)</span>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Loan #</th>
+                      <th>Member</th>
+                      <th>Date Disbursed</th>
+                      <th>Principal (அசல்)</th>
+                      <th>5% Interest (வட்டி)</th>
+                      <th>Total Due</th>
+                      <th>Nominee Details (நாமினி)</th>
+                      <th>Due Date (10-ஆம் தேதி)</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admStmtOutflowsTableBody">
+                    <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No loans disbursed in this month.</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -2283,10 +2384,330 @@
       if (!sDateVal) return;
       const d = new Date(sDateVal);
       d.setMonth(d.getMonth() + 1);
+      d.setDate(10); // Fixed 10th of next month schedule
       document.getElementById('distNextPayDate').value = d.toISOString().split('T')[0];
     }
 
+    async function loadAdminLoanRequests() {
+      const tbody = document.getElementById('adminLoanRequestsTableBody');
+      const cntBadge = document.getElementById('cntAdminPendingLoans');
+      if (!tbody) return;
+
+      try {
+        const data = await api('/api/seed-fund/requests');
+        const reqs = (data.requests || []).filter(r => r.status === 'PENDING');
+        if (cntBadge) cntBadge.textContent = `${reqs.length} Pending`;
+
+        if (reqs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">✨ No pending member loan requests. All caught up! (புதிய விண்ணப்பங்கள் எதுவும் இல்லை)</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = reqs.map(r => {
+          const p = parseFloat(r.requested_amount || 0);
+          const i = Math.round(p * 0.05 * 100) / 100;
+          const t = Math.round((p + i) * 100) / 100;
+          const nom = [r.nominee_name, r.nominee_relation, r.nominee_phone].filter(Boolean).join(' · ');
+
+          return `
+            <tr style="background:rgba(245,200,66,0.03)">
+              <td><strong>#${r.id}</strong></td>
+              <td><strong>${esc(r.member_name)}</strong> <span style="font-size:11px;color:var(--text-muted)">(${r.member_code || r.member_id})</span></td>
+              <td style="font-size:15px;font-weight:800;color:var(--text)">₹${p.toLocaleString('en-IN')}</td>
+              <td style="color:var(--gold);font-weight:700">+₹${i.toLocaleString('en-IN')} (5%)</td>
+              <td style="color:var(--green);font-weight:800">₹${t.toLocaleString('en-IN')}</td>
+              <td style="color:var(--gold);font-weight:600">${esc(nom || '—')}</td>
+              <td style="font-size:12px;color:var(--text-muted)">${esc(r.purpose || 'General Loan')}</td>
+              <td style="font-size:12px">${r.created_at ? r.created_at.split('T')[0] : '—'}</td>
+              <td style="white-space:nowrap">
+                <button class="btn-success btn-sm" onclick="approveAdminLoanRequest(${r.id})" style="margin-right:6px">✅ Approve (அனுமதி)</button>
+                <button class="btn-danger btn-sm" onclick="rejectAdminLoanRequest(${r.id})">❌ Reject</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--red)">Failed to load requests: ${esc(err.message)}</td></tr>`;
+      }
+    }
+
+    async function approveAdminLoanRequest(id) {
+      if (!confirm(`Confirm approval for Loan Request #${id}?\n\nகடன் கோரிக்கைக்கு ஒப்புதல் அளிக்கவா? 5% வட்டியுடன் கடன் பட்டுவாடா செய்யப்பட்டு 10-ஆம் தேதி தவணை அட்டவணை உருவாகும்.`)) return;
+
+      try {
+        const res = await api(`/api/seed-fund/requests/${id}/approve`, { method: 'POST' });
+        showToast(res.message || 'Loan request approved and activated successfully!', 'success');
+        loadAdminLoanRequests();
+        loadSeedFundDistributions();
+      } catch (err) {
+        showToast(err.message || 'Failed to approve loan request', 'error');
+      }
+    }
+
+    async function rejectAdminLoanRequest(id) {
+      const reason = prompt('Enter reason for declining this loan request:');
+      if (reason === null) return;
+
+      try {
+        const res = await api(`/api/seed-fund/requests/${id}/reject`, {
+          method: 'POST',
+          body: JSON.stringify({ admin_notes: reason })
+        });
+        showToast(res.message || 'Loan request rejected', 'info');
+        loadAdminLoanRequests();
+      } catch (err) {
+        showToast(err.message || 'Failed to reject loan request', 'error');
+      }
+    }
+
+    let cachedAdminMonthlyStatement = null;
+
+    async function loadMonthlyStatementAdmin(selectedMonth) {
+      const curMonth = selectedMonth || new Date().toISOString().substring(0, 7);
+      try {
+        const data = await api(`/api/public-dashboard/monthly-statement?month=${curMonth}`);
+        if (!data || !data.success) throw new Error(data.error || 'Failed to load statement');
+        cachedAdminMonthlyStatement = data;
+
+        // Populate month select dropdown if empty
+        const sel = document.getElementById('adminReportMonthSelect');
+        if (sel && data.available_months && sel.options.length <= 1) {
+          sel.innerHTML = data.available_months.map(m => `
+            <option value="${m}" ${m === data.month ? 'selected' : ''}>${m} (${new Date(m + '-01').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })})</option>
+          `).join('');
+        }
+
+        // Summary KPI
+        const s = data.summary || {};
+        if (document.getElementById('admStmtInflow')) document.getElementById('admStmtInflow').textContent = `₹${(s.total_inflow || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('admStmtInflowCount')) document.getElementById('admStmtInflowCount').textContent = `${s.inflow_count || 0} payments received`;
+        if (document.getElementById('admStmtOutflow')) document.getElementById('admStmtOutflow').textContent = `₹${(s.total_outflow || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('admStmtOutflowCount')) document.getElementById('admStmtOutflowCount').textContent = `${s.outflow_count || 0} loans disbursed`;
+        if (document.getElementById('admStmtNetFlow')) {
+          const net = s.net_monthly_flow || 0;
+          document.getElementById('admStmtNetFlow').textContent = `${net >= 0 ? '+' : ''}₹${net.toLocaleString('en-IN')}`;
+          document.getElementById('admStmtNetFlow').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+        }
+        if (document.getElementById('admStmtClosingBalance')) document.getElementById('admStmtClosingBalance').textContent = `₹${(s.current_pool_balance || 0).toLocaleString('en-IN')}`;
+
+        // Inflows Table
+        const inTbody = document.getElementById('admStmtInflowsTableBody');
+        if (inTbody) {
+          if (!data.inflows || data.inflows.length === 0) {
+            inTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">No payment inflows recorded for this month.</td></tr>';
+          } else {
+            inTbody.innerHTML = data.inflows.map((item, idx) => `
+              <tr>
+                <td><strong>#${idx + 1}</strong></td>
+                <td><strong>${esc(item.member_name)}</strong> <span style="font-size:11px;color:var(--text-muted)">(${esc(item.member_code)})</span></td>
+                <td><strong>${item.payment_date}</strong> <span style="font-size:11px;color:var(--text-muted)">(${item.payment_time})</span></td>
+                <td><span class="badge badge-active" style="font-size:11px">${esc(item.category)}</span></td>
+                <td style="color:var(--green);font-weight:800;font-size:14px">₹${item.amount.toLocaleString('en-IN')}</td>
+                <td><code>${esc(item.transaction_reference)}</code></td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        // Outflows Table
+        const outTbody = document.getElementById('admStmtOutflowsTableBody');
+        if (outTbody) {
+          if (!data.outflows || data.outflows.length === 0) {
+            outTbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted)">No loans distributed for this month.</td></tr>';
+          } else {
+            outTbody.innerHTML = data.outflows.map(d => `
+              <tr>
+                <td><strong>#${d.id}</strong></td>
+                <td><strong>${esc(d.member_name)}</strong> <span style="font-size:11px;color:var(--text-muted)">(${esc(d.member_code)})</span></td>
+                <td>${d.distribution_date}</td>
+                <td style="font-weight:700">₹${d.principal_amount.toLocaleString('en-IN')}</td>
+                <td style="color:var(--gold);font-weight:700">+₹${d.interest_amount.toLocaleString('en-IN')} (${d.interest_percentage}%)</td>
+                <td style="font-weight:800;color:var(--primary)">₹${d.total_payable.toLocaleString('en-IN')}</td>
+                <td style="color:var(--gold);font-weight:600">${esc(d.nominee_name)}</td>
+                <td>${d.due_date}</td>
+                <td><span class="badge ${d.payment_status === 'PAID' ? 'badge-active' : 'badge-pending'}">${d.payment_status}</span></td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        showToast('Failed to load monthly statement: ' + err.message, 'error');
+      }
+    }
+
+    function exportMonthlyStatementAdminCSV() {
+      if (!cachedAdminMonthlyStatement) {
+        showToast('Load statement first before exporting', 'error');
+        return;
+      }
+      const data = cachedAdminMonthlyStatement;
+      const m = data.month || 'statement';
+
+      let csv = '\uFEFF'; // UTF-8 BOM
+      csv += `PF CHIT FUND CLUB - FINANCIAL STATEMENT FOR ${m}\n`;
+      csv += `Generated On: ${new Date().toLocaleString('en-IN')}\n\n`;
+
+      csv += `SUMMARY METRICS\n`;
+      csv += `Total Inflow (வரவு),₹${data.summary.total_inflow}\n`;
+      csv += `Total Outflow (கடன்),₹${data.summary.total_outflow}\n`;
+      csv += `Net Monthly Balance (நிகர இருப்பு),₹${data.summary.net_monthly_flow}\n`;
+      csv += `Available Fund Pool,₹${data.summary.current_pool_balance}\n\n`;
+
+      csv += `INFLOWS & MEMBER PAYMENTS\n`;
+      csv += `S.No,Member Name,Member Code,Date,Time,Category,Amount (INR),Transaction Reference\n`;
+      (data.inflows || []).forEach((row, i) => {
+        csv += `"${i+1}","${row.member_name}","${row.member_code}","${row.payment_date}","${row.payment_time}","${row.category}","${row.amount}","${row.transaction_reference}"\n`;
+      });
+
+      csv += `\nOUTFLOWS & SEED FUND LOANS DISTRIBUTED\n`;
+      csv += `Loan ID,Member Name,Member Code,Date Disbursed,Principal (INR),Interest (5%),Total Payable (INR),Nominee Name,Due Date,Status\n`;
+      (data.outflows || []).forEach(row => {
+        csv += `"${row.id}","${row.member_name}","${row.member_code}","${row.distribution_date}","${row.principal_amount}","${row.interest_amount}","${row.total_payable}","${row.nominee_name}","${row.due_date}","${row.payment_status}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `PF_ChitFund_Statement_${m}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Statement exported as PF_ChitFund_Statement_${m}.csv`, 'success');
+    }
+
+    function printMonthlyStatementAdmin() {
+      if (!cachedAdminMonthlyStatement) {
+        showToast('Statement data not loaded', 'error');
+        return;
+      }
+      const data = cachedAdminMonthlyStatement;
+      const m = data.month || 'Current';
+
+      const printWin = window.open('', '_blank');
+      if (!printWin) {
+        window.print();
+        return;
+      }
+
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>PF Chit Fund Club — Monthly Statement ${m}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #111; }
+            h1, h2, h3 { margin: 0 0 8px; }
+            .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+            .meta { font-size: 13px; color: #555; margin-bottom: 16px; }
+            .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+            .kpi-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #f9fafb; text-align: center; }
+            .kpi-title { font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; }
+            .kpi-val { font-size: 18px; font-weight: bold; margin-top: 4px; color: #1e3a8a; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 12px; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
+            th { background: #f3f4f6; font-weight: 700; }
+            .text-right { text-align: right; }
+            .footer { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 12px; font-size: 11px; color: #777; display: flex; justify-content: space-between; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🏛️ PF Chit Fund Club — மாதாந்திர கணக்கு அறிக்கை</h1>
+            <div style="font-size:15px;color:#2563eb;font-weight:bold">Financial Statement for Month: ${m}</div>
+            <div class="meta">Generated: ${new Date().toLocaleString('en-IN')} | All transactions audited and verified</div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-title">Total Inflow (வரவு)</div>
+              <div class="kpi-val" style="color:#16a34a">₹${data.summary.total_inflow.toLocaleString('en-IN')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Total Loans (கடன்)</div>
+              <div class="kpi-val" style="color:#d97706">₹${data.summary.total_outflow.toLocaleString('en-IN')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Net Balance (நிகர இருப்பு)</div>
+              <div class="kpi-val">₹${data.summary.net_monthly_flow.toLocaleString('en-IN')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Pool Balance</div>
+              <div class="kpi-val" style="color:#16a34a">₹${data.summary.current_pool_balance.toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+
+          <h3>📥 Member Payments & Inflows</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Member</th>
+                <th>Payment Date & Time</th>
+                <th>Category</th>
+                <th class="text-right">Amount (₹)</th>
+                <th>Reference / UTR</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(data.inflows || []).map((x, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><strong>${x.member_name}</strong> (${x.member_code})</td>
+                  <td>${x.payment_date} ${x.payment_time}</td>
+                  <td>${x.category}</td>
+                  <td class="text-right"><strong>₹${x.amount.toLocaleString('en-IN')}</strong></td>
+                  <td><code>${x.transaction_reference}</code></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <h3>📤 Seed Fund Loans Disbursed</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Loan #</th>
+                <th>Member</th>
+                <th>Disbursed Date</th>
+                <th class="text-right">Principal</th>
+                <th class="text-right">5% Interest</th>
+                <th class="text-right">Total Due</th>
+                <th>Nominee Details</th>
+                <th>Due Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(data.outflows || []).map(x => `
+                <tr>
+                  <td>#${x.id}</td>
+                  <td><strong>${x.member_name}</strong> (${x.member_code})</td>
+                  <td>${x.distribution_date}</td>
+                  <td class="text-right">₹${x.principal_amount.toLocaleString('en-IN')}</td>
+                  <td class="text-right">+₹${x.interest_amount.toLocaleString('en-IN')}</td>
+                  <td class="text-right"><strong>₹${x.total_payable.toLocaleString('en-IN')}</strong></td>
+                  <td>${x.nominee_name}</td>
+                  <td>${x.due_date}</td>
+                  <td>${x.payment_status}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <div>Authorized Administrator: Admin Office</div>
+            <div>PF Chit Fund Club — Official Financial Transparency Ledger</div>
+          </div>
+        </body>
+        </html>
+      `);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => { printWin.print(); }, 500);
+    }
+
     async function loadSeedFundDistributions() {
+      loadAdminLoanRequests();
       try {
         const summary = await api('/api/seed-fund/summary');
         if (document.getElementById('sfTotalCollection')) document.getElementById('sfTotalCollection').textContent = `₹${parseFloat(summary.total_collection || 0).toLocaleString('en-IN')}`;
@@ -2337,6 +2758,77 @@
         }).join('');
       } catch (e) {
         showToast('Failed to load seed fund distributions: ' + e.message, 'error');
+      }
+    }
+
+    async function quickMarkPaid(distId) {
+      const dist = (cachedDistributions || []).find(d => d.id === distId);
+      const rem = dist ? parseFloat(dist.remaining_amount || 0) : 0;
+      const mem = dist ? dist.member_name : 'Member';
+      if (!confirm(`Confirm full repayment of ₹${rem.toLocaleString('en-IN')} for Loan #${distId} (${mem})?\n\nகடன் நிலுவை தொகை முழுவதும் செலுத்தப்பட்டதாக குறிக்கவா?`)) return;
+
+      try {
+        await api('/api/repayments', {
+          method: 'POST',
+          body: JSON.stringify({
+            distribution_id: distId,
+            payment_amount: rem,
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_method: 'CASH / ADMIN',
+            transaction_ref: `ADMIN_SETTLED_${Date.now()}`,
+            notes: 'Loan settled in full by Admin'
+          })
+        });
+        showToast('Loan marked as fully settled / paid!', 'success');
+        loadSeedFundDistributions();
+      } catch (err) {
+        showToast(err.message || 'Failed to settle loan', 'error');
+      }
+    }
+
+    async function openRepayForDist(distId) {
+      const dist = (cachedDistributions || []).find(d => d.id === distId);
+      const rem = dist ? parseFloat(dist.remaining_amount || 0) : 0;
+      const mem = dist ? dist.member_name : 'Member';
+      const promptVal = prompt(`Enter repayment amount for Loan #${distId} (${mem}):\n\nTotal Due Remaining: ₹${rem.toLocaleString('en-IN')}\n\nசெலுத்தப்படும் தவணை தொகையை உள்ளிடவும் (e.g. 1000 or full balance):`, rem);
+      if (promptVal === null) return;
+      const amt = parseFloat(promptVal);
+      if (isNaN(amt) || amt <= 0) {
+        showToast('Please enter a valid positive payment amount.', 'error');
+        return;
+      }
+      if (amt > rem + 0.01) {
+        showToast(`Amount exceeds remaining payable balance of ₹${rem.toLocaleString('en-IN')}`, 'error');
+        return;
+      }
+
+      try {
+        await api('/api/repayments', {
+          method: 'POST',
+          body: JSON.stringify({
+            distribution_id: distId,
+            payment_amount: amt,
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_method: 'UPI / CASH',
+            transaction_ref: `ADMIN_REPAY_${Date.now()}`,
+            notes: 'Repayment recorded by admin'
+          })
+        });
+        showToast(`Repayment of ₹${amt.toLocaleString('en-IN')} recorded successfully!`, 'success');
+        loadSeedFundDistributions();
+      } catch (err) {
+        showToast(err.message || 'Failed to record repayment', 'error');
+      }
+    }
+
+    async function deleteDist(distId) {
+      if (!confirm(`Are you sure you want to delete Loan Distribution #${distId}?\n\nஇந்த கடன் பதிவை நீக்க விரும்புகிறீர்களா?`)) return;
+      try {
+        await api(`/api/seed-fund/distributions/${distId}`, { method: 'DELETE' });
+        showToast('Loan distribution deleted successfully', 'success');
+        loadSeedFundDistributions();
+      } catch (err) {
+        showToast(err.message || 'Failed to delete distribution', 'error');
       }
     }
 

@@ -39,7 +39,7 @@ async function verifyPaymentRules({ member_id, amount, transaction_reference, pa
     if (numAmount !== expectedAmount) {
       return { 
         autoApprove: false, 
-        reason: `Amount mismatch: ₹${numAmount} submitted, expected monthly contribution is ₹${expectedAmount}` 
+        reason: `Custom/Extra Payment Amount (₹${numAmount}) — Submitted for Admin Review (விருப்பத்தொகை)` 
       };
     }
 

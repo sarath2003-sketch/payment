@@ -1933,10 +1933,55 @@
 
     <!-- PAYMENT PAGE -->
     <div id="paymentPage" class="page">
+      <!-- FIXED 10TH DUE DATE NOTIFICATION BANNER -->
+      <div style="background:linear-gradient(135deg,rgba(245,200,66,0.15),rgba(245,200,66,0.04));border:1px solid rgba(245,200,66,0.35);border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:24px">📢</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:800;color:var(--gold)">
+            மாதாந்திர கட்டண தேதி: மாதந்தோறும் 10-ஆம் தேதி (Fixed 10th Due Date)
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">
+            மாதாந்திர சீட்டு ₹500 ஒவ்வொரு மாதமும் 10-ஆம் தேதிக்குள் கட்ட வேண்டும். அன்று மாலை நிதி ஏலம் & கடன் உதவி (5% வட்டி) வழங்கப்படும்!
+          </div>
+        </div>
+      </div>
+
       <div class="card card-gold">
         <div class="card-title">💳 <span data-i18n="makePayment">Make Payment</span></div>
         <div class="amount-big" id="paymentAmount">₹500</div>
-        <div style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:20px" id="paymentInstructions">Scan the QR code to pay via UPI</div>
+        <div style="text-align:center;color:var(--text3);font-size:13px;margin-bottom:14px" id="paymentInstructions">Scan QR code or click UPI apps below to pay</div>
+
+        <!-- CUSTOM & FLEXIBLE PAYMENT AMOUNT SELECTOR -->
+        <div style="max-width:340px;margin:0 auto 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:14px;padding:12px 14px;text-align:left">
+          <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+            <span>💰 Amount to Pay / செலுத்தும் தொகை:</span>
+            <span id="amountTypeBadge" style="font-size:10px;background:rgba(245,200,66,0.15);padding:2px 8px;border-radius:10px;color:var(--gold)">Monthly Chit</span>
+          </div>
+          <!-- Quick presets -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <button type="button" class="btn-secondary" onclick="setPaymentAmount(500, 'Monthly Chit')" style="flex:1;min-width:65px;padding:5px 6px;font-size:11px;font-weight:700;border-color:var(--gold);color:var(--gold)">
+              ₹500 (சீட்டு)
+            </button>
+            <button type="button" class="btn-secondary" onclick="setPaymentAmount(1000, 'Installment')" style="flex:1;min-width:65px;padding:5px 6px;font-size:11px">
+              ₹1,000
+            </button>
+            <button type="button" class="btn-secondary" onclick="setPaymentAmount(2500, 'Part Loan')" style="flex:1;min-width:65px;padding:5px 6px;font-size:11px">
+              ₹2,500
+            </button>
+            <button type="button" class="btn-secondary" onclick="focusCustomAmount()" style="flex:1;min-width:65px;padding:5px 6px;font-size:11px">
+              ✏️ Custom
+            </button>
+          </div>
+          <!-- Custom Amount Number Input -->
+          <div style="display:flex;align-items:center;background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:4px 10px">
+            <span style="font-size:15px;font-weight:800;color:var(--gold);margin-right:6px">₹</span>
+            <input type="number" id="customPaymentAmount" value="500" min="1" step="any" placeholder="Enter any amount (₹30, ₹40, ₹1000...)" oninput="onCustomAmountInput(this.value)" style="width:100%;background:transparent;border:none;color:#fff;font-size:15px;font-weight:700;outline:none;padding:4px 0">
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:5px">
+            💡 ₹500 அல்லது விருப்பப்படும் எந்த கூடுதல் தொகையையும் (₹30, ₹40, கடன் தவணை) இங்கு மாற்றலாம்.
+          </div>
+        </div>
+
         <!-- QR Code -->
         <div class="qr-container" id="qrContainer">
             <img id="qrCodeImg" src="/assets/qr.png" onerror="this.onerror=null; this.src='/assets/qr.png';" alt="Payment QR">
@@ -1950,7 +1995,7 @@
             ⚡ Direct Mobile Payment / நேரடி பேமெண்ட்
           </div>
           <button type="button" class="btn-primary" onclick="openDirectUpiPay()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:14px;padding:12px;margin-bottom:8px;box-shadow:0 4px 16px rgba(34,197,94,0.3);cursor:pointer;border:none;border-radius:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
-            📱 <span>Pay via GPay / PhonePe / Paytm</span>
+            📱 <span id="directUpiPayBtnText">Pay via GPay / PhonePe / Paytm</span>
           </button>
           <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
             <button type="button" class="btn-secondary" onclick="openDirectUpiPay('gpay')" style="font-size:11px;padding:5px 10px;border-radius:16px;border-color:rgba(245,200,66,0.3);cursor:pointer">
@@ -1964,7 +2009,7 @@
             </button>
           </div>
           <div style="font-size:11px;color:var(--text3);margin-top:8px">
-            💡 Tap above to open UPI app directly, pay ₹500, then paste transaction ID below.
+            💡 மேலேயுள்ள பட்டனை கிளிக் செய்தால் குறிப்பிட்ட தொகை நேரடியாக UPI செயலியில் திறக்கும்!
           </div>
         </div>
         <!-- Payment form -->
@@ -2288,10 +2333,64 @@
             <div style="font-size:18px;font-weight:800;color:var(--red)" id="memRemainingDue">₹0</div>
           </div>
         </div>
+      <div class="card" style="border:1px solid rgba(245,200,66,0.35);background:linear-gradient(135deg,rgba(245,200,66,0.07),rgba(0,0,0,0.2))">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>🌿 Request Loan / கடன் உதவி விண்ணப்பம்</span>
+          <span style="font-size:11px;background:rgba(245,200,66,0.2);color:var(--gold);padding:3px 8px;border-radius:8px;font-weight:700">5% வட்டி</span>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
+          மாதந்தோறும் 10-ஆம் தேதி மாலை நிதி ஏலத்தின் போது கடன் உதவி வழங்கப்படும். உங்களுக்கு தேவையான தொகையையும் நாமினி பெயரையும் உள்ளிட்டு விண்ணப்பிக்கவும்.
+        </div>
+        
+        <div class="form-group">
+          <label>Requested Amount / கடன் தொகை (₹) *</label>
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+            <button type="button" class="btn-secondary" onclick="setLoanReqAmt(5000)" style="flex:1;padding:6px;font-size:12px;font-weight:700">₹5,000</button>
+            <button type="button" class="btn-secondary" onclick="setLoanReqAmt(10000)" style="flex:1;padding:6px;font-size:12px">₹10,000</button>
+            <button type="button" class="btn-secondary" onclick="setLoanReqAmt(20000)" style="flex:1;padding:6px;font-size:12px">₹20,000</button>
+          </div>
+          <input type="number" id="loanReqAmount" placeholder="Enter amount (e.g. 5000)" oninput="updateLoanCalcPreview()" value="5000">
+        </div>
+
+        <!-- Live 5% Interest Preview Box -->
+        <div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+          <div>
+            <div style="font-size:10px;color:var(--text3)">PRINCIPAL / அசல்</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text)" id="loanPrevPrincipal">₹5,000</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3)">5% INTEREST / வட்டி</div>
+            <div style="font-size:14px;font-weight:700;color:var(--gold)" id="loanPrevInterest">+₹250</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3)">TOTAL DUE / மொத்தம்</div>
+            <div style="font-size:14px;font-weight:800;color:var(--green)" id="loanPrevTotal">₹5,250</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nominee Name / நாமினி பெயர் *</label>
+          <input type="text" id="loanReqNominee" placeholder="Enter nominee name (e.g. Karthik / Father / Brother)">
+        </div>
+        <div class="form-group">
+          <label>Nominee Phone & Relationship / நாமினி தொடர்பு எண் & உறவு</label>
+          <input type="text" id="loanReqNomineePhone" placeholder="e.g. 9788123456 (Brother)">
+        </div>
+        <div class="form-group">
+          <label>Purpose / கடன் நோக்கம் (Optional)</label>
+          <input type="text" id="loanReqPurpose" placeholder="e.g. Emergency medical / business / education">
+        </div>
+
+        <button class="btn-primary" style="width:100%;background:linear-gradient(135deg,var(--gold),#d97706);color:#000;font-weight:800;padding:12px;font-size:14px" onclick="submitLoanRequest()">
+          📩 Submit Loan Request / கடனுக்கு விண்ணப்பிக்கவும்
+        </button>
+
+        <!-- Member's submitted requests status -->
+        <div id="memLoanRequestsList" style="margin-top:14px"></div>
       </div>
 
       <div class="card">
-        <div class="card-title">📋 Active Loans</div>
+        <div class="card-title">📋 Active Loans & Repayments / நிலுவைக் கடன்கள்</div>
         <div id="memActiveLoansContainer" style="max-height:220px;overflow-y:auto">
           <div style="text-align:center;padding:20px;color:var(--text3)">Loading your seed fund loans...</div>
         </div>
@@ -3434,9 +3533,101 @@ function showPage(name) {
   window.scrollTo(0, 0);
 }
 
-// ============================================================
-// Member Seed Fund & Nominee Handlers
-// ============================================================
+function setLoanReqAmt(amt) {
+  const el = document.getElementById('loanReqAmount');
+  if (el) el.value = amt;
+  updateLoanCalcPreview();
+}
+
+function updateLoanCalcPreview() {
+  const p = parseFloat(document.getElementById('loanReqAmount')?.value) || 0;
+  const i = Math.round(p * 0.05 * 100) / 100;
+  const t = Math.round((p + i) * 100) / 100;
+  const prevP = document.getElementById('loanPrevPrincipal');
+  const prevI = document.getElementById('loanPrevInterest');
+  const prevT = document.getElementById('loanPrevTotal');
+  if (prevP) prevP.textContent = `₹${p.toLocaleString('en-IN')}`;
+  if (prevI) prevI.textContent = `+₹${i.toLocaleString('en-IN')}`;
+  if (prevT) prevT.textContent = `₹${t.toLocaleString('en-IN')}`;
+}
+
+async function submitLoanRequest() {
+  if (!currentUser) return;
+  const requested_amount = parseFloat(document.getElementById('loanReqAmount').value);
+  const nominee_name = document.getElementById('loanReqNominee').value.trim();
+  const nominee_phone = document.getElementById('loanReqNomineePhone').value.trim();
+  const purpose = document.getElementById('loanReqPurpose').value.trim();
+
+  if (isNaN(requested_amount) || requested_amount <= 0) {
+    showToast('Please enter a valid requested loan amount. (செல்லுபடியாகும் தொகையை உள்ளிடவும்)', 'error');
+    return;
+  }
+  if (!nominee_name) {
+    showToast('Nominee Name is required. (நாமினி பெயர் கட்டாயம்)', 'error');
+    return;
+  }
+
+  try {
+    const res = await api('/api/seed-fund/requests', {
+      method: 'POST',
+      body: JSON.stringify({
+        requested_amount,
+        nominee_name,
+        nominee_phone,
+        purpose,
+        member_id: currentUser.id
+      })
+    });
+    showToast(res.message || 'Loan request submitted successfully! (கடன் விண்ணப்பம் அனுப்பப்பட்டது)', 'success');
+    document.getElementById('loanReqPurpose').value = '';
+    loadMemberLoanRequests();
+  } catch (err) {
+    showToast(err.message || 'Failed to submit loan request', 'error');
+  }
+}
+
+async function loadMemberLoanRequests() {
+  const container = document.getElementById('memLoanRequestsList');
+  if (!container) return;
+  try {
+    const data = await api('/api/seed-fund/requests');
+    const reqs = data.requests || [];
+    if (reqs.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px">📋 My Loan Requests Status / எனது விண்ணப்பங்கள்:</div>
+      ${reqs.map(r => {
+        const badgeStyle = r.status === 'APPROVED' ? 'badge-active' : (r.status === 'REJECTED' ? 'badge-rejected' : 'badge-pending');
+        const statusLabel = r.status === 'APPROVED' ? '✅ APPROVED' : (r.status === 'REJECTED' ? '❌ REJECTED' : '⏳ PENDING REVIEW');
+        return `
+          <div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--gold)">₹${parseFloat(r.requested_amount).toLocaleString('en-IN')} (5% Int: ₹${(r.requested_amount * 0.05).toLocaleString('en-IN')})</div>
+              <div style="font-size:11px;color:var(--text3)">Nominee: ${esc(r.nominee_name)} · ${r.created_at ? r.created_at.split('T')[0] : ''}</div>
+            </div>
+            <span class="badge ${badgeStyle}">${statusLabel}</span>
+          </div>
+        `;
+      }).join('')}
+    `;
+  } catch (err) {
+    console.warn('Could not load loan requests:', err);
+  }
+}
+
+function openLoanRepayForDist(distId, remaining, total) {
+  showPage('payment');
+  setPaymentAmount(remaining, `Loan #${distId} Repay`);
+  const refInput = document.getElementById('transactionRef');
+  if (refInput && !refInput.value) {
+    refInput.placeholder = `Loan #${distId} Repayment UTR / Ref ID...`;
+  }
+  showToast(`Loan #${distId} Repayment of ₹${parseFloat(remaining).toLocaleString('en-IN')} selected. நீங்கள் விரும்பினால் தொகையை மாற்றலாம்.`, 'info');
+}
+
 async function loadMemberSeedFund() {
   if (!currentUser) return;
   try {
@@ -3455,26 +3646,52 @@ async function loadMemberSeedFund() {
     if (document.getElementById('memTotalBorrowed')) document.getElementById('memTotalBorrowed').textContent = `₹${totalBorrowed.toLocaleString('en-IN')}`;
     if (document.getElementById('memRemainingDue')) document.getElementById('memRemainingDue').textContent = `₹${totalRemaining.toLocaleString('en-IN')}`;
 
-    if (!container) return;
-    if (distributions.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">No active seed fund loans found.</div>';
-    } else {
-      container.innerHTML = distributions.map(d => `
-        <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <strong style="color:var(--gold)">Loan #${d.id} — ${d.group_name || 'General'}</strong>
-            <span class="badge ${parseFloat(d.remaining_amount) <= 0 ? 'badge-active' : 'badge-pending'}">${d.payment_status}</span>
-          </div>
-          <div style="font-size:12px;color:var(--text2);display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <div>Principal: ₹${parseFloat(d.principal_amount).toLocaleString('en-IN')}</div>
-            <div>Interest (${d.interest_percentage}%): ₹${parseFloat(d.interest_amount).toLocaleString('en-IN')}</div>
-            <div>Total Payable: ₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</div>
-            <div>Paid: ₹${parseFloat(d.total_repaid || 0).toLocaleString('en-IN')}</div>
-          </div>
-          <div style="font-size:12px;color:var(--red);font-weight:700;margin-top:6px">Remaining Due: ₹${parseFloat(d.remaining_amount).toLocaleString('en-IN')} (Due Date: ${d.due_date})</div>
-        </div>
-      `).join('');
+    if (container) {
+      if (distributions.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">No active seed fund loans found.</div>';
+      } else {
+        container.innerHTML = distributions.map(d => {
+          const rem = parseFloat(d.remaining_amount || 0);
+          const isPaid = rem <= 0 || d.payment_status === 'PAID';
+          const isPartial = rem > 0 && parseFloat(d.total_repaid || 0) > 0;
+          const statusBadge = isPaid
+            ? '<span class="badge badge-active">✅ PAID</span>'
+            : (isPartial ? '<span class="badge badge-pending">🟡 PARTIAL</span>' : '<span class="badge badge-rejected">⏳ PENDING</span>');
+
+          return `
+            <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <strong style="color:var(--gold)">Loan #${d.id} — ${esc(d.group_name || 'General')}</strong>
+                ${statusBadge}
+              </div>
+              <div style="font-size:12px;color:var(--text2);display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div>Principal: <strong>₹${parseFloat(d.principal_amount).toLocaleString('en-IN')}</strong></div>
+                <div>5% Interest: <strong style="color:var(--gold)">+₹${parseFloat(d.interest_amount).toLocaleString('en-IN')}</strong></div>
+                <div>Total Due: <strong>₹${parseFloat(d.total_payable).toLocaleString('en-IN')}</strong></div>
+                <div>Paid so far: <strong style="color:var(--green)">₹${parseFloat(d.total_repaid || 0).toLocaleString('en-IN')}</strong></div>
+              </div>
+              <div style="font-size:13px;color:${isPaid ? 'var(--green)' : 'var(--red)'};font-weight:700;margin-top:8px">
+                Remaining Due / நிலுவை: ₹${rem.toLocaleString('en-IN')} 
+                <span style="font-size:11px;color:var(--text3);font-weight:400;margin-left:6px">(Due by 10th: ${d.due_date || '—'})</span>
+              </div>
+              ${!isPaid ? `
+                <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn-primary" style="flex:2;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;font-weight:700;padding:8px 10px;font-size:12px;border-radius:8px;border:none;cursor:pointer" onclick="openLoanRepayForDist(${d.id}, ${rem}, ${d.total_payable})">
+                    💳 Pay Full Balance (₹${rem.toLocaleString('en-IN')})
+                  </button>
+                  <button class="btn-secondary" style="flex:1;padding:8px 10px;font-size:12px;font-weight:600;border-radius:8px" onclick="openLoanRepayForDist(${d.id}, ${Math.min(rem, 1000)}, ${d.total_payable})">
+                    💵 Pay ₹${Math.min(rem, 1000)}
+                  </button>
+                </div>
+              ` : '<div style="margin-top:8px;color:var(--green);font-size:12px;font-weight:700">✅ This loan has been fully settled!</div>'}
+            </div>
+          `;
+        }).join('');
+      }
     }
+
+    // Load member's loan requests
+    loadMemberLoanRequests();
 
     // Load Nominee details
     const nomRes = await api(`/api/nominees/member/${currentUser.id}`);
@@ -3483,6 +3700,12 @@ async function loadMemberSeedFund() {
       if (document.getElementById('nomRelation')) document.getElementById('nomRelation').value = nomRes.nominee.relationship || '';
       if (document.getElementById('nomPhone')) document.getElementById('nomPhone').value = nomRes.nominee.contact_phone || '';
       if (document.getElementById('nomAddress')) document.getElementById('nomAddress').value = nomRes.nominee.address || '';
+      if (document.getElementById('loanReqNominee') && !document.getElementById('loanReqNominee').value) {
+        document.getElementById('loanReqNominee').value = nomRes.nominee.nominee_name || '';
+      }
+      if (document.getElementById('loanReqNomineePhone') && !document.getElementById('loanReqNomineePhone').value) {
+        document.getElementById('loanReqNomineePhone').value = [nomRes.nominee.contact_phone, nomRes.nominee.relationship].filter(Boolean).join(' - ');
+      }
     }
   } catch (e) { console.warn('Could not load member seed fund info:', e.message); }
 }
@@ -3809,12 +4032,49 @@ function getActiveAdminUpiId() {
   return 'sarath9025@cnrb';
 }
 
+function getSelectedPaymentAmount() {
+  const el = document.getElementById('customPaymentAmount');
+  if (el && el.value) {
+    const val = parseFloat(el.value);
+    if (!isNaN(val) && val > 0) return val;
+  }
+  return parseFloat((window.appSettings && window.appSettings.default_payment_amount) || 500);
+}
+
+function setPaymentAmount(amt, label) {
+  const inp = document.getElementById('customPaymentAmount');
+  if (inp) inp.value = amt;
+  onCustomAmountInput(amt, label);
+}
+
+function focusCustomAmount() {
+  const inp = document.getElementById('customPaymentAmount');
+  if (inp) {
+    inp.focus();
+    inp.select();
+  }
+}
+
+function onCustomAmountInput(val, label) {
+  const num = parseFloat(val) || 0;
+  const disp = document.getElementById('paymentAmount');
+  if (disp) disp.textContent = `₹${num.toLocaleString('en-IN')}`;
+  const badge = document.getElementById('amountTypeBadge');
+  if (badge) {
+    if (label) badge.textContent = label;
+    else if (num === 500) badge.textContent = 'Monthly Chit';
+    else badge.textContent = 'Custom Amount';
+  }
+  const payBtnText = document.getElementById('directUpiPayBtnText');
+  if (payBtnText) payBtnText.textContent = `Pay ₹${num.toLocaleString('en-IN')} via GPay / PhonePe / Paytm`;
+}
+
 function openDirectUpiPay(app) {
   const upiId = getActiveAdminUpiId();
   const upiName = encodeURIComponent((window.appSettings && window.appSettings.admin_upi_name) || 'PF Chit Fund Club');
-  const amount = parseFloat((window.appSettings && window.appSettings.default_payment_amount) || 500);
+  const amount = getSelectedPaymentAmount();
   const memId = (currentUser && (currentUser.member_id || currentUser.id)) ? `Member-${currentUser.member_id || currentUser.id}` : 'Member';
-  const note = encodeURIComponent(`Chit Payment ${memId}`);
+  const note = encodeURIComponent(`Chit Payment ₹${amount} - ${memId}`);
 
   const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${upiName}&am=${amount}&cu=INR&tn=${note}`;
   window.location.href = upiUrl;
@@ -3858,6 +4118,8 @@ async function submitPayment() {
   const month = document.getElementById('paymentMonth').value;
   const ref = document.getElementById('transactionRef').value.trim();
   const file = document.getElementById('screenshotFile').files[0];
+  const payAmount = getSelectedPaymentAmount();
+
   if (!month) { showToast('Please select a payment month', 'error'); return; }
   if (!ref) { showToast('Please enter transaction reference ID', 'error'); return; }
   if (!file) { showToast('Please upload a payment screenshot', 'error'); return; }
@@ -3869,7 +4131,7 @@ async function submitPayment() {
     formData.append('member_id', currentUser.id);
     formData.append('payment_date', new Date().toISOString().split('T')[0]);
     formData.append('payment_month', month);
-    formData.append('amount', appSettings.default_payment_amount || 500);
+    formData.append('amount', payAmount);
     formData.append('transaction_reference', ref);
     const response = await fetch(`${BASE}/api/payment-verification/upload-proof`, {
       method: 'POST',
@@ -3883,9 +4145,9 @@ async function submitPayment() {
     playSuccessSound();
 
     if (data.auto_approved) {
-      showToast('🎉 ' + (currentLang === 'ta' ? 'பணம் உடனடியாக சரிபார்க்கப்பட்டு ₹500 உங்கள் கணக்கில் வரவு வைக்கப்பட்டது!' : 'Payment auto-verified and ₹500 credited to your account!'), 'success');
+      showToast('🎉 ' + (currentLang === 'ta' ? `பணம் உடனடியாக சரிபார்க்கப்பட்டு ₹${payAmount} உங்கள் கணக்கில் வரவு வைக்கப்பட்டது!` : `Payment auto-verified and ₹${payAmount} credited to your account!`), 'success');
     } else {
-      showToast(t('submitSuccess'), 'success');
+      showToast(data.message || t('submitSuccess'), 'success');
     }
 
     // Reset form

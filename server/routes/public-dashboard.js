@@ -368,5 +368,203 @@ router.get('/member/:code', async (req, res) => {
   }
 });
 
+/**
+ * GET MONTHLY FINANCIAL STATEMENT (INFLOWS, OUTFLOWS, NET BALANCE & DETAILED RECORDS)
+ * GET /api/public-dashboard/monthly-statement?month=YYYY-MM
+ */
+router.get('/monthly-statement', async (req, res) => {
+  try {
+    const currentMonth = new Date().toISOString().substring(0, 7);
+    const targetMonth = req.query.month ? String(req.query.month).trim().substring(0, 7) : currentMonth;
+
+    // 1. Fetch Inflows (Approved member payments & repayments in target month)
+    const inflowsSql = `
+      SELECT 
+        p.id,
+        p.member_id,
+        p.amount,
+        p.transaction_reference,
+        p.payment_month,
+        p.payment_date,
+        p.created_at,
+        p.status,
+        COALESCE(m.name, 'Member #' || p.member_id) as member_name,
+        COALESCE(m.member_id, '' || p.member_id) as member_code,
+        COALESCE(m.phone, '—') as member_phone,
+        'MONTHLY_PAYMENT' as category
+      FROM payment_proofs p
+      LEFT JOIN members m ON p.member_id = m.id
+      WHERE (p.status = 'APPROVED' OR p.status = 'PAID')
+        AND (p.payment_date LIKE $1 || '%' OR p.payment_month LIKE $1 || '%')
+      ORDER BY p.payment_date DESC, p.id DESC
+    `;
+    const inflowsRes = await pool.query(inflowsSql, [targetMonth]);
+
+    // Also fetch repayments in target month
+    const repaymentsSql = `
+      SELECT 
+        r.id,
+        r.distribution_id,
+        r.member_id,
+        r.payment_amount as amount,
+        r.payment_date,
+        r.payment_method,
+        r.transaction_ref as transaction_reference,
+        r.created_at,
+        r.status,
+        COALESCE(m.name, 'Member #' || r.member_id) as member_name,
+        COALESCE(m.member_id, '' || r.member_id) as member_code,
+        COALESCE(m.phone, '—') as member_phone,
+        'LOAN_REPAYMENT' as category
+      FROM repayments r
+      LEFT JOIN members m ON r.member_id = m.id
+      WHERE r.payment_date LIKE $1 || '%'
+      ORDER BY r.payment_date DESC, r.id DESC
+    `;
+    const repaymentsRes = await pool.query(repaymentsSql, [targetMonth]);
+
+    // Combine all inflows for target month
+    const allInflows = [
+      ...inflowsRes.rows.map(r => {
+        let timeStr = '12:00:00';
+        if (r.created_at) {
+          const parts = String(r.created_at).split('T');
+          if (parts[1]) timeStr = parts[1].substring(0, 8);
+          else {
+            const sp = String(r.created_at).split(' ');
+            if (sp[1]) timeStr = sp[1].substring(0, 8);
+          }
+        }
+        return {
+          id: r.id,
+          member_id: r.member_id,
+          member_name: r.member_name,
+          member_code: r.member_code,
+          member_phone: r.member_phone,
+          amount: parseFloat(r.amount) || 0,
+          payment_date: r.payment_date,
+          payment_time: timeStr,
+          transaction_reference: r.transaction_reference || 'DIRECT-UPI',
+          category: 'Monthly Chit Payment (சீட்டு கட்டணம்)'
+        };
+      }),
+      ...repaymentsRes.rows.map(r => {
+        let timeStr = '12:00:00';
+        if (r.created_at) {
+          const parts = String(r.created_at).split('T');
+          if (parts[1]) timeStr = parts[1].substring(0, 8);
+          else {
+            const sp = String(r.created_at).split(' ');
+            if (sp[1]) timeStr = sp[1].substring(0, 8);
+          }
+        }
+        return {
+          id: r.id,
+          member_id: r.member_id,
+          member_name: r.member_name,
+          member_code: r.member_code,
+          member_phone: r.member_phone,
+          amount: parseFloat(r.amount) || 0,
+          payment_date: r.payment_date,
+          payment_time: timeStr,
+          transaction_reference: r.transaction_reference || `REPAY-LOAN-#${r.distribution_id}`,
+          category: `Loan Repayment (கடன் தவணை #${r.distribution_id})`
+        };
+      })
+    ];
+
+    allInflows.sort((a, b) => (b.payment_date + b.payment_time).localeCompare(a.payment_date + a.payment_time));
+
+    // 2. Fetch Outflows (Loans Distributed in target month)
+    const outflowsSql = `
+      SELECT 
+        d.id,
+        d.member_id,
+        d.principal_amount,
+        d.interest_percentage,
+        d.interest_amount,
+        d.total_payable,
+        d.total_repaid,
+        d.remaining_amount,
+        d.distribution_date,
+        d.due_date,
+        d.nominee_name,
+        d.payment_status,
+        d.notes,
+        COALESCE(m.name, 'Member #' || d.member_id) as member_name,
+        COALESCE(m.member_id, '' || d.member_id) as member_code,
+        COALESCE(m.phone, '—') as member_phone
+      FROM seed_fund_distributions d
+      LEFT JOIN members m ON d.member_id = m.id
+      WHERE d.distribution_date LIKE $1 || '%'
+      ORDER BY d.distribution_date DESC, d.id DESC
+    `;
+    const outflowsRes = await pool.query(outflowsSql, [targetMonth]);
+    const outflows = outflowsRes.rows.map(d => ({
+      id: d.id,
+      member_id: d.member_id,
+      member_name: d.member_name,
+      member_code: d.member_code,
+      member_phone: d.member_phone,
+      principal_amount: parseFloat(d.principal_amount) || 0,
+      interest_percentage: parseFloat(d.interest_percentage) || 5,
+      interest_amount: parseFloat(d.interest_amount) || 0,
+      total_payable: parseFloat(d.total_payable) || 0,
+      total_repaid: parseFloat(d.total_repaid) || 0,
+      remaining_amount: parseFloat(d.remaining_amount) || 0,
+      distribution_date: d.distribution_date,
+      due_date: d.due_date,
+      nominee_name: d.nominee_name || '—',
+      payment_status: d.payment_status || 'PENDING',
+      notes: d.notes
+    }));
+
+    // 3. Totals
+    const totalInflow = Math.round(allInflows.reduce((acc, x) => acc + x.amount, 0) * 100) / 100;
+    const totalOutflow = Math.round(outflows.reduce((acc, x) => acc + x.principal_amount, 0) * 100) / 100;
+    const netMonthlyFlow = Math.round((totalInflow - totalOutflow) * 100) / 100;
+
+    // Overall metrics for closing balance
+    const overallColl = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payment_proofs WHERE status = 'APPROVED' OR status = 'PAID'`);
+    const overallRepay = await pool.query(`SELECT COALESCE(SUM(payment_amount), 0) as total FROM repayments`);
+    const overallLoans = await pool.query(`SELECT COALESCE(SUM(principal_amount), 0) as total FROM seed_fund_distributions`);
+
+    const poolCollection = parseFloat(overallColl.rows[0]?.total || 0) + parseFloat(overallRepay.rows[0]?.total || 0);
+    const poolDisbursed = parseFloat(overallLoans.rows[0]?.total || 0);
+    const currentPoolBalance = Math.max(0, Math.round((poolCollection - poolDisbursed) * 100) / 100);
+
+    // 4. Generate list of available months (last 12 months including target)
+    const availableMonths = [];
+    const dateCursor = new Date();
+    for (let i = 0; i < 12; i++) {
+      const mStr = dateCursor.toISOString().substring(0, 7);
+      if (!availableMonths.includes(mStr)) availableMonths.push(mStr);
+      dateCursor.setMonth(dateCursor.getMonth() - 1);
+    }
+    if (!availableMonths.includes(targetMonth)) availableMonths.unshift(targetMonth);
+
+    res.json({
+      success: true,
+      month: targetMonth,
+      available_months: availableMonths,
+      summary: {
+        total_inflow: totalInflow,
+        total_outflow: totalOutflow,
+        net_monthly_flow: netMonthlyFlow,
+        total_transactions_count: allInflows.length + outflows.length,
+        inflow_count: allInflows.length,
+        outflow_count: outflows.length,
+        current_pool_balance: currentPoolBalance
+      },
+      inflows: allInflows,
+      outflows: outflows
+    });
+  } catch (error) {
+    console.error('Monthly Statement Error:', error);
+    res.status(500).json({ success: false, error: 'Failed to generate monthly statement: ' + error.message });
+  }
+});
+
 module.exports = router;
+
 
