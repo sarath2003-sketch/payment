@@ -414,7 +414,7 @@ app.use(fileUpload({
 // ============================================================
 // Static Files
 // ============================================================
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: 'public-dashboard.html' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ============================================================
