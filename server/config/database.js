@@ -276,6 +276,9 @@ function initSQLiteFallback() {
         );
       `);
       sqliteDb.run(`ALTER TABLE chat_group_members ADD COLUMN is_speaker INTEGER DEFAULT 0`, () => {});
+      sqliteDb.run(`ALTER TABLE chat_groups ADD COLUMN ludo_active INTEGER DEFAULT 0`, () => {});
+      sqliteDb.run(`ALTER TABLE chat_groups ADD COLUMN ludo_state TEXT DEFAULT ''`, () => {});
+      sqliteDb.run(`CREATE INDEX IF NOT EXISTS idx_chat_group_messages_gid ON chat_group_messages(group_id, created_at)`, () => {});
 
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS chat_group_messages (

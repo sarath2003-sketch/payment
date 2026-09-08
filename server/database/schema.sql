@@ -269,6 +269,8 @@ CREATE TABLE IF NOT EXISTS chat_groups (
     group_admin_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
     max_members INTEGER DEFAULT 12,
     status VARCHAR(20) DEFAULT 'PENDING',
+    ludo_active BOOLEAN DEFAULT FALSE,
+    ludo_state TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -332,6 +334,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_auction_id ON auction_chat_messages(auction_
 CREATE INDEX IF NOT EXISTS idx_notifications_member_id ON notifications(member_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_type, actor_id);
+CREATE INDEX IF NOT EXISTS idx_chat_group_messages_gid ON chat_group_messages(group_id, created_at);
 
 -- ============================================================
 -- DEFAULT APP SETTINGS

@@ -128,6 +128,7 @@ router.get('/:id', async (req, res) => {
     const groupRes = await pool.query(`
       SELECT 
         g.id, g.group_name, g.created_by, g.group_admin_id, g.max_members, g.status, g.created_at,
+        g.ludo_active, g.ludo_state,
         m.name AS owner_name, m.member_id AS owner_member_id
       FROM chat_groups g
       LEFT JOIN members m ON g.group_admin_id = m.id
@@ -139,6 +140,14 @@ router.get('/:id', async (req, res) => {
     }
 
     const group = groupRes.rows[0];
+
+    // Parse ludo state safely
+    let parsedLudoState = null;
+    try {
+      if (group.ludo_state) {
+        parsedLudoState = typeof group.ludo_state === 'string' ? JSON.parse(group.ludo_state) : group.ludo_state;
+      }
+    } catch (e) {}
 
     // Fetch members in group
     const membersRes = await pool.query(`
@@ -156,22 +165,51 @@ router.get('/:id', async (req, res) => {
     const isMember = isAdmin ? true : !!currentMemberObj;
     const isOwner = isAdmin ? true : (group.group_admin_id === memberId);
     const isSpeaker = isAdmin ? true : (currentMemberObj ? (currentMemberObj.is_speaker === true || currentMemberObj.is_speaker === 1) : false);
-    const userRole = isAdmin ? 'ADMIN' : (currentMemberObj?.role || null);
+    const userRole = isAdmin ? 'MAIN_ADMIN' : (currentMemberObj?.role || null);
     const userMuted = isAdmin ? false : (currentMemberObj?.is_muted || false);
 
-    // Filter speakers vs audience
-    const speakers = activeMembers.filter(m => m.is_speaker === true || m.is_speaker === 1);
-    const audience = activeMembers.filter(m => !(m.is_speaker === true || m.is_speaker === 1));
-
-    // Build 12 Speaker Slots
-    const maxSlots = 12;
+    // Build 12 Speaker Slots with Main Admin in Slot #1 and Room Owner as Co-Admin in Slot #2
     const speakerSlots = [];
+    
+    // Slot 1: Supreme Main Admin (கிளப் தலைமை / தலைவர்)
+    speakerSlots.push({
+      slot_number: 1,
+      is_empty: false,
+      member_id_pk: 0,
+      member_id: 'ADMIN',
+      name: '👑 Main Admin / கிளப் தலைமை',
+      role: 'MAIN_ADMIN',
+      is_muted: false,
+      is_online: true,
+      is_owner: true,
+      is_supreme: true
+    });
 
-    for (let i = 0; i < maxSlots; i++) {
-      if (i < speakers.length) {
-        const mem = speakers[i];
+    // Slot 2: Room Creator / Co-Admin (குழு பொறுப்பாளர்)
+    const coAdminMem = activeMembers.find(m => m.member_id_pk === group.group_admin_id);
+    speakerSlots.push({
+      slot_number: 2,
+      is_empty: false,
+      member_id_pk: group.group_admin_id || 1,
+      member_id: group.owner_member_id || ('#' + (group.group_admin_id || 1)),
+      name: (group.owner_name || 'Group Admin') + ' (துணை அட்மின்)',
+      role: 'CO_ADMIN',
+      is_muted: coAdminMem ? !!coAdminMem.is_muted : false,
+      is_online: coAdminMem ? !!coAdminMem.is_online : true,
+      is_owner: false,
+      is_co_admin: true
+    });
+
+    // Remaining speakers (excluding the co-admin who is already in slot 2)
+    const otherSpeakers = activeMembers.filter(m => (m.is_speaker === true || m.is_speaker === 1) && m.member_id_pk !== group.group_admin_id);
+
+    // Slots 3 to 12
+    for (let slotNum = 3; slotNum <= 12; slotNum++) {
+      const spkIdx = slotNum - 3;
+      if (spkIdx < otherSpeakers.length) {
+        const mem = otherSpeakers[spkIdx];
         speakerSlots.push({
-          slot_number: i + 1,
+          slot_number: slotNum,
           is_empty: false,
           member_id_pk: mem.member_id_pk,
           member_id: mem.member_id,
@@ -179,27 +217,32 @@ router.get('/:id', async (req, res) => {
           role: mem.role,
           is_muted: !!mem.is_muted,
           is_online: !!mem.is_online,
-          is_owner: mem.member_id_pk === group.group_admin_id
+          is_owner: false
         });
       } else {
         speakerSlots.push({
-          slot_number: i + 1,
+          slot_number: slotNum,
           is_empty: true
         });
       }
     }
 
+    const audience = activeMembers.filter(m => !(m.is_speaker === true || m.is_speaker === 1) && m.member_id_pk !== group.group_admin_id);
+
     res.json({
       group: {
         ...group,
+        ludo_active: !!group.ludo_active,
+        ludo_state: parsedLudoState,
         max_members: 12,
-        total_member_count: activeMembers.length,
-        speaker_count: speakers.length,
+        total_member_count: activeMembers.length + (isAdmin ? 1 : 0),
+        speaker_count: 2 + otherSpeakers.length,
         is_member: isMember,
         is_owner: isOwner,
         is_speaker: isSpeaker,
         user_role: userRole,
-        user_muted: userMuted
+        user_muted: userMuted,
+        is_main_admin: isAdmin
       },
       speaker_slots: speakerSlots,
       audience: audience,
@@ -219,11 +262,27 @@ router.post('/:id/join', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
-    const memberId = req.admin.id;
+    const isAdmin = req.admin?.type === 'admin';
+    const memberId = isAdmin ? 0 : req.admin.id;
 
     const groupRes = await pool.query('SELECT id, group_name, status FROM chat_groups WHERE id = $1', [groupId]);
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Chat group not found' });
     const group = groupRes.rows[0];
+
+    // Main Admin has supreme authority - always joins without restriction
+    if (isAdmin) {
+      if (io) {
+        io.to(`group_${groupId}`).emit('group:member-joined', {
+          group_id: groupId,
+          member_id_pk: 0,
+          member_id: 'ADMIN',
+          name: '👑 Main Admin / கிளப் தலைமை',
+          is_speaker: true,
+          total_member_count: 1
+        });
+      }
+      return res.json({ message: 'Supreme Admin entered chat room!', is_speaker: true, total_member_count: 1 });
+    }
 
     const allowedJoinStatuses = ['APPROVED', 'ACTIVE', 'FULL'];
     if (!allowedJoinStatuses.includes(group.status)) {
@@ -281,6 +340,10 @@ router.post('/:id/take-speaker-slot', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
+    const isAdmin = req.admin?.type === 'admin';
+    if (isAdmin) {
+      return res.json({ message: 'Supreme Admin stage slot occupied' });
+    }
     const memberId = req.admin.id;
 
     // Verify membership
@@ -316,6 +379,10 @@ router.post('/:id/leave-speaker-slot', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
+    const isAdmin = req.admin?.type === 'admin';
+    if (isAdmin) {
+      return res.json({ message: 'Admin stepped down' });
+    }
     const memberId = req.admin.id;
 
     await pool.query('UPDATE chat_group_members SET is_speaker = 0 WHERE group_id = $1 AND member_id = $2', [groupId, memberId]);
@@ -339,6 +406,10 @@ router.post('/:id/leave', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
+    const isAdmin = req.admin?.type === 'admin';
+    if (isAdmin) {
+      return res.json({ message: 'Admin left view' });
+    }
     const memberId = req.admin.id;
 
     const groupRes = await pool.query('SELECT id, group_admin_id FROM chat_groups WHERE id = $1', [groupId]);
@@ -480,7 +551,6 @@ router.post('/:id/messages', async (req, res) => {
 
     if (io) {
       io.to(`group_${groupId}`).emit('group:new-message', msgData);
-      io.emit('group:new-message', msgData);
     }
 
     res.json({ message: 'Sent', chat: msgData });
@@ -491,21 +561,22 @@ router.post('/:id/messages', async (req, res) => {
 });
 
 /**
- * POST /api/chat-groups/:id/mute (Self or Group Admin)
+ * POST /api/chat-groups/:id/mute (Self or Group Admin or Main Admin)
  */
 router.post('/:id/mute', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
-    const actorId = req.admin.id;
+    const isAdmin = req.admin?.type === 'admin';
+    const actorId = isAdmin ? 0 : req.admin.id;
     const targetMemberId = parseInt(req.body.target_member_id || actorId);
 
     const groupRes = await pool.query('SELECT group_admin_id FROM chat_groups WHERE id = $1', [groupId]);
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Group not found' });
     const isGroupAdmin = groupRes.rows[0].group_admin_id === actorId;
 
-    if (targetMemberId !== actorId && !isGroupAdmin) {
-      return res.status(403).json({ error: 'Only Group Owner can mute other members' });
+    if (!isAdmin && targetMemberId !== actorId && !isGroupAdmin) {
+      return res.status(403).json({ error: 'Only Group Owner or Main Admin can mute other members' });
     }
 
     await pool.query('UPDATE chat_group_members SET is_muted = 1 WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
@@ -521,21 +592,22 @@ router.post('/:id/mute', async (req, res) => {
 });
 
 /**
- * POST /api/chat-groups/:id/unmute (Self or Group Admin)
+ * POST /api/chat-groups/:id/unmute (Self or Group Admin or Main Admin)
  */
 router.post('/:id/unmute', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
-    const actorId = req.admin.id;
+    const isAdmin = req.admin?.type === 'admin';
+    const actorId = isAdmin ? 0 : req.admin.id;
     const targetMemberId = parseInt(req.body.target_member_id || actorId);
 
     const groupRes = await pool.query('SELECT group_admin_id FROM chat_groups WHERE id = $1', [groupId]);
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Group not found' });
     const isGroupAdmin = groupRes.rows[0].group_admin_id === actorId;
 
-    if (targetMemberId !== actorId && !isGroupAdmin) {
-      return res.status(403).json({ error: 'Only Group Owner can unmute other members' });
+    if (!isAdmin && targetMemberId !== actorId && !isGroupAdmin) {
+      return res.status(403).json({ error: 'Only Group Owner or Main Admin can unmute other members' });
     }
 
     await pool.query('UPDATE chat_group_members SET is_muted = 0 WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
@@ -551,21 +623,22 @@ router.post('/:id/unmute', async (req, res) => {
 });
 
 /**
- * POST /api/chat-groups/:id/remove-member (Group Admin only)
+ * POST /api/chat-groups/:id/remove-member (Group Admin or Main Admin)
  */
 router.post('/:id/remove-member', async (req, res) => {
   const io = req.app.get('io');
   try {
     const groupId = parseInt(req.params.id);
-    const actorId = req.admin.id;
+    const isAdmin = req.admin?.type === 'admin';
+    const actorId = isAdmin ? 0 : req.admin.id;
     const targetMemberId = parseInt(req.body.target_member_id);
 
     if (!targetMemberId) return res.status(400).json({ error: 'target_member_id is required' });
 
     const groupRes = await pool.query('SELECT group_admin_id FROM chat_groups WHERE id = $1', [groupId]);
     if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Group not found' });
-    if (groupRes.rows[0].group_admin_id !== actorId) {
-      return res.status(403).json({ error: 'Only Group Owner can remove members' });
+    if (!isAdmin && groupRes.rows[0].group_admin_id !== actorId) {
+      return res.status(403).json({ error: 'Only Group Owner or Main Admin can remove members' });
     }
 
     await pool.query('DELETE FROM chat_group_members WHERE group_id = $1 AND member_id = $2', [groupId, targetMemberId]);
@@ -580,6 +653,100 @@ router.post('/:id/remove-member', async (req, res) => {
     res.json({ message: 'Member removed from group' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to remove member' });
+  }
+});
+
+/**
+ * POST /api/chat-groups/:id/ludo/toggle
+ * Toggle Ludo Mini-Game ON/OFF (Group Owner or Main Admin)
+ */
+router.post('/:id/ludo/toggle', async (req, res) => {
+  const io = req.app.get('io');
+  try {
+    const groupId = parseInt(req.params.id);
+    const isAdmin = req.admin?.type === 'admin';
+    const memberId = isAdmin ? 0 : req.admin.id;
+
+    const groupRes = await pool.query('SELECT group_admin_id, ludo_active FROM chat_groups WHERE id = $1', [groupId]);
+    if (groupRes.rows.length === 0) return res.status(404).json({ error: 'Group not found' });
+    const isOwner = groupRes.rows[0].group_admin_id === memberId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: 'Only Group Owner or Main Admin can toggle Ludo mini-game' });
+    }
+
+    const currentActive = groupRes.rows[0].ludo_active === 1 || groupRes.rows[0].ludo_active === true;
+    const newActive = currentActive ? 0 : 1;
+
+    await pool.query('UPDATE chat_groups SET ludo_active = $1 WHERE id = $2', [newActive, groupId]);
+
+    if (io) {
+      io.to(`group_${groupId}`).emit('group:ludo-toggled', { group_id: groupId, enabled: !!newActive });
+    }
+
+    res.json({ success: true, ludo_active: !!newActive });
+  } catch (err) {
+    console.error('Error toggling Ludo game:', err);
+    res.status(500).json({ error: 'Failed to toggle Ludo game' });
+  }
+});
+
+/**
+ * POST /api/chat-groups/:id/ludo/action
+ * Update Ludo game state (dice roll, token move, turn change)
+ */
+router.post('/:id/ludo/action', async (req, res) => {
+  const io = req.app.get('io');
+  try {
+    const groupId = parseInt(req.params.id);
+    const { action, state, player, message } = req.body || {};
+
+    if (state) {
+      const stateStr = typeof state === 'string' ? state : JSON.stringify(state);
+      await pool.query('UPDATE chat_groups SET ludo_state = $1 WHERE id = $2', [stateStr, groupId]);
+    }
+
+    if (io) {
+      io.to(`group_${groupId}`).emit('group:ludo-updated', {
+        group_id: groupId,
+        action,
+        state,
+        player,
+        message
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating Ludo game:', err);
+    res.status(500).json({ error: 'Failed to update Ludo game' });
+  }
+});
+
+/**
+ * GET /api/chat-groups/:id/ludo/state
+ * Fetch current Ludo game state
+ */
+router.get('/:id/ludo/state', async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    const gRes = await pool.query('SELECT ludo_active, ludo_state FROM chat_groups WHERE id = $1', [groupId]);
+    if (gRes.rows.length === 0) return res.status(404).json({ error: 'Group not found' });
+
+    let parsedState = null;
+    try {
+      if (gRes.rows[0].ludo_state) {
+        parsedState = typeof gRes.rows[0].ludo_state === 'string' ? JSON.parse(gRes.rows[0].ludo_state) : gRes.rows[0].ludo_state;
+      }
+    } catch (e) {}
+
+    res.json({
+      success: true,
+      ludo_active: !!gRes.rows[0].ludo_active,
+      ludo_state: parsedState
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch Ludo state' });
   }
 });
 

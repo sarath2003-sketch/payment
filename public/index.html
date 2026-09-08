@@ -2081,7 +2081,7 @@
 
     <!-- LIVE CHAT ROOM DETAIL PAGE -->
     <div id="chatRoomDetailPage" class="page">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
         <div style="display:flex;align-items:center;gap:10px">
           <button class="icon-btn" onclick="leaveCurrentChatRoomView()">←</button>
           <div>
@@ -2089,9 +2089,71 @@
             <div style="font-size:12px;color:var(--green);font-weight:600" id="crOnlineCount">🟢 0 / 12 Members Online</div>
           </div>
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-primary" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg, #10b981, #059669);display:none" id="crLudoToggleBtn" onclick="toggleLudoGame()">🎲 Ludo: ON / OFF</button>
           <button class="btn-secondary" style="padding:6px 12px;font-size:12px" id="crTransferAdminBtn" onclick="showTransferAdminModal()">👑 Transfer Admin</button>
           <button class="btn-danger" style="padding:6px 12px;font-size:12px" onclick="doLeaveGroup()">🚪 Leave Group</button>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE LUDO MINI-GAME CONTAINER (TOGGLEABLE ON/OFF) -->
+      <div id="ludoSection" class="card hidden" style="padding:14px;margin-bottom:14px;border:2px solid var(--gold);background:linear-gradient(180deg, rgba(245,200,66,0.06), rgba(0,0,0,0.4))">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:22px">🎲</span>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--gold)">Ludo Mini-Game / லூடோ விளையாட்டு</div>
+              <div id="ludoStatusMsg" style="font-size:12px;color:var(--text2);font-weight:600">Waiting to roll dice...</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn-secondary btn-sm" id="ludoResetBtn" onclick="resetLudoGame()" style="padding:4px 10px;font-size:11px">🔄 Reset Board</button>
+            <button class="btn-secondary btn-sm" onclick="toggleLudoGame()" style="padding:4px 10px;font-size:11px">✕ Close Game</button>
+          </div>
+        </div>
+
+        <!-- 4-Player Turn Status Bar -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-bottom:12px" id="ludoPlayerTurnBar">
+          <div class="ludo-player-card" id="lpc-0" style="padding:6px;text-align:center;border-radius:8px;background:rgba(239,68,68,0.15);border:2px solid #ef4444">
+            <div style="font-size:12px;font-weight:800;color:#ef4444">🔴 Red</div>
+            <div style="font-size:10px;color:var(--text3)" id="lpc-tokens-0">Home: 0/4</div>
+          </div>
+          <div class="ludo-player-card" id="lpc-1" style="padding:6px;text-align:center;border-radius:8px;background:rgba(16,185,129,0.15);border:2px solid #10b981">
+            <div style="font-size:12px;font-weight:800;color:#10b981">🟢 Green</div>
+            <div style="font-size:10px;color:var(--text3)" id="lpc-tokens-1">Home: 0/4</div>
+          </div>
+          <div class="ludo-player-card" id="lpc-2" style="padding:6px;text-align:center;border-radius:8px;background:rgba(245,158,11,0.15);border:2px solid #f59e0b">
+            <div style="font-size:12px;font-weight:800;color:#f59e0b">🟡 Yellow</div>
+            <div style="font-size:10px;color:var(--text3)" id="lpc-tokens-2">Home: 0/4</div>
+          </div>
+          <div class="ludo-player-card" id="lpc-3" style="padding:6px;text-align:center;border-radius:8px;background:rgba(59,130,246,0.15);border:2px solid #3b82f6">
+            <div style="font-size:12px;font-weight:800;color:#3b82f6">🔵 Blue</div>
+            <div style="font-size:10px;color:var(--text3)" id="lpc-tokens-3">Home: 0/4</div>
+          </div>
+        </div>
+
+        <!-- Interactive Ludo Board Graphic & Dice Control Area -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <div id="ludoBoardContainer" style="position:relative;width:100%;max-width:360px;aspect-ratio:1/1;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);overflow:hidden;border:3px solid var(--border)">
+            <!-- Interactive Ludo Board SVG -->
+            <svg id="ludoBoardSvg" viewBox="0 0 300 300" style="width:100%;height:100%;display:block">
+              <!-- Rendered via JS renderLudoSvg() -->
+            </svg>
+          </div>
+
+          <!-- Dice & Move Controls -->
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px;width:100%;background:rgba(0,0,0,0.25);padding:10px;border-radius:12px;border:1px solid var(--border)">
+            <button id="ludoDiceBtn" onclick="rollLudoDice()" style="width:54px;height:54px;font-size:30px;border-radius:12px;border:2px solid var(--gold);background:var(--bg2);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:transform 0.2s">
+              🎲
+            </button>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--text)" id="ludoDiceResult">Dice: —</div>
+              <div style="font-size:11px;color:var(--text3)" id="ludoDiceInstruction">Click dice to roll</div>
+            </div>
+            <button class="btn-primary btn-sm" id="ludoRollActionBtn" onclick="rollLudoDice()" style="padding:8px 16px;font-size:12px;font-weight:700">
+              🎲 உருட்டு / Roll
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3431,6 +3493,51 @@ function initSocket() {
       });
       socket.on('settings:updated', () => {
         loadSettings();
+      });
+      socket.on('group:new-message', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          appendGroupChatMessage(data, true);
+        }
+      });
+      socket.on('group:member-joined', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          refreshChatRoom(currentChatGroupId);
+        }
+      });
+      socket.on('group:member-left', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          refreshChatRoom(currentChatGroupId);
+        }
+      });
+      socket.on('group:member-muted', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          refreshChatRoom(currentChatGroupId);
+        }
+      });
+      socket.on('group:member-unmuted', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          refreshChatRoom(currentChatGroupId);
+        }
+      });
+      socket.on('group:member-removed', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          if (currentUser && data.member_id_pk === currentUser.id) {
+            showToast('You were removed from this chat room by Admin', 'warning');
+            leaveCurrentChatRoomView();
+          } else {
+            refreshChatRoom(currentChatGroupId);
+          }
+        }
+      });
+      socket.on('group:ludo-toggled', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          if (typeof onLudoToggled === 'function') onLudoToggled(data.enabled);
+        }
+      });
+      socket.on('group:ludo-updated', (data) => {
+        if (currentChatGroupId && data.group_id === currentChatGroupId) {
+          if (typeof onLudoUpdated === 'function') onLudoUpdated(data);
+        }
       });
     } catch (e) { console.warn('Socket init warning:', e.message); }
   }
@@ -5281,17 +5388,31 @@ async function refreshChatRoom(groupId) {
     document.getElementById('crTitle').textContent = data.group.group_name;
     document.getElementById('crOnlineCount').textContent = `🟢 ${data.group.total_member_count} Members Online (${data.group.speaker_count}/12 Speakers Active)`;
 
-    // Show or hide Transfer Admin button if user is Group Owner
     const isOwner = data.group.group_admin_id === currentUser.id;
+    const isMainAdmin = !!data.group.is_main_admin;
     document.getElementById('crTransferAdminBtn').style.display = isOwner ? 'block' : 'none';
 
-    renderSpeakerSlots(data.speaker_slots, isOwner);
+    // Ludo Game Toggle button visibility
+    const ludoBtn = document.getElementById('crLudoToggleBtn');
+    if (ludoBtn) {
+      ludoBtn.style.display = (isOwner || isMainAdmin) ? 'inline-block' : 'none';
+      ludoBtn.textContent = data.group.ludo_active ? '🎲 Ludo: ON' : '🎲 Ludo: OFF';
+    }
+
+    // Ludo Section state
+    if (data.group.ludo_active) {
+      onLudoToggled(true, data.group.ludo_state);
+    } else {
+      onLudoToggled(false);
+    }
+
+    renderSpeakerSlots(data.speaker_slots, isOwner || isMainAdmin);
   } catch(e) {
     console.error('Error refreshing chat room:', e);
   }
 }
 
-function renderSpeakerSlots(slots, isOwner) {
+function renderSpeakerSlots(slots, canModerate) {
   const container = document.getElementById('speakerSlotsGrid');
   container.innerHTML = slots.map(s => {
     if (s.is_empty) {
@@ -5306,16 +5427,29 @@ function renderSpeakerSlots(slots, isOwner) {
 
     const micIcon = s.is_muted ? '🔇' : '🎤';
     const isSelf = s.member_id_pk === currentUser.id;
+    const isSupreme = s.is_supreme || s.role === 'MAIN_ADMIN';
+    const isCoAdmin = s.is_co_admin || s.role === 'CO_ADMIN';
+
+    let borderStyle = '';
+    let badgeHtml = '';
+    if (isSupreme) {
+      borderStyle = 'border:2px solid var(--gold);background:rgba(245,158,11,0.1)';
+      badgeHtml = '<div style="font-size:9px;color:var(--gold);font-weight:800;text-transform:uppercase">👑 தலைமை / Leader</div>';
+    } else if (isCoAdmin) {
+      borderStyle = 'border:1px solid rgba(99,102,241,0.5);background:rgba(99,102,241,0.08)';
+      badgeHtml = '<div style="font-size:9px;color:var(--primary);font-weight:700">⭐ Co-Admin</div>';
+    }
 
     return `
-      <div class="speaker-slot" style="${s.is_owner ? 'border-color:var(--gold)' : ''}">
+      <div class="speaker-slot" style="${borderStyle}">
         <div class="speaker-avatar">
-          ${s.name.charAt(0).toUpperCase()}
+          ${isSupreme ? '👑' : s.name.charAt(0).toUpperCase()}
           <span class="mic-badge">${micIcon}</span>
         </div>
-        <div class="speaker-name">${s.is_owner ? '👑 ' : ''}${esc(s.name)}</div>
+        <div class="speaker-name">${isSupreme ? '👑 ' : ''}${esc(s.name)}</div>
+        ${badgeHtml}
         <div class="speaker-id">${esc(s.member_id)}</div>
-        ${(isOwner && !isSelf) ? `
+        ${(canModerate && !isSelf && !isSupreme) ? `
           <div class="slot-actions">
             <button class="btn-secondary" style="padding:2px 6px;font-size:10px" onclick="toggleMemberMute(${s.member_id_pk}, ${s.is_muted})">${s.is_muted ? '🔊' : '🔇'}</button>
             <button class="btn-danger" style="padding:2px 6px;font-size:10px" onclick="removeMemberFromRoom(${s.member_id_pk}, '${esc(s.name)}')">❌</button>
@@ -5341,25 +5475,37 @@ async function loadGroupMessages(groupId) {
 function appendGroupChatMessage(m, autoScroll = true) {
   const container = document.getElementById('groupChatMessages');
   if (!container) return;
+
+  // DEDUPLICATION FIX: Prevent message displaying twice
+  if (m.id && document.getElementById('cgm-' + m.id)) return;
+
   const isMe = m.member_id === currentUser.id;
+  const isAdm = m.sender_member_id === 'ADMIN' || m.member_id === null;
 
   const msgDiv = document.createElement('div');
+  if (m.id) msgDiv.id = 'cgm-' + m.id;
   msgDiv.style.cssText = `margin-bottom:10px;display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'}`;
 
-  const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeStr = new Date(m.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   let contentHtml = '';
   if (m.message_type === 'image' && m.media_url) {
-    contentHtml = `<img src="${BASE + m.media_url}" style="max-width:200px;border-radius:10px;margin-top:4px" onclick="window.open(this.src)">`;
+    contentHtml = `<img src="${BASE + m.media_url}" style="max-width:200px;border-radius:10px;margin-top:4px;cursor:pointer" onclick="window.open(this.src)">`;
   } else {
     contentHtml = `<div style="font-size:13px;word-break:break-word">${esc(m.message)}</div>`;
   }
 
+  let senderBadge = isAdm ? '👑 Admin / தலைவர்' : esc(m.sender_name);
+  let bubbleBg = isMe
+    ? 'linear-gradient(135deg, var(--gold-dark), var(--gold))'
+    : (isAdm ? 'linear-gradient(135deg, #4f46e5, #4338ca)' : 'var(--bg2)');
+  let bubbleColor = (isMe || isAdm) ? '#ffffff' : 'var(--text)';
+
   msgDiv.innerHTML = `
     <div style="font-size:11px;color:var(--text3);margin-bottom:2px">
-      ${isMe ? 'You' : esc(m.sender_name)} <span style="font-size:10px">(${m.sender_member_id})</span> · ${timeStr}
+      ${isMe ? 'You' : senderBadge} <span style="font-size:10px">(${m.sender_member_id || ''})</span> · ${timeStr}
     </div>
-    <div style="background:${isMe ? 'linear-gradient(135deg, var(--gold-dark), var(--gold))' : 'var(--bg2)'};color:${isMe ? 'white' : 'var(--text)'};padding:8px 12px;border-radius:12px;max-width:80%;box-shadow:var(--shadow)">
+    <div style="background:${bubbleBg};color:${bubbleColor};padding:8px 12px;border-radius:12px;max-width:80%;box-shadow:var(--shadow)">
       ${contentHtml}
     </div>
   `;
@@ -5375,10 +5521,13 @@ async function sendGroupTextMessage() {
 
   input.value = '';
   try {
-    await api(`/api/chat-groups/${currentChatGroupId}/messages`, {
+    const res = await api(`/api/chat-groups/${currentChatGroupId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ message: text })
     });
+    if (res && res.chat) {
+      appendGroupChatMessage(res.chat, true);
+    }
   } catch(e) {
     showToast(e.message, 'error');
   }
@@ -5399,6 +5548,9 @@ async function sendGroupImage(input) {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
+    if (data && data.chat) {
+      appendGroupChatMessage(data.chat, true);
+    }
     showToast('Photo sent!', 'success');
   } catch(e) {
     showToast(e.message, 'error');
@@ -5428,19 +5580,24 @@ async function toggleMemberMute(targetId, isMuted) {
   } catch(e) { showToast(e.message, 'error'); }
 }
 
-async function removeMemberFromRoom(targetId, name) {
+function removeMemberFromRoom(targetId, name) {
   if (!currentChatGroupId) return;
-  if (!confirm(`Remove member "${name}" from this chat room?`)) return;
-  try {
-    await api(`/api/chat-groups/${currentChatGroupId}/remove-member`, { method: 'POST', body: JSON.stringify({ target_member_id: targetId }) });
-    showToast('Member removed', 'info');
-    refreshChatRoom(currentChatGroupId);
-  } catch(e) { showToast(e.message, 'error'); }
+  openAppConfirm(
+    '❌ உறுப்பினரை நீக்கு / Remove Member',
+    `குழுவிலிருந்து "${name}" உறுப்பினரை நீக்க விரும்புகிறீர்களா?\n\n(Are you sure you want to remove member "${name}" from this chat room?)`,
+    async () => {
+      try {
+        await api(`/api/chat-groups/${currentChatGroupId}/remove-member`, { method: 'POST', body: JSON.stringify({ target_member_id: targetId }) });
+        showToast('Member removed from room', 'info');
+        refreshChatRoom(currentChatGroupId);
+      } catch(e) { showToast(e.message, 'error'); }
+    }
+  );
 }
 
 function showTransferAdminModal() {
   if (!currentSpeakerSlots || !currentSpeakerSlots.length) return;
-  const candidates = currentSpeakerSlots.filter(s => !s.is_empty && s.member_id_pk !== currentUser.id);
+  const candidates = currentSpeakerSlots.filter(s => !s.is_empty && s.member_id_pk !== currentUser.id && !s.is_supreme);
   const select = document.getElementById('taMemberSelect');
   if (candidates.length === 0) {
     showToast('No other members present in room to transfer ownership to', 'warning');
@@ -5470,15 +5627,392 @@ async function confirmTransferAdmin() {
   }
 }
 
-async function doLeaveGroup() {
+function doLeaveGroup() {
+  if (!currentChatGroupId) return;
+  openAppConfirm(
+    '🚪 குழுவிலிருந்து வெளியேறு / Leave Chat Room',
+    'இந்த அரட்டை அறையிலிருந்து வெளியேற விரும்புகிறீர்களா?\n\n(Are you sure you want to leave this chat room?)',
+    async () => {
+      try {
+        await api(`/api/chat-groups/${currentChatGroupId}/leave`, { method: 'POST' });
+        showToast('Left chat room', 'info');
+        leaveCurrentChatRoomView();
+      } catch(e) {
+        showToast(e.message, 'error');
+      }
+    }
+  );
+}
+
+// ============================================================
+// INTERACTIVE LUDO MINI-GAME ENGINE
+// ============================================================
+let currentLudoState = null;
+let isLudoRolling = false;
+
+const LUDO_COLORS = ['#ef4444', '#10b981', '#f59e0b', '#3b82f6'];
+const LUDO_COLOR_NAMES = ['Red', 'Green', 'Yellow', 'Blue'];
+const LUDO_SYMBOLS = ['🔴', '🟢', '🟡', '🔵'];
+
+function getDefaultLudoState() {
+  return {
+    turn: 0, // 0: Red, 1: Green, 2: Yellow, 3: Blue
+    dice: 6,
+    statusText: 'Red 🔴 turn! Roll dice to start! 🎲',
+    players: [
+      { name: 'Red', color: '#ef4444', symbol: '🔴', tokens: [-1, -1, -1, -1] },
+      { name: 'Green', color: '#10b981', symbol: '🟢', tokens: [-1, -1, -1, -1] },
+      { name: 'Yellow', color: '#f59e0b', symbol: '🟡', tokens: [-1, -1, -1, -1] },
+      { name: 'Blue', color: '#3b82f6', symbol: '🔵', tokens: [-1, -1, -1, -1] }
+    ],
+    winner: null
+  };
+}
+
+async function toggleLudoGame() {
   if (!currentChatGroupId) return;
   try {
-    await api(`/api/chat-groups/${currentChatGroupId}/leave`, { method: 'POST' });
-    showToast('Left chat room', 'info');
-    leaveCurrentChatRoomView();
+    const res = await api(`/api/chat-groups/${currentChatGroupId}/ludo/toggle`, { method: 'POST' });
+    onLudoToggled(res.ludo_active);
+    showToast(res.ludo_active ? '🎲 Ludo Game Activated!' : 'Ludo Game Closed', 'info');
+    const ludoBtn = document.getElementById('crLudoToggleBtn');
+    if (ludoBtn) ludoBtn.textContent = res.ludo_active ? '🎲 Ludo: ON' : '🎲 Ludo: OFF';
   } catch(e) {
     showToast(e.message, 'error');
   }
+}
+
+function onLudoToggled(enabled, stateData) {
+  const section = document.getElementById('ludoSection');
+  if (!section) return;
+  if (enabled) {
+    section.classList.remove('hidden');
+    currentLudoState = stateData || currentLudoState || getDefaultLudoState();
+    updateLudoUI();
+  } else {
+    section.classList.add('hidden');
+  }
+}
+
+function onLudoUpdated(data) {
+  if (!data || !data.state) return;
+  currentLudoState = data.state;
+  updateLudoUI();
+  if (data.message) {
+    showToast(data.message, 'info');
+  }
+}
+
+function updateLudoUI() {
+  if (!currentLudoState) return;
+  const s = currentLudoState;
+
+  // Status message
+  const statusEl = document.getElementById('ludoStatusMsg');
+  if (statusEl) statusEl.textContent = s.statusText || `${LUDO_COLOR_NAMES[s.turn]} ${LUDO_SYMBOLS[s.turn]} Turn!`;
+
+  // Turn cards
+  for (let i = 0; i < 4; i++) {
+    const card = document.getElementById(`lpc-${i}`);
+    const tokEl = document.getElementById(`lpc-tokens-${i}`);
+    if (card) {
+      const isTurn = s.turn === i;
+      card.style.transform = isTurn ? 'scale(1.05)' : 'scale(1)';
+      card.style.boxShadow = isTurn ? '0 0 10px rgba(245,200,66,0.6)' : 'none';
+      card.style.borderColor = isTurn ? 'var(--gold)' : LUDO_COLORS[i];
+    }
+    if (tokEl && s.players && s.players[i]) {
+      const homeCount = s.players[i].tokens.filter(pos => pos === 56).length;
+      tokEl.textContent = `Home: ${homeCount}/4`;
+    }
+  }
+
+  // Dice result
+  const diceBtn = document.getElementById('ludoDiceBtn');
+  const diceRes = document.getElementById('ludoDiceResult');
+  const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  const diceVal = s.dice || 6;
+  if (diceBtn) diceBtn.textContent = diceFaces[diceVal - 1] || '🎲';
+  if (diceRes) diceRes.textContent = `Dice: ${diceVal}`;
+
+  // Winner announcement
+  if (s.winner !== null && s.winner !== undefined) {
+    if (statusEl) statusEl.textContent = `🏆 ${LUDO_COLOR_NAMES[s.winner]} ${LUDO_SYMBOLS[s.winner]} WON THE GAME! 🎉`;
+  }
+
+  renderLudoSvg();
+}
+
+async function rollLudoDice() {
+  if (!currentChatGroupId || isLudoRolling) return;
+  if (!currentLudoState) currentLudoState = getDefaultLudoState();
+  if (currentLudoState.winner !== null && currentLudoState.winner !== undefined) {
+    showToast('Game has finished! Reset board to play again.', 'info');
+    return;
+  }
+
+  isLudoRolling = true;
+  const diceBtn = document.getElementById('ludoDiceBtn');
+  if (diceBtn) diceBtn.style.transform = 'rotate(360deg)';
+
+  // Roll 1 to 6
+  const roll = Math.floor(Math.random() * 6) + 1;
+  const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+  setTimeout(async () => {
+    if (diceBtn) {
+      diceBtn.style.transform = 'rotate(0deg)';
+      diceBtn.textContent = diceFaces[roll - 1];
+    }
+
+    const s = currentLudoState;
+    s.dice = roll;
+    const player = s.players[s.turn];
+
+    // Find movable tokens
+    // Tokens at -1 can move out ONLY if roll is 6
+    // Tokens >= 0 can move if pos + roll <= 56
+    let movableTokenIndices = [];
+    player.tokens.forEach((pos, idx) => {
+      if (pos === -1 && roll === 6) movableTokenIndices.push(idx);
+      else if (pos >= 0 && pos + roll <= 56) movableTokenIndices.push(idx);
+    });
+
+    let msg = '';
+    if (movableTokenIndices.length === 0) {
+      msg = `${player.name} ${player.symbol} rolled ${roll}. No move possible!`;
+      s.turn = (s.turn + 1) % 4;
+      s.statusText = `${msg} Next: ${LUDO_COLOR_NAMES[s.turn]} ${LUDO_SYMBOLS[s.turn]}`;
+    } else if (movableTokenIndices.length === 1) {
+      // Auto move single eligible token
+      const chosenToken = movableTokenIndices[0];
+      executeTokenMove(s.turn, chosenToken, roll);
+      return; // executeTokenMove handles broadcast and turn
+    } else {
+      // Multiple options: auto-pick or allow click
+      // If token at -1 can exit, prioritize that, else move most advanced token
+      const baseIdx = movableTokenIndices.find(idx => player.tokens[idx] === -1);
+      const chosenToken = (baseIdx !== undefined) ? baseIdx : movableTokenIndices[0];
+      executeTokenMove(s.turn, chosenToken, roll);
+      return;
+    }
+
+    isLudoRolling = false;
+    updateLudoUI();
+    await syncLudoAction('roll', s, msg);
+  }, 400);
+}
+
+async function executeTokenMove(playerIdx, tokenIdx, roll) {
+  const s = currentLudoState;
+  const player = s.players[playerIdx];
+  const oldPos = player.tokens[tokenIdx];
+
+  if (oldPos === -1 && roll === 6) {
+    player.tokens[tokenIdx] = 0; // Brought out to start square
+  } else if (oldPos >= 0 && oldPos + roll <= 56) {
+    player.tokens[tokenIdx] = oldPos + roll;
+  }
+
+  const newPos = player.tokens[tokenIdx];
+  let msg = `${player.name} ${player.symbol} rolled ${roll} and moved token!`;
+
+  // Check capture of opponents (only on common track steps 0..50, excluding safe spots)
+  const safeSpots = [0, 8, 13, 21, 26, 34, 39, 47];
+  if (newPos >= 0 && newPos <= 50) {
+    const globalTile = (newPos + (playerIdx * 13)) % 52;
+    if (!safeSpots.includes(globalTile)) {
+      s.players.forEach((opp, oppIdx) => {
+        if (oppIdx !== playerIdx) {
+          opp.tokens.forEach((oppPos, oppTokIdx) => {
+            if (oppPos >= 0 && oppPos <= 50) {
+              const oppTile = (oppPos + (oppIdx * 13)) % 52;
+              if (oppTile === globalTile) {
+                opp.tokens[oppTokIdx] = -1; // Captured!
+                msg += ` 💥 Knocked out ${opp.name} token back to base!`;
+              }
+            }
+          });
+        }
+      });
+    }
+  }
+
+  // Check Win condition: all 4 tokens at 56
+  if (player.tokens.every(p => p === 56)) {
+    s.winner = playerIdx;
+    s.statusText = `🏆 ${player.name} ${player.symbol} WINS THE GAME! 🎉`;
+  } else {
+    // If rolled 6, gets bonus turn; otherwise pass turn
+    if (roll === 6) {
+      s.statusText = `${msg} Rolled 6! ${player.name} gets another roll! 🎲`;
+    } else {
+      s.turn = (s.turn + 1) % 4;
+      s.statusText = `${msg} Next: ${LUDO_COLOR_NAMES[s.turn]} ${LUDO_SYMBOLS[s.turn]}`;
+    }
+  }
+
+  isLudoRolling = false;
+  updateLudoUI();
+  await syncLudoAction('move', s, msg);
+}
+
+async function resetLudoGame() {
+  if (!currentChatGroupId) return;
+  openAppConfirm(
+    '🎲 பலகையை மீட்டமை / Reset Ludo Board',
+    'லூடோ விளையாட்டை மீண்டும் முதலிலிருந்து தொடங்க விரும்புகிறீர்களா?\n\n(Are you sure you want to reset the Ludo game to starting positions?)',
+    async () => {
+      currentLudoState = getDefaultLudoState();
+      updateLudoUI();
+      await syncLudoAction('reset', currentLudoState, 'Ludo game reset by room leader!');
+    }
+  );
+}
+
+async function syncLudoAction(action, state, message) {
+  try {
+    if (socket) {
+      socket.emit('group:ludo-action', {
+        group_id: currentChatGroupId,
+        action,
+        state,
+        message
+      });
+    }
+    await api(`/api/chat-groups/${currentChatGroupId}/ludo/action`, {
+      method: 'POST',
+      body: JSON.stringify({ action, state, message })
+    });
+  } catch(e) {
+    console.error('Ludo sync error:', e);
+  }
+}
+
+// Crisp Vector Drawing of Classic Ludo Board
+function renderLudoSvg() {
+  const svg = document.getElementById('ludoBoardSvg');
+  if (!svg || !currentLudoState) return;
+
+  const s = currentLudoState;
+  const colors = ['#ef4444', '#10b981', '#f59e0b', '#3b82f6'];
+
+  // Base coordinates for 4 player homes (each 120x120)
+  // Red: top-left (0,0)
+  // Green: top-right (180,0)
+  // Yellow: bottom-right (180,180)
+  // Blue: bottom-left (0,180)
+  let svgContent = `
+    <!-- Background -->
+    <rect width="300" height="300" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+
+    <!-- Red Base -->
+    <rect x="0" y="0" width="120" height="120" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+    <rect x="20" y="20" width="80" height="80" rx="10" fill="#ffffff" stroke="#ef4444" stroke-width="1.5"/>
+
+    <!-- Green Base -->
+    <rect x="180" y="0" width="120" height="120" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+    <rect x="200" y="20" width="80" height="80" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.5"/>
+
+    <!-- Yellow Base -->
+    <rect x="180" y="180" width="120" height="120" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+    <rect x="200" y="200" width="80" height="80" rx="10" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+
+    <!-- Blue Base -->
+    <rect x="0" y="180" width="120" height="120" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+    <rect x="20" y="200" width="80" height="80" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+
+    <!-- Center Triangles -->
+    <polygon points="120,120 180,120 150,150" fill="#10b981"/>
+    <polygon points="180,120 180,180 150,150" fill="#f59e0b"/>
+    <polygon points="180,180 120,180 150,150" fill="#3b82f6"/>
+    <polygon points="120,180 120,120 150,150" fill="#ef4444"/>
+
+    <!-- Red Home Column (horizontal) -->
+    <rect x="20" y="130" width="100" height="40" fill="#fca5a5" opacity="0.6"/>
+    <!-- Green Home Column (vertical) -->
+    <rect x="130" y="20" width="40" height="100" fill="#6ee7b7" opacity="0.6"/>
+    <!-- Yellow Home Column (horizontal) -->
+    <rect x="180" y="130" width="100" height="40" fill="#fde68a" opacity="0.6"/>
+    <!-- Blue Home Column (vertical) -->
+    <rect x="130" y="180" width="40" height="100" fill="#93c5fd" opacity="0.6"/>
+
+    <!-- Safe Stars -->
+    <text x="30" y="138" font-size="12" text-anchor="middle" fill="#ef4444">⭐</text>
+    <text x="170" y="38" font-size="12" text-anchor="middle" fill="#10b981">⭐</text>
+    <text x="270" y="178" font-size="12" text-anchor="middle" fill="#f59e0b">⭐</text>
+    <text x="130" y="278" font-size="12" text-anchor="middle" fill="#3b82f6">⭐</text>
+
+    <!-- Center Trophy Icon -->
+    <text x="150" y="154" font-size="16" text-anchor="middle">🏆</text>
+  `;
+
+  // Base slot coordinates for each player's 4 tokens:
+  const baseSlots = [
+    [{x:40, y:40}, {x:80, y:40}, {x:40, y:80}, {x:80, y:80}],          // Red
+    [{x:220, y:40}, {x:260, y:40}, {x:220, y:80}, {x:260, y:80}],      // Green
+    [{x:220, y:220}, {x:260, y:220}, {x:220, y:260}, {x:260, y:260}],  // Yellow
+    [{x:40, y:220}, {x:80, y:220}, {x:40, y:260}, {x:80, y:260}]       // Blue
+  ];
+
+  // Track map (approximate 52 coordinates around board perimeter)
+  const trackCoords = [
+    {x:30,y:120},{x:50,y:120},{x:70,y:120},{x:90,y:120},{x:110,y:120},
+    {x:125,y:105},{x:125,y:85},{x:125,y:65},{x:125,y:45},{x:125,y:25},{x:125,y:10},
+    {x:150,y:10},{x:175,y:10},
+    {x:175,y:25},{x:175,y:45},{x:175,y:65},{x:175,y:85},{x:175,y:105},
+    {x:190,y:120},{x:210,y:120},{x:230,y:120},{x:250,y:120},{x:270,y:120},{x:290,y:120},
+    {x:290,y:150},{x:290,y:175},
+    {x:270,y:175},{x:250,y:175},{x:230,y:175},{x:210,y:175},{x:190,y:175},
+    {x:175,y:195},{x:175,y:215},{x:175,y:235},{x:175,y:255},{x:175,y:275},{x:175,y:290},
+    {x:150,y:290},{x:125,y:290},
+    {x:125,y:275},{x:125,y:255},{x:125,y:235},{x:125,y:215},{x:125,y:195},
+    {x:110,y:175},{x:90,y:175},{x:70,y:175},{x:50,y:175},{x:30,y:175},{x:10,y:175},
+    {x:10,y:150},{x:10,y:120}
+  ];
+
+  // Home columns
+  const homeColumns = [
+    [{x:30,y:150},{x:50,y:150},{x:70,y:150},{x:90,y:150},{x:110,y:150},{x:135,y:150}], // Red
+    [{x:150,y:30},{x:150,y:50},{x:150,y:70},{x:150,y:90},{x:150,y:110},{x:150,y:135}], // Green
+    [{x:270,y:150},{x:250,y:150},{x:230,y:150},{x:210,y:150},{x:190,y:150},{x:165,y:150}], // Yellow
+    [{x:150,y:270},{x:150,y:250},{x:150,y:230},{x:150,y:210},{x:150,y:190},{x:150,y:165}]  // Blue
+  ];
+
+  // Draw Tokens
+  s.players.forEach((player, pIdx) => {
+    const col = colors[pIdx];
+    player.tokens.forEach((pos, tIdx) => {
+      let pt = { x: 0, y: 0 };
+      if (pos === -1) {
+        pt = baseSlots[pIdx][tIdx];
+      } else if (pos >= 0 && pos <= 50) {
+        const globalIdx = (pos + (pIdx * 13)) % 52;
+        pt = trackCoords[globalIdx] || { x: 150, y: 150 };
+      } else if (pos > 50 && pos < 56) {
+        const homeIdx = pos - 51;
+        pt = homeColumns[pIdx][homeIdx] || { x: 150, y: 150 };
+      } else {
+        // Finished (56)
+        pt = homeColumns[pIdx][5];
+      }
+
+      // Small jitter so overlapping tokens don't completely hide each other
+      const jitterX = (pIdx * 4) - 6;
+      const jitterY = (tIdx * 4) - 6;
+      const finalX = (pos >= 0 && pos < 56) ? (pt.x + jitterX) : pt.x;
+      const finalY = (pos >= 0 && pos < 56) ? (pt.y + jitterY) : pt.y;
+
+      svgContent += `
+        <g style="cursor:pointer" onclick="rollLudoDice()">
+          <circle cx="${finalX}" cy="${finalY}" r="11" fill="${col}" stroke="#ffffff" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))"/>
+          <circle cx="${finalX}" cy="${finalY}" r="4" fill="#ffffff"/>
+        </g>
+      `;
+    });
+  });
+
+  svg.innerHTML = svgContent;
 }
 
 function leaveCurrentChatRoomView() {

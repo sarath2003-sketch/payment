@@ -2219,22 +2219,109 @@
     </div>
   </div>
 
-  <!-- ADMIN CHAT & MODERATION MODAL -->
+  <!-- SUPREME ADMIN CHAT ROOM & MODERATION MODAL -->
   <div id="adminChatModal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:600px;width:100%;height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg-surface)">
+    <div class="modal" style="max-width:900px;width:95%;height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border:2px solid var(--gold);box-shadow:var(--shadow)">
+      
+      <!-- Room Header -->
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg-surface);flex-wrap:wrap;gap:8px">
         <div>
-          <h3 id="adminChatRoomTitle" style="font-size:16px;color:var(--primary);margin-bottom:2px">💬 Chat Room</h3>
-          <div id="adminChatRoomSub" style="font-size:12px;color:var(--text-muted)">Live conversation with members</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <h3 id="adminChatRoomTitle" style="font-size:17px;font-weight:800;color:var(--gold);margin:0">💬 Chat Room</h3>
+            <span class="badge badge-active" id="adminChatStatusBadge" style="font-size:11px">👑 Supreme Admin View</span>
+          </div>
+          <div id="adminChatRoomSub" style="font-size:12px;color:var(--text-muted);margin-top:2px">Live conversation with members · 12 Speaker Slots Active</div>
         </div>
-        <button class="btn-secondary btn-sm" onclick="closeModal('adminChatModal')">✕ Close</button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="btn-primary btn-sm" id="adminLudoToggleBtn" onclick="toggleAdminLudoGame()" style="padding:6px 14px;font-size:12px;background:linear-gradient(135deg, #10b981, #059669);font-weight:700">
+            🎲 Ludo Game: ON / OFF
+          </button>
+          <button class="btn-secondary btn-sm" onclick="closeAdminChatModal()" style="padding:6px 14px;font-weight:600">✕ Close Room</button>
+        </div>
       </div>
-      <div id="adminChatMessagesBox" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)">
-        <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading messages...</div>
+
+      <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg)">
+        
+        <!-- 12 Speaker Slots Grid for Admin -->
+        <div style="padding:14px;background:rgba(0,0,0,0.15);border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:0.5px">
+              🎙️ 12 Speaker Stage Slots (மேடை இருக்கைகள்)
+            </div>
+            <div style="font-size:12px;color:var(--text-muted)" id="adminStageCount">2/12 Speakers Active</div>
+          </div>
+          <div class="speaker-slots-grid" id="adminSpeakerSlotsGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:8px">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Interactive Ludo Mini-Game for Admin (toggleable) -->
+        <div id="adminLudoSection" class="hidden" style="padding:14px;margin:12px;border:2px solid var(--gold);border-radius:12px;background:linear-gradient(180deg, rgba(245,200,66,0.06), rgba(0,0,0,0.4))">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:22px">🎲</span>
+              <div>
+                <div style="font-size:15px;font-weight:800;color:var(--gold)">Ludo Mini-Game / லூடோ விளையாட்டு (Admin Control)</div>
+                <div id="adminLudoStatusMsg" style="font-size:12px;color:var(--text-muted);font-weight:600">Waiting to roll dice...</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn-secondary btn-sm" onclick="resetAdminLudoGame()" style="padding:4px 10px;font-size:11px">🔄 Reset Board</button>
+              <button class="btn-secondary btn-sm" onclick="toggleAdminLudoGame()" style="padding:4px 10px;font-size:11px">✕ Hide Game</button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;margin-bottom:12px" id="adminLudoPlayerTurnBar">
+            <div class="ludo-player-card" id="admin-lpc-0" style="padding:6px;text-align:center;border-radius:8px;background:rgba(239,68,68,0.15);border:2px solid #ef4444">
+              <div style="font-size:12px;font-weight:800;color:#ef4444">🔴 Red</div>
+              <div style="font-size:10px;color:var(--text-muted)" id="admin-lpc-tokens-0">Home: 0/4</div>
+            </div>
+            <div class="ludo-player-card" id="admin-lpc-1" style="padding:6px;text-align:center;border-radius:8px;background:rgba(16,185,129,0.15);border:2px solid #10b981">
+              <div style="font-size:12px;font-weight:800;color:#10b981">🟢 Green</div>
+              <div style="font-size:10px;color:var(--text-muted)" id="admin-lpc-tokens-1">Home: 0/4</div>
+            </div>
+            <div class="ludo-player-card" id="admin-lpc-2" style="padding:6px;text-align:center;border-radius:8px;background:rgba(245,158,11,0.15);border:2px solid #f59e0b">
+              <div style="font-size:12px;font-weight:800;color:#f59e0b">🟡 Yellow</div>
+              <div style="font-size:10px;color:var(--text-muted)" id="admin-lpc-tokens-2">Home: 0/4</div>
+            </div>
+            <div class="ludo-player-card" id="admin-lpc-3" style="padding:6px;text-align:center;border-radius:8px;background:rgba(59,130,246,0.15);border:2px solid #3b82f6">
+              <div style="font-size:12px;font-weight:800;color:#3b82f6">🔵 Blue</div>
+              <div style="font-size:10px;color:var(--text-muted)" id="admin-lpc-tokens-3">Home: 0/4</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <div style="position:relative;width:100%;max-width:320px;aspect-ratio:1/1;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);overflow:hidden;border:2px solid var(--border)">
+              <svg id="adminLudoBoardSvg" viewBox="0 0 300 300" style="width:100%;height:100%;display:block">
+                <!-- SVG Board -->
+              </svg>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:16px;background:rgba(0,0,0,0.25);padding:8px 16px;border-radius:12px;border:1px solid var(--border)">
+              <button id="adminLudoDiceBtn" onclick="rollAdminLudoDice()" style="width:48px;height:48px;font-size:26px;border-radius:10px;border:2px solid var(--gold);background:var(--bg-surface);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)">
+                🎲
+              </button>
+              <div style="font-size:14px;font-weight:800;color:var(--text)" id="adminLudoDiceResult">Dice: —</div>
+              <button class="btn-primary btn-sm" onclick="rollAdminLudoDice()" style="padding:6px 14px;font-size:12px;font-weight:700">
+                🎲 Roll Dice
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Messages Feed -->
+        <div style="padding:10px 16px 4px;font-size:12px;font-weight:700;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center">
+          <span>💬 LIVE CONVERSATION FEED (நேரலை அரட்டை)</span>
+          <span style="font-size:11px;color:var(--green)">⚡ Real-time synced</span>
+        </div>
+        <div id="adminChatMessagesBox" style="flex:1;min-height:220px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+          <div style="text-align:center;padding:20px;color:var(--text-muted)">Loading messages...</div>
+        </div>
       </div>
+
+      <!-- Chat Input Area -->
       <div style="padding:12px 16px;border-top:1px solid var(--border);background:var(--bg-surface);display:flex;gap:8px;align-items:center">
-        <input type="text" id="adminChatInput" placeholder="Type message as Admin (Enter to send)..." style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendAdminChatMessage()">
-        <button class="btn-primary" onclick="sendAdminChatMessage()" style="padding:10px 18px;font-weight:700">Send ➤</button>
+        <input type="text" id="adminChatInput" placeholder="Type message as Main Admin / தலைவர் (Enter to send)..." style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)" onkeydown="if(event.key==='Enter')sendAdminChatMessage()">
+        <button class="btn-primary" onclick="sendAdminChatMessage()" style="padding:10px 20px;font-weight:700">Send ➤</button>
       </div>
     </div>
   </div>
@@ -3592,6 +3679,46 @@
             console.log('[Admin Socket] settings:updated received:', data);
             loadSettings();
           });
+          adminSocket.on('group:new-message', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              appendAdminChatMessage(data);
+            }
+          });
+          adminSocket.on('group:member-joined', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              refreshAdminChatRoom(currentAdminChatGroupId);
+            }
+          });
+          adminSocket.on('group:member-left', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              refreshAdminChatRoom(currentAdminChatGroupId);
+            }
+          });
+          adminSocket.on('group:member-muted', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              refreshAdminChatRoom(currentAdminChatGroupId);
+            }
+          });
+          adminSocket.on('group:member-unmuted', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              refreshAdminChatRoom(currentAdminChatGroupId);
+            }
+          });
+          adminSocket.on('group:member-removed', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              refreshAdminChatRoom(currentAdminChatGroupId);
+            }
+          });
+          adminSocket.on('group:ludo-toggled', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              onAdminLudoToggled(data.enabled);
+            }
+          });
+          adminSocket.on('group:ludo-updated', (data) => {
+            if (currentAdminChatGroupId && data.group_id === currentAdminChatGroupId) {
+              onAdminLudoUpdated(data);
+            }
+          });
         } catch (e) { console.warn('Admin socket init warning:', e.message); }
       }
     }
@@ -4933,13 +5060,17 @@
     }
 
     function deleteGroup(id, name) {
-      openConfirm('Delete Chat Group', `Are you sure you want to permanently delete chat group "${name}"? This action cannot be undone.`, async () => {
-        try {
-          await api(`/api/admin/chat-groups/groups/${id}`, { method: 'DELETE' });
-          showToast('Group permanently deleted', 'info');
-          loadAdminGroups();
-        } catch(e) { showToast(e.message, 'error'); }
-      });
+      openConfirm(
+        '🗑️ Delete Chat Group / அரட்டை குழுவை நீக்கு',
+        `"${name}" அரட்டை குழுவை நிரந்தரமாக நீக்க விரும்புகிறீர்களா? இந்த செயலை மாற்ற முடியாது.\n\n(Are you sure you want to permanently delete chat group "${name}"? This action cannot be undone.)`,
+        async () => {
+          try {
+            await api(`/api/admin/chat-groups/groups/${id}`, { method: 'DELETE' });
+            showToast('Group permanently deleted / குழு நீக்கப்பட்டது', 'info');
+            loadAdminGroups();
+          } catch(e) { showToast(e.message, 'error'); }
+        }
+      );
     }
 
     async function showAdminCreateGroupModal() {
@@ -4956,8 +5087,12 @@
       } catch(e) { showToast(e.message, 'error'); }
     }
 
-    // Admin Chat & Moderation Handlers
+    // ============================================================
+    // SUPREME ADMIN CHAT & MODERATION SYSTEM
+    // ============================================================
     let currentAdminChatGroupId = null;
+    let adminLudoState = null;
+    let isAdminLudoRolling = false;
 
     async function openAdminChatModal(groupId, groupName) {
       currentAdminChatGroupId = groupId;
@@ -4965,7 +5100,100 @@
       if (titleEl) titleEl.textContent = `💬 ${groupName} (#${groupId})`;
       const m = document.getElementById('adminChatModal');
       if (m) m.classList.remove('hidden');
+
+      // Supreme Admin joins socket room
+      if (adminSocket) {
+        adminSocket.emit('group:join-room', { group_id: groupId });
+      }
+
+      await refreshAdminChatRoom(groupId);
       await loadAdminChatMessages(groupId);
+    }
+
+    function closeAdminChatModal() {
+      if (adminSocket && currentAdminChatGroupId) {
+        adminSocket.emit('group:leave-room', { group_id: currentAdminChatGroupId });
+      }
+      currentAdminChatGroupId = null;
+      closeModal('adminChatModal');
+    }
+
+    async function refreshAdminChatRoom(groupId) {
+      if (!groupId || groupId !== currentAdminChatGroupId) return;
+      try {
+        const d = await api(`/api/chat-groups/${groupId}`);
+        const group = d.group || {};
+        const slots = d.speaker_slots || [];
+
+        const countEl = document.getElementById('adminStageCount');
+        if (countEl) countEl.textContent = `${group.speaker_count || 2}/12 Speakers Active · ${group.total_member_count || 1} Total In Room`;
+
+        const ludoBtn = document.getElementById('adminLudoToggleBtn');
+        if (ludoBtn) {
+          ludoBtn.textContent = group.ludo_active ? '🎲 Ludo Game: ON' : '🎲 Ludo Game: OFF';
+          ludoBtn.style.background = group.ludo_active ? 'linear-gradient(135deg, #10b981, #059669)' : 'var(--bg-surface-hover)';
+        }
+
+        // Render 12 Stage Slots
+        const container = document.getElementById('adminSpeakerSlotsGrid');
+        if (container) {
+          container.innerHTML = slots.map(s => {
+            if (s.is_empty) {
+              return `
+                <div style="background:var(--bg-surface);border:1px dashed var(--border);border-radius:10px;padding:10px;text-align:center;opacity:0.6">
+                  <div style="font-size:18px;margin-bottom:2px">➕</div>
+                  <div style="font-size:11px;color:var(--text-muted)">Slot #${s.slot_number}</div>
+                  <div style="font-size:10px;color:var(--text-dim)">Available</div>
+                </div>
+              `;
+            }
+
+            const isSupreme = s.is_supreme || s.role === 'MAIN_ADMIN';
+            const isCoAdmin = s.is_co_admin || s.role === 'CO_ADMIN';
+            const micIcon = s.is_muted ? '🔇' : '🎤';
+
+            let border = '1px solid var(--border)';
+            let roleBadge = `<span style="font-size:9px;color:var(--text-muted)">Member</span>`;
+
+            if (isSupreme) {
+              border = '2px solid var(--gold);background:rgba(245,158,11,0.12)';
+              roleBadge = `<span style="font-size:10px;font-weight:800;color:var(--gold)">👑 கிளப் தலைமை (தலைவர்)</span>`;
+            } else if (isCoAdmin) {
+              border = '1.5px solid rgba(99,102,241,0.6);background:rgba(99,102,241,0.08)';
+              roleBadge = `<span style="font-size:10px;font-weight:700;color:var(--primary)">⭐ Co-Admin (துணை)</span>`;
+            }
+
+            return `
+              <div style="background:var(--bg-surface);border:${border};border-radius:10px;padding:10px;text-align:center;position:relative">
+                <div style="width:36px;height:36px;border-radius:50%;background:var(--bg-surface-hover);display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:16px;border:1px solid var(--border);position:relative">
+                  ${isSupreme ? '👑' : esc((s.name || 'M').charAt(0).toUpperCase())}
+                  <span style="position:absolute;bottom:-4px;right:-4px;font-size:11px">${micIcon}</span>
+                </div>
+                <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(s.name)}">${esc(s.name)}</div>
+                ${roleBadge}
+                <div style="font-size:10px;color:var(--text-muted)">${esc(s.member_id)}</div>
+                ${!isSupreme ? `
+                  <div style="display:flex;gap:4px;justify-content:center;margin-top:6px">
+                    <button class="btn-secondary btn-sm" style="padding:2px 6px;font-size:10px" onclick="toggleAdminSpeakerMute(${s.member_id_pk}, ${s.is_muted})" title="${s.is_muted ? 'Unmute' : 'Mute'}">${s.is_muted ? '🔊' : '🔇'}</button>
+                    <button class="btn-danger btn-sm" style="padding:2px 6px;font-size:10px" onclick="kickMemberFromAdminRoom(${s.member_id_pk}, '${esc(s.name)}')" title="Kick Member">❌</button>
+                  </div>
+                ` : `
+                  <div style="margin-top:6px;font-size:10px;color:var(--gold);font-weight:700">👑 Supreme Host</div>
+                `}
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Ludo Mini-Game State
+        if (group.ludo_active) {
+          onAdminLudoToggled(true, group.ludo_state);
+        } else {
+          onAdminLudoToggled(false);
+        }
+      } catch (e) {
+        console.error('Error refreshing admin chat room:', e);
+      }
     }
 
     async function loadAdminChatMessages(groupId) {
@@ -4974,27 +5202,50 @@
       try {
         const d = await api(`/api/chat-groups/${groupId}/messages`);
         const msgs = d.messages || [];
+        box.innerHTML = '';
         if (!msgs.length) {
           box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No messages in this chat room yet. Send a message below!</div>';
           return;
         }
-        box.innerHTML = msgs.map(m => {
-          const isAdm = m.sender_member_id === 'ADMIN' || m.member_id === null;
-          return `
-            <div style="display:flex;flex-direction:column;align-items:${isAdm ? 'flex-end' : 'flex-start'};margin-bottom:8px">
-              <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">
-                <strong>${esc(m.sender_name)}</strong> (${esc(m.sender_member_id || '')}) · ${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
-              <div style="background:${isAdm ? 'var(--primary)' : 'var(--bg-surface-hover)'};color:${isAdm ? '#fff' : 'var(--text)'};padding:8px 14px;border-radius:12px;max-width:80%;box-shadow:var(--shadow);border:1px solid var(--border)">
-                ${m.message_type === 'image' && m.media_url ? `<img src="${m.media_url}" style="max-width:200px;border-radius:8px">` : esc(m.message)}
-              </div>
-            </div>
-          `;
-        }).join('');
+        msgs.forEach(m => appendAdminChatMessage(m, false));
         box.scrollTop = box.scrollHeight;
       } catch (e) {
         box.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Error loading messages: ${esc(e.message)}</div>`;
       }
+    }
+
+    function appendAdminChatMessage(m, autoScroll = true) {
+      const box = document.getElementById('adminChatMessagesBox');
+      if (!box) return;
+
+      // DEDUPLICATION FIX: Prevent message duplicating on admin view
+      if (m.id && document.getElementById('admin-cgm-' + m.id)) return;
+
+      const isAdm = m.sender_member_id === 'ADMIN' || m.member_id === null;
+      const msgDiv = document.createElement('div');
+      if (m.id) msgDiv.id = 'admin-cgm-' + m.id;
+      msgDiv.style.cssText = `display:flex;flex-direction:column;align-items:${isAdm ? 'flex-end' : 'flex-start'};margin-bottom:8px`;
+
+      const timeStr = new Date(m.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      let contentHtml = '';
+      if (m.message_type === 'image' && m.media_url) {
+        contentHtml = `<img src="${m.media_url}" style="max-width:200px;border-radius:8px;cursor:pointer" onclick="window.open(this.src)">`;
+      } else {
+        contentHtml = `<div style="font-size:13px;word-break:break-word">${esc(m.message)}</div>`;
+      }
+
+      msgDiv.innerHTML = `
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px">
+          <strong>${isAdm ? '👑 Admin / தலைவர்' : esc(m.sender_name)}</strong> (${esc(m.sender_member_id || '')}) · ${timeStr}
+        </div>
+        <div style="background:${isAdm ? 'linear-gradient(135deg, #4f46e5, #4338ca)' : 'var(--bg-surface-hover)'};color:${isAdm ? '#fff' : 'var(--text)'};padding:8px 14px;border-radius:12px;max-width:80%;box-shadow:var(--shadow);border:1px solid var(--border)">
+          ${contentHtml}
+        </div>
+      `;
+
+      box.appendChild(msgDiv);
+      if (autoScroll) box.scrollTop = box.scrollHeight;
     }
 
     async function sendAdminChatMessage() {
@@ -5003,14 +5254,301 @@
       if (!text || !currentAdminChatGroupId) return;
       input.value = '';
       try {
-        await api(`/api/chat-groups/${currentAdminChatGroupId}/messages`, {
+        const res = await api(`/api/chat-groups/${currentAdminChatGroupId}/messages`, {
           method: 'POST',
           body: JSON.stringify({ message: text })
         });
-        await loadAdminChatMessages(currentAdminChatGroupId);
+        if (res && res.chat) {
+          appendAdminChatMessage(res.chat, true);
+        }
       } catch (e) {
         showToast(e.message, 'error');
       }
+    }
+
+    async function toggleAdminSpeakerMute(targetId, isMuted) {
+      if (!currentAdminChatGroupId) return;
+      const endpoint = isMuted ? `/api/chat-groups/${currentAdminChatGroupId}/unmute` : `/api/chat-groups/${currentAdminChatGroupId}/mute`;
+      try {
+        await api(endpoint, { method: 'POST', body: JSON.stringify({ target_member_id: targetId }) });
+        showToast(isMuted ? 'Speaker unmuted' : 'Speaker muted', 'success');
+        refreshAdminChatRoom(currentAdminChatGroupId);
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    function kickMemberFromAdminRoom(targetId, name) {
+      if (!currentAdminChatGroupId) return;
+      openConfirm(
+        'Remove Member from Stage / நீக்கு',
+        `Are you sure you want to kick speaker "${name}" from this chat room?\n\nமேடையிலிருந்து "${name}" உறுப்பினரை வெளியேற்ற விரும்புகிறீர்களா?`,
+        async () => {
+          try {
+            await api(`/api/chat-groups/${currentAdminChatGroupId}/remove-member`, {
+              method: 'POST',
+              body: JSON.stringify({ target_member_id: targetId })
+            });
+            showToast('Member removed from room', 'info');
+            refreshAdminChatRoom(currentAdminChatGroupId);
+          } catch (e) {
+            showToast(e.message, 'error');
+          }
+        }
+      );
+    }
+
+    // Admin Ludo Engine
+    async function toggleAdminLudoGame() {
+      if (!currentAdminChatGroupId) return;
+      try {
+        const res = await api(`/api/chat-groups/${currentAdminChatGroupId}/ludo/toggle`, { method: 'POST' });
+        onAdminLudoToggled(res.ludo_active);
+        showToast(res.ludo_active ? '🎲 Ludo Game Activated!' : 'Ludo Game Closed', 'info');
+        const ludoBtn = document.getElementById('adminLudoToggleBtn');
+        if (ludoBtn) ludoBtn.textContent = res.ludo_active ? '🎲 Ludo Game: ON' : '🎲 Ludo Game: OFF';
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    function onAdminLudoToggled(enabled, stateData) {
+      const section = document.getElementById('adminLudoSection');
+      if (!section) return;
+      if (enabled) {
+        section.classList.remove('hidden');
+        adminLudoState = stateData || adminLudoState || getDefaultAdminLudoState();
+        updateAdminLudoUI();
+      } else {
+        section.classList.add('hidden');
+      }
+    }
+
+    function onAdminLudoUpdated(data) {
+      if (!data || !data.state) return;
+      adminLudoState = data.state;
+      updateAdminLudoUI();
+      if (data.message) showToast(data.message, 'info');
+    }
+
+    function getDefaultAdminLudoState() {
+      return {
+        turn: 0,
+        dice: 6,
+        statusText: 'Red 🔴 Turn! Roll dice to start! 🎲',
+        players: [
+          { name: 'Red', color: '#ef4444', symbol: '🔴', tokens: [-1, -1, -1, -1] },
+          { name: 'Green', color: '#10b981', symbol: '🟢', tokens: [-1, -1, -1, -1] },
+          { name: 'Yellow', color: '#f59e0b', symbol: '🟡', tokens: [-1, -1, -1, -1] },
+          { name: 'Blue', color: '#3b82f6', symbol: '🔵', tokens: [-1, -1, -1, -1] }
+        ],
+        winner: null
+      };
+    }
+
+    function updateAdminLudoUI() {
+      if (!adminLudoState) return;
+      const s = adminLudoState;
+      const colors = ['#ef4444', '#10b981', '#f59e0b', '#3b82f6'];
+      const names = ['Red', 'Green', 'Yellow', 'Blue'];
+      const symbols = ['🔴', '🟢', '🟡', '🔵'];
+
+      const statusEl = document.getElementById('adminLudoStatusMsg');
+      if (statusEl) statusEl.textContent = s.statusText || `${names[s.turn]} ${symbols[s.turn]} Turn!`;
+
+      for (let i = 0; i < 4; i++) {
+        const card = document.getElementById(`admin-lpc-${i}`);
+        const tokEl = document.getElementById(`admin-lpc-tokens-${i}`);
+        if (card) {
+          const isTurn = s.turn === i;
+          card.style.transform = isTurn ? 'scale(1.05)' : 'scale(1)';
+          card.style.boxShadow = isTurn ? '0 0 10px rgba(245,200,66,0.6)' : 'none';
+          card.style.borderColor = isTurn ? 'var(--gold)' : colors[i];
+        }
+        if (tokEl && s.players && s.players[i]) {
+          const homeCount = s.players[i].tokens.filter(pos => pos === 56).length;
+          tokEl.textContent = `Home: ${homeCount}/4`;
+        }
+      }
+
+      const diceBtn = document.getElementById('adminLudoDiceBtn');
+      const diceRes = document.getElementById('adminLudoDiceResult');
+      const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+      const diceVal = s.dice || 6;
+      if (diceBtn) diceBtn.textContent = diceFaces[diceVal - 1] || '🎲';
+      if (diceRes) diceRes.textContent = `Dice: ${diceVal}`;
+
+      renderAdminLudoSvg();
+    }
+
+    async function rollAdminLudoDice() {
+      if (!currentAdminChatGroupId || isAdminLudoRolling) return;
+      if (!adminLudoState) adminLudoState = getDefaultAdminLudoState();
+      isAdminLudoRolling = true;
+
+      const diceBtn = document.getElementById('adminLudoDiceBtn');
+      if (diceBtn) diceBtn.style.transform = 'rotate(360deg)';
+
+      const roll = Math.floor(Math.random() * 6) + 1;
+      const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+      setTimeout(async () => {
+        if (diceBtn) {
+          diceBtn.style.transform = 'rotate(0deg)';
+          diceBtn.textContent = diceFaces[roll - 1];
+        }
+
+        const s = adminLudoState;
+        s.dice = roll;
+        const player = s.players[s.turn];
+
+        let movable = [];
+        player.tokens.forEach((pos, idx) => {
+          if (pos === -1 && roll === 6) movable.push(idx);
+          else if (pos >= 0 && pos + roll <= 56) movable.push(idx);
+        });
+
+        const names = ['Red', 'Green', 'Yellow', 'Blue'];
+        const symbols = ['🔴', '🟢', '🟡', '🔵'];
+        let msg = '';
+
+        if (movable.length === 0) {
+          msg = `${player.name} ${player.symbol} rolled ${roll}. No move possible!`;
+          s.turn = (s.turn + 1) % 4;
+          s.statusText = `${msg} Next: ${names[s.turn]} ${symbols[s.turn]}`;
+        } else {
+          const chosen = (movable.find(idx => player.tokens[idx] === -1) !== undefined) ? movable.find(idx => player.tokens[idx] === -1) : movable[0];
+          const oldPos = player.tokens[chosen];
+          if (oldPos === -1 && roll === 6) player.tokens[chosen] = 0;
+          else if (oldPos >= 0 && oldPos + roll <= 56) player.tokens[chosen] = oldPos + roll;
+
+          msg = `${player.name} ${player.symbol} rolled ${roll} and moved token!`;
+          if (roll === 6) {
+            s.statusText = `${msg} Rolled 6! Another turn! 🎲`;
+          } else {
+            s.turn = (s.turn + 1) % 4;
+            s.statusText = `${msg} Next: ${names[s.turn]} ${symbols[s.turn]}`;
+          }
+        }
+
+        isAdminLudoRolling = false;
+        updateAdminLudoUI();
+
+        if (adminSocket) {
+          adminSocket.emit('group:ludo-action', { group_id: currentAdminChatGroupId, action: 'roll', state: s, message: msg });
+        }
+        await api(`/api/chat-groups/${currentAdminChatGroupId}/ludo/action`, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'roll', state: s, message: msg })
+        });
+      }, 400);
+    }
+
+    async function resetAdminLudoGame() {
+      if (!currentAdminChatGroupId) return;
+      openConfirm('Reset Ludo Board', 'Are you sure you want to reset the Ludo game to initial state for all participants?', async () => {
+        adminLudoState = getDefaultAdminLudoState();
+        updateAdminLudoUI();
+        if (adminSocket) {
+          adminSocket.emit('group:ludo-action', { group_id: currentAdminChatGroupId, action: 'reset', state: adminLudoState, message: 'Admin reset Ludo board' });
+        }
+        await api(`/api/chat-groups/${currentAdminChatGroupId}/ludo/action`, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'reset', state: adminLudoState, message: 'Admin reset Ludo board' })
+        });
+      });
+    }
+
+    function renderAdminLudoSvg() {
+      const svg = document.getElementById('adminLudoBoardSvg');
+      if (!svg || !adminLudoState) return;
+      const s = adminLudoState;
+      const colors = ['#ef4444', '#10b981', '#f59e0b', '#3b82f6'];
+
+      let svgContent = `
+        <rect width="300" height="300" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+        <rect x="0" y="0" width="120" height="120" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+        <rect x="20" y="20" width="80" height="80" rx="10" fill="#ffffff" stroke="#ef4444" stroke-width="1.5"/>
+        <rect x="180" y="0" width="120" height="120" fill="#d1fae5" stroke="#10b981" stroke-width="2"/>
+        <rect x="200" y="20" width="80" height="80" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.5"/>
+        <rect x="180" y="180" width="120" height="120" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+        <rect x="200" y="200" width="80" height="80" rx="10" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5"/>
+        <rect x="0" y="180" width="120" height="120" fill="#dbeafe" stroke="#3b82f6" stroke-width="2"/>
+        <rect x="20" y="200" width="80" height="80" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5"/>
+        <polygon points="120,120 180,120 150,150" fill="#10b981"/>
+        <polygon points="180,120 180,180 150,150" fill="#f59e0b"/>
+        <polygon points="180,180 120,180 150,150" fill="#3b82f6"/>
+        <polygon points="120,180 120,120 150,150" fill="#ef4444"/>
+        <rect x="20" y="130" width="100" height="40" fill="#fca5a5" opacity="0.6"/>
+        <rect x="130" y="20" width="40" height="100" fill="#6ee7b7" opacity="0.6"/>
+        <rect x="180" y="130" width="100" height="40" fill="#fde68a" opacity="0.6"/>
+        <rect x="130" y="180" width="40" height="100" fill="#93c5fd" opacity="0.6"/>
+        <text x="30" y="138" font-size="12" text-anchor="middle" fill="#ef4444">⭐</text>
+        <text x="170" y="38" font-size="12" text-anchor="middle" fill="#10b981">⭐</text>
+        <text x="270" y="178" font-size="12" text-anchor="middle" fill="#f59e0b">⭐</text>
+        <text x="130" y="278" font-size="12" text-anchor="middle" fill="#3b82f6">⭐</text>
+        <text x="150" y="154" font-size="16" text-anchor="middle">🏆</text>
+      `;
+
+      const baseSlots = [
+        [{x:40, y:40}, {x:80, y:40}, {x:40, y:80}, {x:80, y:80}],
+        [{x:220, y:40}, {x:260, y:40}, {x:220, y:80}, {x:260, y:80}],
+        [{x:220, y:220}, {x:260, y:220}, {x:220, y:260}, {x:260, y:260}],
+        [{x:40, y:220}, {x:80, y:220}, {x:40, y:260}, {x:80, y:260}]
+      ];
+
+      const trackCoords = [
+        {x:30,y:120},{x:50,y:120},{x:70,y:120},{x:90,y:120},{x:110,y:120},
+        {x:125,y:105},{x:125,y:85},{x:125,y:65},{x:125,y:45},{x:125,y:25},{x:125,y:10},
+        {x:150,y:10},{x:175,y:10},
+        {x:175,y:25},{x:175,y:45},{x:175,y:65},{x:175,y:85},{x:175,y:105},
+        {x:190,y:120},{x:210,y:120},{x:230,y:120},{x:250,y:120},{x:270,y:120},{x:290,y:120},
+        {x:290,y:150},{x:290,y:175},
+        {x:270,y:175},{x:250,y:175},{x:230,y:175},{x:210,y:175},{x:190,y:175},
+        {x:175,y:195},{x:175,y:215},{x:175,y:235},{x:175,y:255},{x:175,y:275},{x:175,y:290},
+        {x:150,y:290},{x:125,y:290},
+        {x:125,y:275},{x:125,y:255},{x:125,y:235},{x:125,y:215},{x:125,y:195},
+        {x:110,y:175},{x:90,y:175},{x:70,y:175},{x:50,y:175},{x:30,y:175},{x:10,y:175},
+        {x:10,y:150},{x:10,y:120}
+      ];
+
+      const homeColumns = [
+        [{x:30,y:150},{x:50,y:150},{x:70,y:150},{x:90,y:150},{x:110,y:150},{x:135,y:150}],
+        [{x:150,y:30},{x:150,y:50},{x:150,y:70},{x:150,y:90},{x:150,y:110},{x:150,y:135}],
+        [{x:270,y:150},{x:250,y:150},{x:230,y:150},{x:210,y:150},{x:190,y:150},{x:165,y:150}],
+        [{x:150,y:270},{x:150,y:250},{x:150,y:230},{x:150,y:210},{x:150,y:190},{x:150,y:165}]
+      ];
+
+      s.players.forEach((player, pIdx) => {
+        const col = colors[pIdx];
+        player.tokens.forEach((pos, tIdx) => {
+          let pt = { x: 0, y: 0 };
+          if (pos === -1) {
+            pt = baseSlots[pIdx][tIdx];
+          } else if (pos >= 0 && pos <= 50) {
+            const globalIdx = (pos + (pIdx * 13)) % 52;
+            pt = trackCoords[globalIdx] || { x: 150, y: 150 };
+          } else if (pos > 50 && pos < 56) {
+            pt = homeColumns[pIdx][pos - 51] || { x: 150, y: 150 };
+          } else {
+            pt = homeColumns[pIdx][5];
+          }
+
+          const jitterX = (pIdx * 4) - 6;
+          const jitterY = (tIdx * 4) - 6;
+          const finalX = (pos >= 0 && pos < 56) ? (pt.x + jitterX) : pt.x;
+          const finalY = (pos >= 0 && pos < 56) ? (pt.y + jitterY) : pt.y;
+
+          svgContent += `
+            <g style="cursor:pointer" onclick="rollAdminLudoDice()">
+              <circle cx="${finalX}" cy="${finalY}" r="11" fill="${col}" stroke="#ffffff" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))"/>
+              <circle cx="${finalX}" cy="${finalY}" r="4" fill="#ffffff"/>
+            </g>
+          `;
+        });
+      });
+
+      svg.innerHTML = svgContent;
     }
 
     // In-App Quick Refresh for Admin Portal

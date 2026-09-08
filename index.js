@@ -45,6 +45,14 @@ const { endAuction } = require('./server/routes/auction');
 const app = express();
 const server = http.createServer(app);
 
+// Global Crash Prevention Handlers
+process.on('uncaughtException', (err) => {
+  console.error('[CRASH PREVENTION] Uncaught Exception:', err.message, err.stack);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRASH PREVENTION] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 // ============================================================
 // Socket.IO Setup
 // ============================================================
@@ -171,6 +179,36 @@ io.on('connection', async (socket) => {
   socket.on('group:leave-room', ({ group_id }) => {
     if (group_id) {
       socket.leave(`group_${group_id}`);
+    }
+  });
+
+  // Ludo Mini-Game Socket Events
+  socket.on('group:ludo-toggle', async ({ group_id, enabled }) => {
+    try {
+      if (!group_id) return;
+      await pool.query('UPDATE chat_groups SET ludo_active = $1 WHERE id = $2', [enabled ? 1 : 0, group_id]);
+      io.to(`group_${group_id}`).emit('group:ludo-toggled', { group_id, enabled: !!enabled });
+    } catch (e) {
+      console.error('[Socket Ludo Toggle Error]:', e.message);
+    }
+  });
+
+  socket.on('group:ludo-action', async ({ group_id, action, state, player, message }) => {
+    try {
+      if (!group_id) return;
+      if (state) {
+        const stateStr = typeof state === 'string' ? state : JSON.stringify(state);
+        await pool.query('UPDATE chat_groups SET ludo_state = $1 WHERE id = $2', [stateStr, group_id]);
+      }
+      io.to(`group_${group_id}`).emit('group:ludo-updated', {
+        group_id,
+        action,
+        state,
+        player,
+        message
+      });
+    } catch (e) {
+      console.error('[Socket Ludo Action Error]:', e.message);
     }
   });
 
