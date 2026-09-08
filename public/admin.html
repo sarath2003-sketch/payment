@@ -1097,30 +1097,61 @@
 
         <!-- ================= PAYMENTS MANAGEMENT ================= -->
         <div id="payments" class="page">
-          <!-- Active QR Code Quick Management Card -->
-          <div class="card" style="margin-bottom:18px;border:1px solid var(--border)">
+          <!-- Active QR Code & UPI ID Management Card -->
+          <div class="card" style="margin-bottom:18px;border:1px solid var(--border);background:var(--surface)">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
               <div>
                 <div style="font-weight:800;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px">
-                  📸 Active Payment QR Scanner Code
+                  📸 Active Payment QR & Admin UPI ID Settings
                 </div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
-                  This UPI QR code is shown to members on their payment page to scan & pay ₹500.
+                  இந்த QR கோடு மற்றும் UPI ID உறுப்பினர் பக்கத்திலும், நேரடி GPay/PhonePe பேமெண்ட்டிலும் பயன்படுத்தப்படும்.
                 </div>
               </div>
-              <div style="display:flex;gap:8px;align-items:center">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <input type="file" id="payTabQrInput" accept="image/*" style="display:none" onchange="uploadPaymentTabQr(this)">
-                <button class="btn-secondary btn-sm" onclick="document.getElementById('payTabQrInput').click()">📷 Upload New QR Image</button>
+                <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('payTabQrInput').click()">📷 Upload New QR Image</button>
+                <button type="button" class="btn-primary btn-sm" onclick="toggleQuickUpiEdit()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;font-weight:700">✏️ Change UPI ID & Name</button>
               </div>
             </div>
-            <div style="display:flex;align-items:center;gap:18px;margin-top:14px;flex-wrap:wrap">
-              <div id="payTabQrPreview" style="width:110px;height:110px;border-radius:12px;border:1px solid var(--border);padding:4px;background:#fff;display:flex;align-items:center;justify-content:center">
+
+            <div style="display:flex;align-items:flex-start;gap:20px;margin-top:16px;flex-wrap:wrap">
+              <div id="payTabQrPreview" style="width:120px;height:120px;border-radius:12px;border:1px solid var(--border);padding:6px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.15);flex-shrink:0">
                 <img id="payTabQrImg" src="/assets/qr.png" alt="Active QR" style="max-width:100%;max-height:100%;object-fit:contain">
               </div>
-              <div style="font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:6px">
-                <div>UPI ID: <strong id="payTabUpiId" style="color:var(--primary);font-size:14px">9025893352@idfcfirst</strong></div>
-                <div>Bank / Payee Name: <strong id="payTabUpiName">IDFC First Bank · Sarathkumar Pandiyaraja</strong></div>
-                <div>Default Amount: <strong style="color:var(--green)">₹500 / month</strong></div>
+
+              <!-- View Mode Details -->
+              <div id="payTabUpiViewBox" style="font-size:13px;color:var(--text);display:flex;flex-direction:column;gap:8px;flex:1;min-width:260px">
+                <div style="background:var(--bg);border:1px solid var(--border);padding:10px 14px;border-radius:10px">
+                  <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Admin UPI ID (GPay / PhonePe):</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px">
+                    <strong id="payTabUpiId" style="color:var(--primary);font-size:16px;letter-spacing:0.3px">sarath9025@cnrb</strong>
+                    <button type="button" class="btn-secondary btn-sm" onclick="toggleQuickUpiEdit(true)" style="padding:2px 8px;font-size:11px">✏️ Edit</button>
+                  </div>
+                </div>
+                <div style="background:var(--bg);border:1px solid var(--border);padding:10px 14px;border-radius:10px">
+                  <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Payee / Bank Account Name:</div>
+                  <strong id="payTabUpiName" style="color:var(--text);font-size:14px">IDFC First Bank · Sarathkumar Pandiyaraja</strong>
+                </div>
+              </div>
+
+              <!-- Quick Edit Mode Form -->
+              <div id="payTabUpiEditBox" class="hidden" style="flex:1;min-width:280px;background:var(--bg);border:2px solid var(--primary);border-radius:12px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,0.25)">
+                <div style="font-weight:800;font-size:14px;color:var(--primary);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+                  💳 Update Admin UPI ID & Payee Name
+                </div>
+                <div style="margin-bottom:10px">
+                  <label style="font-size:11px;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px">NEW UPI ID * (எ.கா: yourname@oksbi / yourname@cnrb)</label>
+                  <input type="text" id="quickInputUpiId" placeholder="e.g. sarath9025@cnrb" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:15px;font-weight:700;letter-spacing:0.3px">
+                </div>
+                <div style="margin-bottom:14px">
+                  <label style="font-size:11px;color:var(--text-muted);font-weight:700;display:block;margin-bottom:4px">PAYEE / BANK NAME * (வங்கி அல்லது கணக்கு வைத்திருப்பவர் பெயர்)</label>
+                  <input type="text" id="quickInputUpiName" placeholder="e.g. Canara Bank · Sarathkumar" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px">
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                  <button type="button" class="btn-secondary btn-sm" onclick="toggleQuickUpiEdit(false)">Cancel</button>
+                  <button type="button" class="btn-success btn-sm" onclick="saveQuickUpiSettings()" style="font-weight:800;background:linear-gradient(135deg,#16a34a,#15803d);border:none;padding:8px 16px">💾 Save UPI ID & Name</button>
+                </div>
               </div>
             </div>
           </div>
@@ -3973,6 +4004,54 @@
       } catch (e) { showToast(e.message, 'error'); }
     }
 
+    function toggleQuickUpiEdit(show) {
+      const editBox = document.getElementById('payTabUpiEditBox');
+      const viewBox = document.getElementById('payTabUpiViewBox');
+      if (!editBox || !viewBox) return;
+
+      const willShow = (show !== undefined) ? show : editBox.classList.contains('hidden');
+      if (willShow) {
+        const curUpi = document.getElementById('payTabUpiId')?.textContent?.trim() || '';
+        const curName = document.getElementById('payTabUpiName')?.textContent?.trim() || '';
+        if (document.getElementById('quickInputUpiId')) document.getElementById('quickInputUpiId').value = curUpi;
+        if (document.getElementById('quickInputUpiName')) document.getElementById('quickInputUpiName').value = curName;
+        editBox.classList.remove('hidden');
+        viewBox.classList.add('hidden');
+        document.getElementById('quickInputUpiId')?.focus();
+      } else {
+        editBox.classList.add('hidden');
+        viewBox.classList.remove('hidden');
+      }
+    }
+
+    async function saveQuickUpiSettings() {
+      const newUpi = (document.getElementById('quickInputUpiId')?.value || '').trim();
+      const newName = (document.getElementById('quickInputUpiName')?.value || '').trim();
+
+      if (!newUpi) {
+        showToast('UPI ID cannot be empty / UPI ID காலியாக இருக்கக்கூடாது', 'error');
+        return;
+      }
+
+      try {
+        await api('/api/settings', {
+          method: 'PUT',
+          body: JSON.stringify({
+            admin_upi_id: newUpi,
+            admin_upi_name: newName || 'PF Chit Fund Club'
+          })
+        });
+        showToast(`✅ Admin UPI ID updated to: ${newUpi}!`, 'success');
+        if (document.getElementById('payTabUpiId')) document.getElementById('payTabUpiId').textContent = newUpi;
+        if (document.getElementById('payTabUpiName')) document.getElementById('payTabUpiName').textContent = newName || 'PF Chit Fund Club';
+        if (document.getElementById('sAdminUpiId')) document.getElementById('sAdminUpiId').value = newUpi;
+        if (document.getElementById('sAdminUpiName')) document.getElementById('sAdminUpiName').value = newName || 'PF Chit Fund Club';
+        toggleQuickUpiEdit(false);
+      } catch (e) {
+        showToast('Failed to update UPI ID: ' + e.message, 'error');
+      }
+    }
+
     async function uploadPaymentTabQr(input) {
       const file = input?.files?.[0];
       if (!file) return;
@@ -3986,13 +4065,19 @@
             method: 'POST',
             body: JSON.stringify({ image_data: base64Data })
           });
-          showToast('Payment QR Code updated and saved to server!', 'success');
+          showToast('✅ Payment QR Code updated and saved to server!', 'success');
           const newQr = d.qr_path_versioned || (d.qr_path ? `${d.qr_path}?v=${Date.now()}` : '/assets/qr.png');
           const payImg = document.getElementById('payTabQrImg');
           if (payImg) payImg.src = newQr;
           const setImg = document.getElementById('currentAdminQrImg');
           if (setImg) setImg.src = newQr;
           loadSettings();
+
+          // Open UPI ID edit box to ensure the user matches UPI ID with the uploaded QR code
+          setTimeout(() => {
+            toggleQuickUpiEdit(true);
+            showToast('💡 Now verify/enter the matching UPI ID below and click Save! (இந்த QR கோடுக்கான UPI ஐடியை கீழே சேமிக்கவும்)', 'info');
+          }, 600);
         } catch (err) {
           showToast(err.message || 'Failed to upload QR Code', 'error');
         }

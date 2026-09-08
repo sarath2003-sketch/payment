@@ -128,8 +128,8 @@ router.get(['/summary', '/'], async (req, res) => {
       success: true,
       last_updated: new Date().toISOString(),
       payment_info: {
-        admin_upi_id: setMap['admin_upi_id'] || '9025893352@idfcfirst',
-        admin_upi_name: setMap['admin_upi_name'] || 'IDFC First Bank · Sarathkumar Pandiyaraja',
+        admin_upi_id: setMap['admin_upi_id'] || 'sarath9025@cnrb',
+        admin_upi_name: setMap['admin_upi_name'] || 'Canara Bank · Sarathkumar',
         qr_path_versioned: qrPathVersioned
       },
       metrics: {

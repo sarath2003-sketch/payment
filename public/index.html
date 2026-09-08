@@ -1940,8 +1940,8 @@
         <!-- QR Code -->
         <div class="qr-container" id="qrContainer">
             <img id="qrCodeImg" src="/assets/qr.png" onerror="this.onerror=null; this.src='/assets/qr.png';" alt="Payment QR">
-          <div class="qr-upi" id="paymentUpiDisplay">UPI ID: 9025893352@idfcfirst</div>
-          <div style="font-size:11px;color:#666;margin-top:4px" id="paymentUpiNameDisplay">IDFC First Bank · Sarathkumar Pandiyaraja</div>
+          <div class="qr-upi" id="paymentUpiDisplay">UPI ID: sarath9025@cnrb</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px;font-weight:600" id="paymentUpiNameDisplay">Canara Bank · Sarathkumar</div>
         </div>
 
         <!-- DIRECT UPI PAYMENT OPTIONS (MOBILE GPAY / PHONEPE / PAYTM) -->
@@ -2766,6 +2766,8 @@ async function loadHubPublicData() {
   }
 }
 
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
 function renderHubTicker() {
   const container = document.getElementById('hubTickerItems');
   if (!container) return;
@@ -3191,15 +3193,23 @@ function initSocket() {
 // App Init
 // ============================================================
 async function initApp() {
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('mainApp').classList.remove('hidden');
-  // Load profile
+  // Load profile first to verify active authentication
   try {
     const profile = await api('/api/member-auth/profile');
+    if (!profile || !profile.id) throw new Error('Invalid member profile');
     currentUser = { ...currentUser, ...profile };
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').classList.remove('hidden');
     updateHeaderUI();
     updateDashboard(profile);
-  } catch (e) { console.error('Profile error:', e); }
+  } catch (e) {
+    console.warn('Authentication expired or invalid:', e.message);
+    authToken = null;
+    localStorage.removeItem('memberToken');
+    document.getElementById('authScreen').style.display = 'block';
+    document.getElementById('mainApp').classList.add('hidden');
+    return;
+  }
   // Load dashboard metrics & features
   loadMemberDashboardMetrics();
   loadMemberFundCardAndSchedule();
@@ -3760,37 +3770,8 @@ async function loadPaymentHistory() {
 }
 
 // ============================================================
-// Payment Submission
+// Payment Submission & Direct UPI
 // ============================================================
-async function loadSettings() {
-  try {
-    const data = await api('/api/settings/public');
-    appSettings = data || {};
-
-    if (appSettings.default_payment_amount) {
-      const el = document.getElementById('paymentAmount');
-      if (el) el.textContent = `₹${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
-    }
-
-    const upiEl = document.getElementById('paymentUpiDisplay');
-    if (upiEl) upiEl.textContent = `UPI ID: ${appSettings.admin_upi_id || '9025893352@idfcfirst'}`;
-
-    const nameEl = document.getElementById('paymentUpiNameDisplay');
-    if (nameEl) nameEl.textContent = appSettings.admin_upi_name || 'IDFC First Bank · Sarathkumar Pandiyaraja';
-
-    const qrImg = document.getElementById('qrCodeImg');
-    if (qrImg) {
-      const rawQr = appSettings.qr_path_versioned || (appSettings.qr_path ? `${appSettings.qr_path}?v=${Date.now()}` : '/assets/qr.png');
-      const qrSrc = resolveMediaUrl(rawQr);
-      qrImg.src = qrSrc;
-      qrImg.style.display = 'block';
-      const fb = document.getElementById('qrFallbackMsg');
-      if (fb) fb.remove();
-    }
-  } catch(e) {
-    console.warn('Could not load public settings:', e);
-  }
-}
 function populateMonthOptions() {
   const sel = document.getElementById('paymentMonth');
   sel.innerHTML = '<option value="">Select month...</option>';
@@ -3814,24 +3795,29 @@ function handleFileSelect(event) {
   reader.onload = e => { preview.src = e.target.result; preview.classList.remove('hidden'); prompt.style.display = 'none'; };
   reader.readAsDataURL(file);
 }
+
+function getActiveAdminUpiId() {
+  if (window.appSettings && window.appSettings.admin_upi_id) {
+    const clean = String(window.appSettings.admin_upi_id).trim();
+    if (clean) return clean;
+  }
+  const el = document.getElementById('paymentUpiDisplay');
+  if (el && el.textContent) {
+    const extracted = el.textContent.replace(/^UPI\s*ID\s*:\s*/i, '').trim();
+    if (extracted) return extracted;
+  }
+  return 'sarath9025@cnrb';
+}
+
 function openDirectUpiPay(app) {
-  const upiId = (appSettings.admin_upi_id || '9025893352@idfcfirst').trim();
-  const upiName = encodeURIComponent(appSettings.admin_upi_name || 'PF Chit Fund Club');
-  const amount = parseFloat(appSettings.default_payment_amount || 500);
+  const upiId = getActiveAdminUpiId();
+  const upiName = encodeURIComponent((window.appSettings && window.appSettings.admin_upi_name) || 'PF Chit Fund Club');
+  const amount = parseFloat((window.appSettings && window.appSettings.default_payment_amount) || 500);
   const memId = (currentUser && (currentUser.member_id || currentUser.id)) ? `Member-${currentUser.member_id || currentUser.id}` : 'Member';
   const note = encodeURIComponent(`Chit Payment ${memId}`);
 
-  let upiUrl = `upi://pay?pa=${upiId}&pn=${upiName}&am=${amount}&cu=INR&tn=${note}`;
-  
-  if (app === 'gpay') {
-    window.location.href = upiUrl;
-  } else if (app === 'phonepe') {
-    window.location.href = upiUrl;
-  } else if (app === 'paytm') {
-    window.location.href = upiUrl;
-  } else {
-    window.location.href = upiUrl;
-  }
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${upiName}&am=${amount}&cu=INR&tn=${note}`;
+  window.location.href = upiUrl;
 }
 
 function playSuccessSound() {
