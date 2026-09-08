@@ -1313,8 +1313,11 @@
           <span style="font-weight:600;color:var(--text2);font-size:13px" id="pubUpiName">IDFC First Bank · Sarathkumar Pandiyaraja</span>
         </div>
       </div>
-      <div style="margin-top:14px;display:flex;gap:10px">
-        <button type="button" class="nav-link-btn" onclick="navigatePortal('member')" style="background:var(--gold);color:var(--dark);font-weight:700;padding:8px 18px">
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="nav-link-btn" onclick="openDirectUpiPay()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;padding:8px 16px;border:none;border-radius:10px;box-shadow:0 4px 15px rgba(34,197,94,0.3);cursor:pointer">
+          📱 <span>Pay ₹500 via GPay / PhonePe / Paytm</span>
+        </button>
+        <button type="button" class="nav-link-btn" onclick="navigatePortal('member')" style="background:var(--gold);color:var(--dark);font-weight:700;padding:8px 16px">
           🔑 Submit Payment Proof in Member Portal
         </button>
       </div>
@@ -1384,6 +1387,15 @@
     if (!p) return '';
     if (p.startsWith('data:') || p.startsWith('http://') || p.startsWith('https://')) return p;
     return BASE + (p.startsWith('/') ? p : '/' + p);
+  }
+
+  function openDirectUpiPay(app) {
+    const upiId = (document.getElementById('pubUpiId')?.textContent || '9025893352@idfcfirst').trim();
+    const upiName = encodeURIComponent(document.getElementById('pubUpiName')?.textContent || 'PF Chit Fund Club');
+    const amount = 500;
+    const note = encodeURIComponent('PF Chit Fund Club Monthly Contribution');
+    const upiUrl = `upi://pay?pa=${upiId}&pn=${upiName}&am=${amount}&cu=INR&tn=${note}`;
+    window.location.href = upiUrl;
   }
 
   // Bilingual Translations

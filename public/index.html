@@ -1943,6 +1943,30 @@
           <div class="qr-upi" id="paymentUpiDisplay">UPI ID: 9025893352@idfcfirst</div>
           <div style="font-size:11px;color:#666;margin-top:4px" id="paymentUpiNameDisplay">IDFC First Bank · Sarathkumar Pandiyaraja</div>
         </div>
+
+        <!-- DIRECT UPI PAYMENT OPTIONS (MOBILE GPAY / PHONEPE / PAYTM) -->
+        <div class="direct-upi-box" style="margin:16px auto 20px;max-width:320px;background:rgba(245,200,66,0.06);border:1px solid var(--border2);border-radius:14px;padding:14px;text-align:center">
+          <div style="font-size:11px;font-weight:800;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">
+            ⚡ Direct Mobile Payment / நேரடி பேமெண்ட்
+          </div>
+          <button type="button" class="btn-primary" onclick="openDirectUpiPay()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:14px;padding:12px;margin-bottom:8px;box-shadow:0 4px 16px rgba(34,197,94,0.3);cursor:pointer;border:none;border-radius:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px">
+            📱 <span>Pay via GPay / PhonePe / Paytm</span>
+          </button>
+          <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+            <button type="button" class="btn-secondary" onclick="openDirectUpiPay('gpay')" style="font-size:11px;padding:5px 10px;border-radius:16px;border-color:rgba(245,200,66,0.3);cursor:pointer">
+              🔵 GPay
+            </button>
+            <button type="button" class="btn-secondary" onclick="openDirectUpiPay('phonepe')" style="font-size:11px;padding:5px 10px;border-radius:16px;border-color:rgba(245,200,66,0.3);cursor:pointer">
+              🟣 PhonePe
+            </button>
+            <button type="button" class="btn-secondary" onclick="openDirectUpiPay('paytm')" style="font-size:11px;padding:5px 10px;border-radius:16px;border-color:rgba(245,200,66,0.3);cursor:pointer">
+              🔷 Paytm
+            </button>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">
+            💡 Tap above to open UPI app directly, pay ₹500, then paste transaction ID below.
+          </div>
+        </div>
         <!-- Payment form -->
         <div id="paymentFormSection">
           <!-- Month selection -->
@@ -3790,6 +3814,59 @@ function handleFileSelect(event) {
   reader.onload = e => { preview.src = e.target.result; preview.classList.remove('hidden'); prompt.style.display = 'none'; };
   reader.readAsDataURL(file);
 }
+function openDirectUpiPay(app) {
+  const upiId = (appSettings.admin_upi_id || '9025893352@idfcfirst').trim();
+  const upiName = encodeURIComponent(appSettings.admin_upi_name || 'PF Chit Fund Club');
+  const amount = parseFloat(appSettings.default_payment_amount || 500);
+  const memId = (currentUser && (currentUser.member_id || currentUser.id)) ? `Member-${currentUser.member_id || currentUser.id}` : 'Member';
+  const note = encodeURIComponent(`Chit Payment ${memId}`);
+
+  let upiUrl = `upi://pay?pa=${upiId}&pn=${upiName}&am=${amount}&cu=INR&tn=${note}`;
+  
+  if (app === 'gpay') {
+    window.location.href = upiUrl;
+  } else if (app === 'phonepe') {
+    window.location.href = upiUrl;
+  } else if (app === 'paytm') {
+    window.location.href = upiUrl;
+  } else {
+    window.location.href = upiUrl;
+  }
+}
+
+function playSuccessSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    
+    // Tone 1
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    gain1.gain.setValueAtTime(0.3, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.2);
+
+    // Tone 2 (Higher happy chime)
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.12); // A5
+    gain2.gain.setValueAtTime(0.35, now + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(now + 0.12);
+    osc2.stop(now + 0.45);
+  } catch (e) {
+    console.warn('Audio not available:', e);
+  }
+}
+
 async function submitPayment() {
   const btn = document.getElementById('submitPaymentBtn');
   const month = document.getElementById('paymentMonth').value;
@@ -3816,8 +3893,11 @@ async function submitPayment() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Upload failed');
 
+    // Play instant verification chime sound
+    playSuccessSound();
+
     if (data.auto_approved) {
-      showToast('🎉 ' + (currentLang === 'ta' ? 'பணம் தானாக சரிபார்க்கப்பட்டு ₹500 உங்கள் கணக்கில் வரவு வைக்கப்பட்டது!' : 'Payment auto-verified and ₹500 credited to your account!'), 'success');
+      showToast('🎉 ' + (currentLang === 'ta' ? 'பணம் உடனடியாக சரிபார்க்கப்பட்டு ₹500 உங்கள் கணக்கில் வரவு வைக்கப்பட்டது!' : 'Payment auto-verified and ₹500 credited to your account!'), 'success');
     } else {
       showToast(t('submitSuccess'), 'success');
     }
