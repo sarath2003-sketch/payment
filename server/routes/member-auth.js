@@ -114,6 +114,10 @@ router.post(['/', '/register'], async (req, res) => {
     // Hash password securely
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const isDuplicate = false;
+    const duplicateReason = null;
+    const duplicateOfId = null;
+
     // Insert new member
     const result = await client.query(
       `INSERT INTO members 
