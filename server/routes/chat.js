@@ -55,6 +55,23 @@ router.post('/:auction_id/send', authenticateToken, async (req, res) => {
       senderMemberId = member.rows[0]?.member_id || '';
     }
 
+    // AUTOMATIC DEDUPLICATION: Suppress rapid duplicate message sent within 3 seconds
+    const recentDup = await pool.query(
+      `SELECT id, created_at, auction_id, sender_name, message, message_type, sender_member_id 
+       FROM auction_chat_messages 
+       WHERE auction_id = $1 AND sender_name = $2 AND message = $3 
+       ORDER BY id DESC LIMIT 1`,
+      [req.params.auction_id, senderName, message.trim()]
+    );
+
+    if (recentDup.rows.length > 0) {
+      const lastMsg = recentDup.rows[0];
+      const diffMs = Date.now() - new Date(lastMsg.created_at).getTime();
+      if (!isNaN(diffMs) && diffMs < 3000) {
+        return res.json({ message: 'Sent', chat: lastMsg, duplicate_suppressed: true });
+      }
+    }
+
     const result = await pool.query(`
       INSERT INTO auction_chat_messages (auction_id, member_id, admin_id, sender_name, sender_member_id, message, message_type)
       VALUES ($1, $2, $3, $4, $5, $6, 'text') RETURNING *
@@ -72,7 +89,6 @@ router.post('/:auction_id/send', authenticateToken, async (req, res) => {
 
     if (io) {
       io.to(`auction_${req.params.auction_id}`).emit('auction:new-chat', msgData);
-      io.emit('auction:new-chat', msgData);
     }
 
     res.json({ message: 'Sent', chat: msgData });

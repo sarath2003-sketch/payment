@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, member_id, name, email, phone, status, activation_status, payment_status, is_online, last_active_at, created_at, updated_at FROM members ORDER BY name'
+      'SELECT id, member_id, name, email, phone, status, activation_status, payment_status, is_online, last_active_at, created_at, updated_at FROM members WHERE deleted_at IS NULL ORDER BY name'
     );
     res.json(result.rows);
   } catch (error) {

@@ -41,6 +41,7 @@ const schedulesRoutes = require('./server/routes/schedules');
 const noticesRoutes = require('./server/routes/notices');
 const publicDashboardRoutes = require('./server/routes/public-dashboard');
 const { endAuction } = require('./server/routes/auction');
+const { startBackgroundCleaner } = require('./server/services/auto-deduplicator');
 
 const app = express();
 const server = http.createServer(app);
@@ -288,6 +289,21 @@ io.on('connection', async (socket) => {
         const member = await pool.query('SELECT name, member_id FROM members WHERE id = $1', [memberId]);
         senderName = member.rows[0]?.name || 'Member';
         senderMemberId = member.rows[0]?.member_id || '';
+      }
+
+      // AUTOMATIC DEDUPLICATION: Suppress rapid duplicate auction chat message
+      const recentDup = await pool.query(
+        `SELECT id, created_at FROM auction_chat_messages 
+         WHERE auction_id = $1 AND sender_name = $2 AND message = $3 
+         ORDER BY id DESC LIMIT 1`,
+        [auction_id, senderName, message.trim()]
+      );
+
+      if (recentDup.rows.length > 0) {
+        const diffMs = Date.now() - new Date(recentDup.rows[0].created_at).getTime();
+        if (!isNaN(diffMs) && diffMs < 3000) {
+          return; // Suppress duplicate socket emit
+        }
       }
 
       const result = await pool.query(`
@@ -646,6 +662,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`📊 Admin Portal: http://0.0.0.0:${PORT}/admin`);
   console.log(`👤 Member Portal: http://0.0.0.0:${PORT}/`);
   console.log('='.repeat(60));
+
+  // Start self-healing deduplication engine
+  startBackgroundCleaner();
 });
 
 module.exports = app;

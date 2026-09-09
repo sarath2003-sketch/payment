@@ -329,14 +329,17 @@ router.post('/', async (req, res) => {
 
     const dupCheck = await client.query(
       `SELECT id, member_id, name FROM members 
-       WHERE LOWER(name) = LOWER($1) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))`,
+       WHERE (LOWER(TRIM(name)) = LOWER(TRIM($1)) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2)))
+         AND deleted_at IS NULL`,
       [name, upi_id]
     );
 
     if (dupCheck.rows.length > 0) {
-      isDuplicate = true;
-      duplicateOfId = dupCheck.rows[0].id;
-      duplicateReason = `Matching existing member ${dupCheck.rows[0].member_id} (${dupCheck.rows[0].name})`;
+      await client.query('ROLLBACK');
+      const dup = dupCheck.rows[0];
+      return res.status(400).json({ 
+        error: `Member "${dup.name}" already exists with Member ID ${dup.member_id}. Duplicate names are not allowed.` 
+      });
     }
 
     // Auto-generate next Member ID in SF001 format

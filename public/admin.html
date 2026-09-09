@@ -2960,7 +2960,12 @@
     async function showNewDistributionModal() {
       try {
         const membersData = await api('/api/members');
-        cachedMembersList = membersData || [];
+        const seenM = new Set();
+        cachedMembersList = (membersData || []).filter(m => {
+          if (!m || !m.id || seenM.has(m.id)) return false;
+          seenM.add(m.id);
+          return true;
+        });
         const groupsData = await api('/api/groups');
         cachedGroupsList = groupsData.groups || [];
 
@@ -3149,7 +3154,12 @@
     async function showCreateNoticeModal() {
       try {
         const membersData = await api('/api/members');
-        cachedMembersList = membersData || [];
+        const seenNotM = new Set();
+        cachedMembersList = (membersData || []).filter(m => {
+          if (!m || !m.id || seenNotM.has(m.id)) return false;
+          seenNotM.add(m.id);
+          return true;
+        });
 
         const mSelect = document.getElementById('notMemberSelect');
         mSelect.innerHTML = '<option value="">Select Member...</option>' + cachedMembersList.map(m => `<option value="${m.id}">${m.member_id} - ${m.name}</option>`).join('');
@@ -3788,14 +3798,21 @@
 
       try {
         const d = await api(`/api/admin/members?search=${encodeURIComponent(search)}&activation_status=${act}&payment_status=${pay}&sort_by=${sort}`);
-        window.adminMembersCache = d.members || [];
+        const seenMemberIds = new Set();
+        const rawMembers = d.members || [];
+        const uniqueMembers = rawMembers.filter(m => {
+          if (!m || !m.id || seenMemberIds.has(m.id)) return false;
+          seenMemberIds.add(m.id);
+          return true;
+        });
+        window.adminMembersCache = uniqueMembers;
         const tbody = document.getElementById('membersTableBody');
-        if (!d.members || !d.members.length) {
+        if (!uniqueMembers || !uniqueMembers.length) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px">No members found.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = d.members.map(m => {
+        tbody.innerHTML = uniqueMembers.map(m => {
           const payStatus = m.payment_status || 'UNPAID';
           const actStatus = m.activation_status || 'ACTIVE';
 
@@ -5137,8 +5154,9 @@
         // Render 12 Stage Slots
         const container = document.getElementById('adminSpeakerSlotsGrid');
         if (container) {
+          const seenSpeakerPks = new Set();
           container.innerHTML = slots.map(s => {
-            if (s.is_empty) {
+            if (s.is_empty || !s.member_id_pk) {
               return `
                 <div style="background:var(--bg-surface);border:1px dashed var(--border);border-radius:10px;padding:10px;text-align:center;opacity:0.6">
                   <div style="font-size:18px;margin-bottom:2px">➕</div>
@@ -5147,6 +5165,18 @@
                 </div>
               `;
             }
+
+            // Deduplicate: If speaker was already rendered in an earlier slot, show empty slot
+            if (seenSpeakerPks.has(s.member_id_pk)) {
+              return `
+                <div style="background:var(--bg-surface);border:1px dashed var(--border);border-radius:10px;padding:10px;text-align:center;opacity:0.6">
+                  <div style="font-size:18px;margin-bottom:2px">➕</div>
+                  <div style="font-size:11px;color:var(--text-muted)">Slot #${s.slot_number}</div>
+                  <div style="font-size:10px;color:var(--text-dim)">Available</div>
+                </div>
+              `;
+            }
+            seenSpeakerPks.add(s.member_id_pk);
 
             const isSupreme = s.is_supreme || s.role === 'MAIN_ADMIN';
             const isCoAdmin = s.is_co_admin || s.role === 'CO_ADMIN';
@@ -5202,6 +5232,7 @@
       try {
         const d = await api(`/api/chat-groups/${groupId}/messages`);
         const msgs = d.messages || [];
+        window._seenAdminGroupMsgIds = new Set();
         box.innerHTML = '';
         if (!msgs.length) {
           box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">No messages in this chat room yet. Send a message below!</div>';
@@ -5216,10 +5247,22 @@
 
     function appendAdminChatMessage(m, autoScroll = true) {
       const box = document.getElementById('adminChatMessagesBox');
-      if (!box) return;
+      if (!box || !m) return;
 
-      // DEDUPLICATION FIX: Prevent message duplicating on admin view
-      if (m.id && document.getElementById('admin-cgm-' + m.id)) return;
+      window._seenAdminGroupMsgIds = window._seenAdminGroupMsgIds || new Set();
+
+      // ADVANCED DEDUPLICATION: Check Set ID and DOM ID
+      if (m.id) {
+        if (window._seenAdminGroupMsgIds.has('id_' + m.id)) return;
+        if (document.getElementById('admin-cgm-' + m.id)) return;
+        window._seenAdminGroupMsgIds.add('id_' + m.id);
+      }
+
+      // Deduplicate by rapid content fingerprint (same group + sender + text within 3s)
+      const timeBucket = Math.floor(new Date(m.created_at || Date.now()).getTime() / 3000);
+      const fp = `${m.group_id || currentAdminChatGroupId}_${m.sender_name || ''}_${(m.message || '').trim()}_${timeBucket}`;
+      if (window._seenAdminGroupMsgIds.has(fp)) return;
+      window._seenAdminGroupMsgIds.add(fp);
 
       const isAdm = m.sender_member_id === 'ADMIN' || m.member_id === null;
       const msgDiv = document.createElement('div');
@@ -5254,13 +5297,11 @@
       if (!text || !currentAdminChatGroupId) return;
       input.value = '';
       try {
-        const res = await api(`/api/chat-groups/${currentAdminChatGroupId}/messages`, {
+        await api(`/api/chat-groups/${currentAdminChatGroupId}/messages`, {
           method: 'POST',
           body: JSON.stringify({ message: text })
         });
-        if (res && res.chat) {
-          appendAdminChatMessage(res.chat, true);
-        }
+        // Message rendered automatically via single socket broadcast
       } catch (e) {
         showToast(e.message, 'error');
       }

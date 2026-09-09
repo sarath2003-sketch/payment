@@ -17,7 +17,8 @@ router.post(['/', '/register'], async (req, res) => {
   console.log('--- New Registration Request ---');
   let client;
   try {
-    let { name, email, phone, password, confirmPassword } = req.body || {};
+    let { name, email, phone, password, confirmPassword, upi_id, upiId } = req.body || {};
+    upiId = (upiId || upi_id || '').trim();
 
     // Sanitize & Trim
     name = (name || '').trim();
@@ -78,24 +79,20 @@ router.post(['/', '/register'], async (req, res) => {
       email = `${email.split('@')[0]}_${cleanPhone}@${email.split('@')[1] || 'gmail.com'}`;
     }
 
-    // Check for potential duplicate matching by Name or UPI
-    let upiId = (req.body.upi_id || req.body.upiId || req.body.upi || '').trim();
-    let isDuplicate = false;
-    let duplicateReason = null;
-    let duplicateOfId = null;
-
+    // PREVENT DUPLICATE MEMBER CREATION: Disallow registering under an existing member's name
     const dupCheck = await client.query(
       `SELECT id, member_id, name FROM members 
-       WHERE LOWER(name) = LOWER($1) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))`,
+       WHERE (LOWER(TRIM(name)) = LOWER(TRIM($1)) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))) 
+       AND deleted_at IS NULL`,
       [name, upiId]
     );
 
     if (dupCheck.rows.length > 0) {
-      isDuplicate = true;
-      duplicateOfId = dupCheck.rows[0]?.id || null;
-      const dupMemberId = dupCheck.rows[0]?.member_id || dupCheck.rows[0]?.id || '';
-      const dupName = dupCheck.rows[0]?.name || '';
-      duplicateReason = `Similar name/UPI matching existing member ${dupMemberId} (${dupName})`;
+      await client.query('ROLLBACK');
+      const dup = dupCheck.rows[0];
+      return res.status(400).json({ 
+        error: `Member with name "${dup.name}" is already registered (Member ID: ${dup.member_id}). Please log in or contact Admin.` 
+      });
     }
 
     // Generate next sequential Member ID starting at 101

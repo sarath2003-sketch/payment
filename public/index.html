@@ -3494,51 +3494,6 @@ function initSocket() {
       socket.on('settings:updated', () => {
         loadSettings();
       });
-      socket.on('group:new-message', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          appendGroupChatMessage(data, true);
-        }
-      });
-      socket.on('group:member-joined', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          refreshChatRoom(currentChatGroupId);
-        }
-      });
-      socket.on('group:member-left', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          refreshChatRoom(currentChatGroupId);
-        }
-      });
-      socket.on('group:member-muted', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          refreshChatRoom(currentChatGroupId);
-        }
-      });
-      socket.on('group:member-unmuted', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          refreshChatRoom(currentChatGroupId);
-        }
-      });
-      socket.on('group:member-removed', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          if (currentUser && data.member_id_pk === currentUser.id) {
-            showToast('You were removed from this chat room by Admin', 'warning');
-            leaveCurrentChatRoomView();
-          } else {
-            refreshChatRoom(currentChatGroupId);
-          }
-        }
-      });
-      socket.on('group:ludo-toggled', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          if (typeof onLudoToggled === 'function') onLudoToggled(data.enabled);
-        }
-      });
-      socket.on('group:ludo-updated', (data) => {
-        if (currentChatGroupId && data.group_id === currentChatGroupId) {
-          if (typeof onLudoUpdated === 'function') onLudoUpdated(data);
-        }
-      });
     } catch (e) { console.warn('Socket init warning:', e.message); }
   }
 }
@@ -4110,12 +4065,19 @@ function renderMemberListUI(members) {
   const container = document.getElementById('memListContainer');
   if (!container) return;
 
-  if (!members || members.length === 0) {
+  const seenM = new Set();
+  const uniqueMembers = (members || []).filter(m => {
+    if (!m || !m.id || seenM.has(m.id)) return false;
+    seenM.add(m.id);
+    return true;
+  });
+
+  if (!uniqueMembers || uniqueMembers.length === 0) {
     container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3)">No registered members found.</div>';
     return;
   }
 
-  container.innerHTML = members.map(m => {
+  container.innerHTML = uniqueMembers.map(m => {
     const isOnline = Boolean(m.is_online);
     const onlineBadge = isOnline
       ? '<span style="color:#10b981;font-weight:700;font-size:11px">● Online</span>'
@@ -4944,6 +4906,7 @@ async function loadChatHistory(auctionId) {
     const data = await api(`/api/chat/${auctionId}/messages`);
     const el = document.getElementById('chatMessages');
     if (!el) return;
+    window._seenAuctionMsgIds = new Set();
     el.innerHTML = '';
     (data.messages || []).forEach(m => appendChatMessage(m, false));
     el.scrollTop = el.scrollHeight;
@@ -4952,10 +4915,25 @@ async function loadChatHistory(auctionId) {
 
 function appendChatMessage(msg, scroll = true) {
   const el = document.getElementById('chatMessages');
-  if (!el) return;
+  if (!el || !msg) return;
+
+  window._seenAuctionMsgIds = window._seenAuctionMsgIds || new Set();
+
+  if (msg.id) {
+    if (window._seenAuctionMsgIds.has('id_' + msg.id)) return;
+    if (document.getElementById('acmsg-' + msg.id)) return;
+    window._seenAuctionMsgIds.add('id_' + msg.id);
+  }
+
+  const timeBucket = Math.floor(new Date(msg.created_at || Date.now()).getTime() / 3000);
+  const fp = `${msg.auction_id || ''}_${msg.sender_name || ''}_${(msg.message || '').trim()}_${timeBucket}`;
+  if (window._seenAuctionMsgIds.has(fp)) return;
+  window._seenAuctionMsgIds.add(fp);
+
   const isOwn = currentUser && msg.sender_member_id === currentUser.member_id;
   const isAdmin = msg.sender_role === 'admin';
   const div = document.createElement('div');
+  if (msg.id) div.id = 'acmsg-' + msg.id;
   div.className = `chat-msg ${isOwn ? 'own' : ''} ${isAdmin ? 'admin-msg' : ''}`;
   const initial = (msg.sender_name || '?').charAt(0).toUpperCase();
   const timeStr = formatTime(msg.created_at);
@@ -5143,9 +5121,18 @@ let currentGroupData = null;
 let currentSpeakerSlots = [];
 let isSelfMuted = false;
 
-// Socket listeners for Group Chat
+// Socket listeners for Group Chat (Deduplicated cleanly)
 function setupGroupSocketListeners() {
   if (!socket) return;
+
+  // Clean up any existing listeners before attaching
+  const groupEvents = [
+    'group:member-joined', 'group:member-left', 'group:member-muted',
+    'group:member-unmuted', 'group:new-message', 'group:member-removed',
+    'group:admin-transferred', 'group:deactivated', 'group:deleted',
+    'group:list-updated', 'group:request-approved', 'group:ludo-toggled', 'group:ludo-updated'
+  ];
+  groupEvents.forEach(evt => socket.off(evt));
 
   socket.on('group:member-joined', (data) => {
     if (data.group_id === currentChatGroupId) {
@@ -5174,14 +5161,14 @@ function setupGroupSocketListeners() {
   });
 
   socket.on('group:new-message', (data) => {
-    if (data.group_id === currentChatGroupId) {
+    if (currentChatGroupId && data.group_id === currentChatGroupId) {
       appendGroupChatMessage(data, true);
     }
   });
 
   socket.on('group:member-removed', (data) => {
     if (data.group_id === currentChatGroupId) {
-      if (data.member_id_pk === currentUser.id) {
+      if (currentUser && data.member_id_pk === currentUser.id) {
         showToast('❌ You have been removed from this chat room by the Group Admin', 'warning');
         leaveCurrentChatRoomView();
       } else {
@@ -5213,7 +5200,6 @@ function setupGroupSocketListeners() {
 
   // Real-time room list refresh — when admin approves a room, all members see it immediately
   socket.on('group:list-updated', () => {
-    // Only refresh if user is on the chat-rooms page
     const chatPage = document.getElementById('chatRoomsPage');
     if (chatPage && chatPage.classList.contains('active')) {
       loadChatGroups();
@@ -5224,6 +5210,18 @@ function setupGroupSocketListeners() {
     if (data.group) {
       showToast(`✅ Chat room "${data.group.group_name}" has been approved and is now live!`, 'success');
       loadChatGroups();
+    }
+  });
+
+  socket.on('group:ludo-toggled', (data) => {
+    if (currentChatGroupId && data.group_id === currentChatGroupId) {
+      if (typeof onLudoToggled === 'function') onLudoToggled(data.enabled, data.state);
+    }
+  });
+
+  socket.on('group:ludo-updated', (data) => {
+    if (currentChatGroupId && data.group_id === currentChatGroupId) {
+      if (typeof onLudoUpdated === 'function') onLudoUpdated(data);
     }
   });
 }
@@ -5414,8 +5412,11 @@ async function refreshChatRoom(groupId) {
 
 function renderSpeakerSlots(slots, canModerate) {
   const container = document.getElementById('speakerSlotsGrid');
-  container.innerHTML = slots.map(s => {
-    if (s.is_empty) {
+  if (!container) return;
+  const seenSpeakerPks = new Set();
+
+  container.innerHTML = (slots || []).map(s => {
+    if (s.is_empty || !s.member_id_pk) {
       return `
         <div class="speaker-slot empty">
           <div class="speaker-avatar">+</div>
@@ -5424,6 +5425,18 @@ function renderSpeakerSlots(slots, canModerate) {
         </div>
       `;
     }
+
+    // Deduplicate: If speaker already rendered in previous slot, show empty slot
+    if (seenSpeakerPks.has(s.member_id_pk)) {
+      return `
+        <div class="speaker-slot empty">
+          <div class="speaker-avatar">+</div>
+          <div class="speaker-name">Empty Slot</div>
+          <div class="speaker-id">Available</div>
+        </div>
+      `;
+    }
+    seenSpeakerPks.add(s.member_id_pk);
 
     const micIcon = s.is_muted ? '🔇' : '🎤';
     const isSelf = s.member_id_pk === currentUser.id;
@@ -5462,10 +5475,12 @@ function renderSpeakerSlots(slots, canModerate) {
 
 async function loadGroupMessages(groupId) {
   const container = document.getElementById('groupChatMessages');
+  if (!container) return;
   try {
     const data = await api(`/api/chat-groups/${groupId}/messages`);
+    window._seenGroupMsgIds = new Set();
     container.innerHTML = '';
-    data.messages.forEach(m => appendGroupChatMessage(m, false));
+    (data.messages || []).forEach(m => appendGroupChatMessage(m, false));
     container.scrollTop = container.scrollHeight;
   } catch(e) {
     container.innerHTML = `<div style="color:var(--red);font-size:12px">${e.message}</div>`;
@@ -5474,10 +5489,22 @@ async function loadGroupMessages(groupId) {
 
 function appendGroupChatMessage(m, autoScroll = true) {
   const container = document.getElementById('groupChatMessages');
-  if (!container) return;
+  if (!container || !m) return;
 
-  // DEDUPLICATION FIX: Prevent message displaying twice
-  if (m.id && document.getElementById('cgm-' + m.id)) return;
+  window._seenGroupMsgIds = window._seenGroupMsgIds || new Set();
+
+  // ADVANCED DEDUPLICATION: Check Set ID and DOM ID
+  if (m.id) {
+    if (window._seenGroupMsgIds.has('id_' + m.id)) return;
+    if (document.getElementById('cgm-' + m.id)) return;
+    window._seenGroupMsgIds.add('id_' + m.id);
+  }
+
+  // Deduplicate by rapid content fingerprint (same group + sender + message within 3s)
+  const timeBucket = Math.floor(new Date(m.created_at || Date.now()).getTime() / 3000);
+  const fp = `${m.group_id || currentChatGroupId}_${m.sender_name || ''}_${(m.message || '').trim()}_${timeBucket}`;
+  if (window._seenGroupMsgIds.has(fp)) return;
+  window._seenGroupMsgIds.add(fp);
 
   const isMe = m.member_id === currentUser.id;
   const isAdm = m.sender_member_id === 'ADMIN' || m.member_id === null;
@@ -5521,13 +5548,11 @@ async function sendGroupTextMessage() {
 
   input.value = '';
   try {
-    const res = await api(`/api/chat-groups/${currentChatGroupId}/messages`, {
+    await api(`/api/chat-groups/${currentChatGroupId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ message: text })
     });
-    if (res && res.chat) {
-      appendGroupChatMessage(res.chat, true);
-    }
+    // Message rendered automatically via single socket broadcast
   } catch(e) {
     showToast(e.message, 'error');
   }
@@ -5548,9 +5573,7 @@ async function sendGroupImage(input) {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
-    if (data && data.chat) {
-      appendGroupChatMessage(data.chat, true);
-    }
+    // Message rendered automatically via single socket broadcast
     showToast('Photo sent!', 'success');
   } catch(e) {
     showToast(e.message, 'error');

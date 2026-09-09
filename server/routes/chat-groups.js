@@ -149,14 +149,15 @@ router.get('/:id', async (req, res) => {
       }
     } catch (e) {}
 
-    // Fetch members in group
+    // Fetch members in group - Strictly deduplicated by member id
     const membersRes = await pool.query(`
       SELECT 
         cgm.id AS membership_id, cgm.role, cgm.is_muted, cgm.is_speaker, cgm.is_online, cgm.joined_at,
         m.id AS member_id_pk, m.member_id, m.name, m.email, m.phone
       FROM chat_group_members cgm
       JOIN members m ON cgm.member_id = m.id
-      WHERE cgm.group_id = $1
+      WHERE cgm.group_id = $1 AND m.deleted_at IS NULL
+      GROUP BY m.id
       ORDER BY (CASE WHEN cgm.role = 'ADMIN' THEN 0 ELSE 1 END), cgm.joined_at ASC
     `, [groupId]);
 
@@ -200,8 +201,15 @@ router.get('/:id', async (req, res) => {
       is_co_admin: true
     });
 
-    // Remaining speakers (excluding the co-admin who is already in slot 2)
-    const otherSpeakers = activeMembers.filter(m => (m.is_speaker === true || m.is_speaker === 1) && m.member_id_pk !== group.group_admin_id);
+    // Remaining speakers (strictly deduplicated so no name repeats)
+    const seenSpeakerIds = new Set([group.group_admin_id, 0]);
+    const otherSpeakers = [];
+    for (const m of activeMembers) {
+      if ((m.is_speaker === true || m.is_speaker === 1) && !seenSpeakerIds.has(m.member_id_pk)) {
+        seenSpeakerIds.add(m.member_id_pk);
+        otherSpeakers.push(m);
+      }
+    }
 
     // Slots 3 to 12
     for (let slotNum = 3; slotNum <= 12; slotNum++) {
@@ -539,6 +547,24 @@ router.post('/:id/messages', async (req, res) => {
 
     if (!messageText && !mediaUrl) {
       return res.status(400).json({ error: 'Message cannot be empty' });
+    }
+
+    // AUTOMATIC DEDUPLICATION: Suppress rapid duplicate message sent within 3 seconds
+    const recentDup = await pool.query(
+      `SELECT id, created_at, group_id, sender_name, message, media_url, message_type, sender_member_id 
+       FROM chat_group_messages 
+       WHERE group_id = $1 AND sender_name = $2 AND message = $3 
+       ORDER BY id DESC LIMIT 1`,
+      [groupId, senderName, messageText]
+    );
+
+    if (recentDup.rows.length > 0) {
+      const lastMsg = recentDup.rows[0];
+      const diffMs = Date.now() - new Date(lastMsg.created_at).getTime();
+      if (!isNaN(diffMs) && diffMs < 3000) {
+        console.log(`[DEDUPLICATION] Duplicate message suppressed for ${senderName} in group ${groupId}`);
+        return res.json({ message: 'Sent', chat: lastMsg, duplicate_suppressed: true });
+      }
     }
 
     const insRes = await pool.query(`
