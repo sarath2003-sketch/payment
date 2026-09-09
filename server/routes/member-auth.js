@@ -78,65 +78,110 @@ router.post(['/', '/register'], async (req, res) => {
       email = `${email.split('@')[0]}_${cleanPhone}@${email.split('@')[1] || 'gmail.com'}`;
     }
 
-    // Check for potential duplicate matching by Name or UPI
     let upiId = (req.body.upi_id || req.body.upiId || req.body.upi || '').trim();
-    let isDuplicate = false;
-    let duplicateReason = null;
-    let duplicateOfId = null;
 
-    const dupCheck = await client.query(
-      `SELECT id, member_id, name FROM members 
-       WHERE LOWER(name) = LOWER($1) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))`,
-      [name, upiId]
+    // Check for unclaimed pre-populated member (from past Excel import)
+    const claimCheck = await client.query(
+      `SELECT id, member_id, name, phone, email, balance, payment_status, activation_status 
+       FROM members 
+       WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) AND (phone LIKE '0000000%' OR phone LIKE 'temp_%' OR phone LIKE 'unclaimed%')
+       ORDER BY id ASC LIMIT 1`,
+      [name]
     );
 
-    if (dupCheck.rows.length > 0) {
-      isDuplicate = true;
-      duplicateOfId = dupCheck.rows[0]?.id || null;
-      const dupMemberId = dupCheck.rows[0]?.member_id || dupCheck.rows[0]?.id || '';
-      const dupName = dupCheck.rows[0]?.name || '';
-      duplicateReason = `Similar name/UPI matching existing member ${dupMemberId} (${dupName})`;
-    }
+    let member;
+    let finalId;
+    let finalMemberId;
+    let finalName;
+    let finalEmail;
+    let finalPhone;
+    let finalUpi;
+    let wasClaimed = false;
 
-    // Generate next sequential Member ID starting at 101
-    const idRes = await client.query(`
-      SELECT member_id FROM members 
-      WHERE deleted_at IS NULL
-      ORDER BY id DESC
-    `);
-    
-    let maxNum = 100;
-    for (const row of idRes.rows || []) {
-      const num = parseInt(row.member_id, 10);
-      if (!isNaN(num) && num >= 100 && num < 10000 && num > maxNum) {
-        maxNum = num;
+    if (claimCheck.rows && claimCheck.rows.length > 0) {
+      // SMART CLAIM: Link the pre-existing member profile!
+      const unclaimedMember = claimCheck.rows[0];
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await client.query(
+        `UPDATE members 
+         SET phone = $1, email = $2, password_hash = $3, upi_id = COALESCE($4, upi_id), 
+             status = 'ACTIVE', activation_status = 'ACTIVE', updated_at = CURRENT_TIMESTAMP
+         WHERE id = $5`,
+        [cleanPhone, email, hashedPassword, upiId || null, unclaimedMember.id]
+      );
+
+      await client.query('COMMIT');
+
+      finalId = unclaimedMember.id;
+      finalMemberId = unclaimedMember.member_id;
+      finalName = unclaimedMember.name;
+      finalEmail = email;
+      finalPhone = cleanPhone;
+      finalUpi = upiId || '';
+      wasClaimed = true;
+
+      console.log(`[SMART CLAIM SUCCESS] Member "${finalName}" (ID ${finalMemberId}) claimed pre-populated account with phone ${finalPhone}. Past records linked.`);
+    } else {
+      // Check for potential duplicate matching by Name or UPI
+      let isDuplicate = false;
+      let duplicateReason = null;
+      let duplicateOfId = null;
+
+      const dupCheck = await client.query(
+        `SELECT id, member_id, name FROM members 
+         WHERE LOWER(name) = LOWER($1) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))`,
+        [name, upiId]
+      );
+
+      if (dupCheck.rows.length > 0) {
+        isDuplicate = true;
+        duplicateOfId = dupCheck.rows[0]?.id || null;
+        const dupMemberId = dupCheck.rows[0]?.member_id || dupCheck.rows[0]?.id || '';
+        const dupName = dupCheck.rows[0]?.name || '';
+        duplicateReason = `Similar name/UPI matching existing member ${dupMemberId} (${dupName})`;
       }
+
+      // Generate next sequential Member ID starting at 101
+      const idRes = await client.query(`
+        SELECT member_id FROM members 
+        WHERE deleted_at IS NULL
+        ORDER BY id DESC
+      `);
+      
+      let maxNum = 100;
+      for (const row of idRes.rows || []) {
+        const num = parseInt(row.member_id, 10);
+        if (!isNaN(num) && num >= 100 && num < 10000 && num > maxNum) {
+          maxNum = num;
+        }
+      }
+      const memberId = String(maxNum + 1);
+
+      // Hash password securely
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insert new member
+      const result = await client.query(
+        `INSERT INTO members 
+          (member_id, name, email, phone, upi_id, password_hash, balance, status, activation_status, payment_status, is_duplicate, duplicate_reason, duplicate_of_id) 
+         VALUES ($1, $2, $3, $4, $5, $6, 0.00, 'ACTIVE', 'ACTIVE', 'UNPAID', $7, $8, $9) 
+         RETURNING id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status, created_at`,
+        [memberId, name, email, cleanPhone, upiId || null, hashedPassword, isDuplicate, duplicateReason, duplicateOfId]
+      );
+
+      await client.query('COMMIT');
+
+      member = result.rows[0] || {};
+      finalMemberId = member.member_id || memberId;
+      finalName = member.name || name;
+      finalEmail = member.email || email;
+      finalPhone = member.phone || cleanPhone;
+      finalUpi = member.upi_id || upiId || '';
+      finalId = member.id || 0;
+
+      console.log(`[REGISTRATION SUCCESS] Member ID: ${finalMemberId}, Name: ${finalName}, Phone: ${finalPhone}, Email: ${finalEmail}`);
     }
-    const memberId = String(maxNum + 1);
-
-    // Hash password securely
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert new member
-    const result = await client.query(
-      `INSERT INTO members 
-        (member_id, name, email, phone, upi_id, password_hash, balance, status, activation_status, payment_status, is_duplicate, duplicate_reason, duplicate_of_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, 0.00, 'ACTIVE', 'ACTIVE', 'UNPAID', $7, $8, $9) 
-       RETURNING id, member_id, name, email, phone, upi_id, balance, status, activation_status, payment_status, created_at`,
-      [memberId, name, email, cleanPhone, upiId || null, hashedPassword, isDuplicate, duplicateReason, duplicateOfId]
-    );
-
-    await client.query('COMMIT');
-
-    const member = result.rows[0] || {};
-    const finalMemberId = member.member_id || memberId;
-    const finalName = member.name || name;
-    const finalEmail = member.email || email;
-    const finalPhone = member.phone || cleanPhone;
-    const finalUpi = member.upi_id || upiId || '';
-    const finalId = member.id || 0;
-
-    console.log(`[REGISTRATION SUCCESS] Member ID: ${finalMemberId}, Name: ${finalName}, Phone: ${finalPhone}, Email: ${finalEmail}`);
 
     // Generate JWT token for instant login
     const token = jwt.sign(
@@ -150,7 +195,10 @@ router.post(['/', '/register'], async (req, res) => {
     );
 
     res.status(201).json({
-      message: 'Registration successful!',
+      message: wasClaimed 
+        ? `Welcome, ${finalName}! Your account is verified. Your past June & July chit payments (₹1,000 paid) have been automatically linked!` 
+        : 'Registration successful!',
+      claimed: wasClaimed,
       token: token,
       id: finalId,
       member_id: finalMemberId,

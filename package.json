@@ -7,6 +7,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "db:init": "psql -U postgres -f server/database/schema.sql",
+    "import:past": "node server/scripts/import_past_excel.js",
     "test": "node --test"
   },
   "keywords": [
