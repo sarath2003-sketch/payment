@@ -20,3 +20,4 @@ payment.rar
 *.bak
 
 cloudflared.exe
+start_server.bat
