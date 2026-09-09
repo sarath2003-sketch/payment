@@ -1485,7 +1485,7 @@
   <!-- HERO CARD -->
   <div class="hub-hero-card">
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <img src="assets/logo.png" class="hub-logo" onerror="this.src='assets/logo.svg'" alt="PF Logo">
+      <img src="assets/logo.png" id="hubLogoImg" class="hub-logo" onerror="this.src='assets/logo.svg'" alt="PF Logo">
       <div>
         <h1 class="hub-title" id="txtHubHeroTitle">PF Chit Fund Club — Public Overview</h1>
         <p class="hub-sub" id="txtHubHeroSub">Real-time Public Seed Fund Statistics, Transparency Feed & Online Payments</p>
@@ -3179,6 +3179,9 @@ async function loadSettings() {
       if (aLogo) aLogo.src = logoUrl;
       const hLogo = document.getElementById('headerLogo');
       if (hLogo) hLogo.src = logoUrl;
+      const hubLogo = document.getElementById('hubLogoImg');
+      if (hubLogo) hubLogo.src = logoUrl;
+      document.querySelectorAll('.brand-logo, .hub-logo').forEach(img => { img.src = logoUrl; });
     }
     // Update org name
     if (appSettings.org_name) {

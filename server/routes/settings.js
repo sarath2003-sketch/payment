@@ -137,27 +137,43 @@ router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
 // ============================================================
 router.post('/logo', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    if (!req.files || !req.files.logo) {
-      return res.status(400).json({ error: 'No logo file uploaded' });
-    }
-    const logoFile = req.files.logo;
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
-    if (!allowedTypes.includes(logoFile.mimetype)) {
-      return res.status(400).json({ error: 'Logo must be an image file (JPG, PNG, WebP, SVG)' });
-    }
-    if (logoFile.size > 5 * 1024 * 1024) {
-      return res.status(400).json({ error: 'Logo must be under 5MB' });
-    }
-
     const assetsDir = path.join(__dirname, '..', '..', 'public', 'assets');
     if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
 
-    const ext = path.extname(logoFile.name) || '.png';
-    const logoName = `logo_${Date.now()}${ext}`;
-    const logoPath = path.join(assetsDir, logoName);
-    await logoFile.mv(logoPath);
+    let logoUrl = null;
 
-    const logoUrl = `/assets/${logoName}`;
+    if (req.body && req.body.image_data) {
+      // Base64 upload
+      const dataStr = req.body.image_data;
+      const matches = dataStr.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+      if (!matches) {
+        return res.status(400).json({ error: 'Invalid image data format' });
+      }
+      const ext = matches[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg');
+      const base64Data = matches[2];
+      const logoName = `logo_${Date.now()}.${ext}`;
+      const logoPath = path.join(assetsDir, logoName);
+      fs.writeFileSync(logoPath, Buffer.from(base64Data, 'base64'));
+      logoUrl = `/assets/${logoName}`;
+    } else if (req.files && req.files.logo) {
+      // Multipart upload
+      const logoFile = req.files.logo;
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+      if (!allowedTypes.includes(logoFile.mimetype)) {
+        return res.status(400).json({ error: 'Logo must be an image file (JPG, PNG, WebP, SVG)' });
+      }
+      if (logoFile.size > 5 * 1024 * 1024) {
+        return res.status(400).json({ error: 'Logo must be under 5MB' });
+      }
+      const ext = path.extname(logoFile.name) || '.png';
+      const logoName = `logo_${Date.now()}${ext}`;
+      const logoPath = path.join(assetsDir, logoName);
+      await logoFile.mv(logoPath);
+      logoUrl = `/assets/${logoName}`;
+    } else {
+      return res.status(400).json({ error: 'No logo file or image data uploaded' });
+    }
+
     await pool.query(
       `INSERT INTO app_settings (key, value, updated_at) VALUES ('logo_path', $1, CURRENT_TIMESTAMP)
        ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP`,
@@ -170,7 +186,7 @@ router.post('/logo', authenticateToken, requireAdmin, async (req, res) => {
     res.json({ message: 'Logo uploaded successfully', logo_path: logoUrl });
   } catch (err) {
     console.error('Error uploading logo:', err);
-    res.status(500).json({ error: 'Failed to upload logo' });
+    res.status(500).json({ error: 'Failed to upload logo: ' + err.message });
   }
 });
 
@@ -218,10 +234,12 @@ router.post('/qr', authenticateToken, requireAdmin, async (req, res) => {
 // ============================================================
 router.delete('/logo', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    await pool.query(`UPDATE app_settings SET value = NULL WHERE key = 'logo_path'`);
-    res.json({ message: 'Logo removed' });
+    await pool.query(`UPDATE app_settings SET value = '/assets/logo.png', updated_at = CURRENT_TIMESTAMP WHERE key = 'logo_path'`);
+    const io = req.app.get('io');
+    if (io) io.emit('settings:updated', { logo_path: '/assets/logo.png' });
+    res.json({ message: 'Logo reset to default', logo_path: '/assets/logo.png' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to remove logo' });
+    res.status(500).json({ error: 'Failed to reset logo' });
   }
 });
 

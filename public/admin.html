@@ -1702,6 +1702,19 @@
 
             <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
 
+            <div class="card-title" style="font-size:16px">🏷️ Upload Club Logo / DP (கிளப் லோகோ / டிஸ்பிளே படம்)</div>
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Upload the official PF Chit Fund Club Logo or DP from your phone gallery. It will automatically update on the Member Portal, Public Dashboard, and Admin Sidebar.</p>
+            <div class="form-group">
+              <input type="file" id="adminLogoFileInput" accept="image/*" style="margin-bottom:10px">
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn-primary" type="button" onclick="uploadAdminLogo()">📤 Upload New Logo / DP</button>
+                <button class="btn-secondary" type="button" onclick="removeAdminLogo()" style="color:var(--red)">🗑️ Reset to Default Logo</button>
+              </div>
+            </div>
+            <div id="adminLogoPreview" style="margin-top:10px"></div>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:24px 0">
+
             <div class="card-title" style="font-size:16px;color:var(--red)">🧹 Reset & Clean Test Data (சோதனை தரவு அழித்தல்)</div>
             <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">If you have old test loans, orphan member payments, or want to reset the public balance back to clean ₹0, click below.</p>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
@@ -4659,6 +4672,22 @@
             </div>
           `;
         }
+
+        const logoContainer = document.getElementById('adminLogoPreview');
+        const logoPath = d.logo_path ? `${d.logo_path}?v=${Date.now()}` : '/assets/logo.png';
+        if (logoContainer) {
+          logoContainer.innerHTML = `
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:16px;max-width:280px;text-align:center">
+              <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;font-weight:700">CURRENT ACTIVE CLUB LOGO / DP</div>
+              <img src="${logoPath}" id="currentAdminLogoImg" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);margin:0 auto 8px;display:block;background:var(--bg-surface)">
+              <div style="font-size:11px;color:var(--text-muted)">Live on Member Portal, Public Hub & Header</div>
+            </div>
+          `;
+        }
+        const sLogo = document.getElementById('sidebarLogo');
+        if (sLogo) { sLogo.src = logoPath; sLogo.style.display = 'block'; }
+        const aLogo = document.getElementById('adminLogoImg');
+        if (aLogo) { aLogo.src = logoPath; }
       } catch (e) { console.warn('Could not load settings:', e); }
     }
 
@@ -4792,6 +4821,44 @@
         }
       };
       reader.readAsDataURL(file);
+    }
+
+    async function uploadAdminLogo() {
+      const fileInput = document.getElementById('adminLogoFileInput');
+      const file = fileInput?.files?.[0];
+      if (!file) {
+        showToast('Please select a logo image file to upload / லோகோ படம் தேர்ந்தெடுக்கவும்', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        try {
+          showToast('Uploading new Club Logo / DP...', 'info');
+          const d = await api('/api/settings/logo', {
+            method: 'POST',
+            body: JSON.stringify({ image_data: base64Data })
+          });
+          showToast('✅ Club Logo / DP updated successfully! (லோகோ மாற்றப்பட்டது)', 'success');
+          loadSettings();
+          if (fileInput) fileInput.value = '';
+        } catch (err) {
+          showToast(err.message || 'Failed to upload Logo', 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function removeAdminLogo() {
+      if (!confirm('Are you sure you want to reset to the default PF Chit Fund Club logo?')) return;
+      try {
+        await api('/api/settings/logo', { method: 'DELETE' });
+        showToast('✅ Logo reset to default!', 'success');
+        loadSettings();
+      } catch (err) {
+        showToast(err.message || 'Failed to reset logo', 'error');
+      }
     }
 
     // Activation List Loader
