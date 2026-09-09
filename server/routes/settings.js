@@ -82,6 +82,7 @@ router.put('/', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
   try {
     let qrUrl = '';
+    const publicAssetPath = path.join(__dirname, '../../public/assets/qr.png');
     if (req.body && req.body.image_data) {
       const base64Data = req.body.image_data.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
@@ -92,6 +93,8 @@ router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
       const filePath = path.join(uploadsDir, filename);
       fs.writeFileSync(filePath, buffer);
       qrUrl = `/uploads/${filename}`;
+      // Also overwrite public/assets/qr.png so it works statically and across deploys
+      try { fs.writeFileSync(publicAssetPath, buffer); } catch (e) {}
     } else if (req.files && (req.files.qr || req.files.qr_code || req.files.image)) {
       const file = req.files.qr || req.files.qr_code || req.files.image;
       const ext = path.extname(file.name) || '.png';
@@ -102,6 +105,8 @@ router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
       const filePath = path.join(uploadsDir, filename);
       await file.mv(filePath);
       qrUrl = `/uploads/${filename}`;
+      // Also overwrite public/assets/qr.png so it works statically and across deploys
+      try { fs.copyFileSync(filePath, publicAssetPath); } catch (e) {}
     } else {
       return res.status(400).json({ error: 'No image provided for QR code.' });
     }
@@ -117,10 +122,12 @@ router.post('/upload-qr', authenticateToken, requireAdmin, async (req, res) => {
     `, [String(version)]);
 
     // Audit Log
-    await pool.query(`
-      INSERT INTO audit_logs (actor_type, actor_id, actor_name, action, entity_type, details)
-      VALUES ('admin', $1, 'Admin', 'UPLOAD_PAYMENT_QR', 'settings', $2)
-    `, [req.admin.id, `Uploaded new Payment QR Scanner image: ${qrUrl}`]);
+    try {
+      await pool.query(`
+        INSERT INTO audit_logs (actor_type, actor_id, actor_name, action, entity_type, details)
+        VALUES ('admin', $1, 'Admin', 'UPLOAD_PAYMENT_QR', 'settings', $2)
+      `, [req.admin?.id || 1, `Uploaded new Payment QR Scanner image: ${qrUrl}`]);
+    } catch (auditErr) {}
 
     const io = req.app.get('io');
     if (io) io.emit('settings:updated', { qr_path: qrUrl, qr_version: version, qr_path_versioned: `${qrUrl}?v=${version}` });

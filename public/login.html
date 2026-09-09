@@ -3169,12 +3169,16 @@ function initSocket() {
 async function initApp() {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('mainApp').classList.remove('hidden');
+  if (currentUser) {
+    updateHeaderUI();
+    updateDashboard(currentUser);
+  }
   // Load profile
   try {
     const profile = await api('/api/member-auth/profile');
     currentUser = { ...currentUser, ...profile };
     updateHeaderUI();
-    updateDashboard(profile);
+    updateDashboard(currentUser);
   } catch (e) { console.error('Profile error:', e); }
   // Load dashboard metrics & features
   loadMemberDashboardMetrics();

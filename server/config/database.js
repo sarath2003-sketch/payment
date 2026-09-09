@@ -15,11 +15,12 @@ if (!fs.existsSync(dbDir)) {
 
 const sqliteDbPath = path.join(dbDir, 'payment_system.sqlite');
 
-// Check if 100% Localhost Storage / SQLite mode is enabled
-const isLocalStorageMode = process.env.USE_LOCAL_STORAGE === 'true' || 
-                           process.env.USE_SQLITE === 'true' || 
-                           process.env.DB_CLIENT === 'sqlite' || 
-                           !process.env.DATABASE_URL;
+// Check if 100% Localhost Storage / SQLite mode is enabled (DATABASE_URL takes priority if configured)
+const isLocalStorageMode = !process.env.DATABASE_URL && 
+                           (process.env.USE_LOCAL_STORAGE === 'true' || 
+                            process.env.USE_SQLITE === 'true' || 
+                            process.env.DB_CLIENT === 'sqlite' || 
+                            !process.env.DATABASE_URL);
 
 if (isLocalStorageMode) {
   useSQLite = true;
@@ -55,6 +56,372 @@ if (isLocalStorageMode) {
   }
 }
 
+// ============================================================
+// Pure-JavaScript File-Backed JSON Store Engine
+// Activates seamlessly if sqlite3 native module cannot be loaded
+// ============================================================
+function createJsonStore(storeFilePath) {
+  let tables = {};
+
+  function saveToDisk() {
+    try {
+      const dir = path.dirname(storeFilePath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(storeFilePath, JSON.stringify(tables, null, 2), 'utf8');
+    } catch (e) {
+      console.warn('[JSON Store Save Warning]', e.message);
+    }
+  }
+
+  function loadFromDisk() {
+    if (fs.existsSync(storeFilePath)) {
+      try {
+        tables = JSON.parse(fs.readFileSync(storeFilePath, 'utf8'));
+        return;
+      } catch (e) {
+        console.warn('[JSON Store Load Warning]', e.message);
+      }
+    }
+    const initPath = path.join(path.dirname(storeFilePath), 'initial_data.json');
+    if (fs.existsSync(initPath)) {
+      try {
+        tables = JSON.parse(fs.readFileSync(initPath, 'utf8'));
+        saveToDisk();
+        console.log('[JSON Store] Seeded tables from initial_data.json successfully.');
+      } catch (e) {
+        console.warn('[JSON Store Initial Seed Error]', e.message);
+      }
+    }
+  }
+
+  loadFromDisk();
+
+  function getTable(name) {
+    const key = (name || '').trim().toLowerCase();
+    for (const k of Object.keys(tables)) {
+      if (k.toLowerCase() === key) return tables[k];
+    }
+    tables[key] = [];
+    return tables[key];
+  }
+
+  function setTable(name, arr) {
+    const key = (name || '').trim().toLowerCase();
+    for (const k of Object.keys(tables)) {
+      if (k.toLowerCase() === key) {
+        tables[k] = arr;
+        saveToDisk();
+        return;
+      }
+    }
+    tables[key] = arr;
+    saveToDisk();
+  }
+
+  const db = {
+    serialize: (fn) => fn && fn(),
+
+    run: function (sql, params, cb) {
+      const callback = typeof params === 'function' ? params : cb;
+      const cleanParams = Array.isArray(params) ? [...params] : [];
+      let lastID = null;
+      let changes = 0;
+
+      const trimmed = (sql || '').trim();
+
+      // Transactions / schema / PRAGMA
+      if (/^(BEGIN|COMMIT|ROLLBACK|PRAGMA)/i.test(trimmed)) {
+        if (callback) callback.call({ lastID: 0, changes: 0 }, null);
+        return;
+      }
+
+      // CREATE TABLE
+      if (/^CREATE\s+TABLE/i.test(trimmed)) {
+        const m = trimmed.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-zA-Z0-9_]+)/i);
+        if (m) getTable(m[1]);
+        saveToDisk();
+        if (callback) callback.call({ lastID: 0, changes: 0 }, null);
+        return;
+      }
+
+      // ALTER TABLE
+      if (/^ALTER\s+TABLE/i.test(trimmed)) {
+        if (callback) callback.call({ lastID: 0, changes: 0 }, null);
+        return;
+      }
+
+      // INSERT INTO
+      if (/^INSERT/i.test(trimmed)) {
+        const m = trimmed.match(/INSERT(?:\s+OR\s+IGNORE)?\s+INTO\s+([a-zA-Z0-9_]+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+        if (m) {
+          const tableName = m[1];
+          const cols = m[2].split(',').map(c => c.trim());
+          const valPlaceholders = m[3].split(',').map(v => v.trim());
+          const rows = getTable(tableName);
+
+          const newRow = {};
+          let maxId = 0;
+          rows.forEach(r => { if (r.id && Number(r.id) > maxId) maxId = Number(r.id); });
+          newRow.id = maxId + 1;
+          newRow.created_at = new Date().toISOString().replace('T', ' ').substring(0, 19);
+          newRow.updated_at = newRow.created_at;
+
+          let pIdx = 0;
+          cols.forEach((col, i) => {
+            const ph = valPlaceholders[i] || '?';
+            if (ph === '?') {
+              newRow[col] = cleanParams[pIdx++];
+            } else if (/^'.*'$/.test(ph)) {
+              newRow[col] = ph.slice(1, -1);
+            } else if (!isNaN(Number(ph))) {
+              newRow[col] = Number(ph);
+            } else {
+              newRow[col] = ph;
+            }
+          });
+
+          // Handle conflict / duplicate ignore
+          let isDup = false;
+          if (/INSERT\s+OR\s+IGNORE/i.test(trimmed)) {
+            if (newRow.key && rows.some(r => r.key === newRow.key)) isDup = true;
+            if (newRow.username && rows.some(r => r.username === newRow.username)) isDup = true;
+            if (newRow.member_id && rows.some(r => r.member_id === newRow.member_id)) isDup = true;
+          }
+
+          if (!isDup) {
+            rows.push(newRow);
+            lastID = newRow.id;
+            changes = 1;
+            saveToDisk();
+          }
+        }
+        if (callback) callback.call({ lastID: lastID || 1, changes }, null);
+        return;
+      }
+
+      // UPDATE
+      if (/^UPDATE/i.test(trimmed)) {
+        const m = trimmed.match(/UPDATE\s+([a-zA-Z0-9_]+)\s+SET\s+(.*?)(?:\s+WHERE\s+(.*))?$/i);
+        if (m) {
+          const tableName = m[1];
+          const setClause = m[2];
+          const whereClause = m[3] || '';
+          const rows = getTable(tableName);
+
+          const setParts = setClause.split(',').map(s => s.trim());
+          let pIdx = 0;
+          const updates = {};
+          setParts.forEach(sp => {
+            const eq = sp.split('=').map(x => x.trim());
+            const col = eq[0];
+            const valExpr = eq[1];
+            if (valExpr === '?') {
+              updates[col] = cleanParams[pIdx++];
+            } else if (/CURRENT_TIMESTAMP/i.test(valExpr)) {
+              updates[col] = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            } else if (/^'.*'$/.test(valExpr)) {
+              updates[col] = valExpr.slice(1, -1);
+            } else if (!isNaN(Number(valExpr))) {
+              updates[col] = Number(valExpr);
+            }
+          });
+
+          rows.forEach(r => {
+            let match = true;
+            if (whereClause) {
+              if (/id\s*=\s*\?/i.test(whereClause)) {
+                match = (r.id === cleanParams[pIdx]);
+              } else if (/key\s*=\s*\?/i.test(whereClause)) {
+                match = (r.key === cleanParams[pIdx]);
+              } else if (/key\s*=\s*([a-zA-Z0-9_']+)/i.test(whereClause)) {
+                const keyVal = whereClause.match(/key\s*=\s*([a-zA-Z0-9_']+)/i)[1].replace(/'/g, '');
+                match = (r.key === keyVal);
+              } else if (/username\s*=\s*\?/i.test(whereClause)) {
+                match = (r.username === cleanParams[pIdx]);
+              }
+            }
+            if (match) {
+              Object.assign(r, updates, { updated_at: new Date().toISOString().replace('T', ' ').substring(0, 19) });
+              changes++;
+            }
+          });
+          saveToDisk();
+        }
+        if (callback) callback.call({ lastID: null, changes }, null);
+        return;
+      }
+
+      // DELETE
+      if (/^DELETE/i.test(trimmed)) {
+        const m = trimmed.match(/DELETE\s+FROM\s+([a-zA-Z0-9_]+)(?:\s+WHERE\s+(.*))?$/i);
+        if (m) {
+          const tableName = m[1];
+          const whereClause = m[2] || '';
+          let rows = getTable(tableName);
+          const initialLen = rows.length;
+          if (!whereClause) {
+            rows = [];
+          } else if (/id\s*=\s*\?/i.test(whereClause)) {
+            const targetId = cleanParams[0];
+            rows = rows.filter(r => r.id !== targetId);
+          }
+          setTable(tableName, rows);
+          changes = initialLen - rows.length;
+        }
+        if (callback) callback.call({ lastID: null, changes }, null);
+        return;
+      }
+
+      if (callback) callback.call({ lastID: 1, changes: 0 }, null);
+    },
+
+    all: function (sql, params, cb) {
+      const callback = typeof params === 'function' ? params : cb;
+      const cleanParams = Array.isArray(params) ? [...params] : [];
+      const trimmed = (sql || '').trim();
+
+      // SELECT COUNT(*)
+      if (/SELECT\s+count\(\*\)(?:\s+as\s+([a-zA-Z0-9_]+))?\s+FROM\s+([a-zA-Z0-9_]+)/i.test(trimmed)) {
+        const m = trimmed.match(/SELECT\s+count\(\*\)(?:\s+as\s+([a-zA-Z0-9_]+))?\s+FROM\s+([a-zA-Z0-9_]+)/i);
+        const alias = m[1] || 'cnt';
+        const tableName = m[2];
+        const rows = getTable(tableName);
+        const res = {};
+        res[alias] = rows.length;
+        if (callback) callback(null, [res]);
+        return;
+      }
+
+      // Standard SELECT
+      const fromMatch = trimmed.match(/FROM\s+([a-zA-Z0-9_]+)/i);
+      if (!fromMatch) {
+        if (callback) callback(null, [{ '1': 1 }]);
+        return;
+      }
+
+      const tableName = fromMatch[1];
+      let rows = [...getTable(tableName)];
+
+      // WHERE filters
+      if (/WHERE/i.test(trimmed)) {
+        const whereIdx = trimmed.toUpperCase().indexOf('WHERE');
+        const afterWhere = trimmed.substring(whereIdx + 5);
+
+        // Member auth lookup: WHERE LOWER(member_id) = LOWER(?) OR LOWER(email) = LOWER(?) OR (phone = ? AND ? != '')
+        if (/member_id/i.test(afterWhere) && /phone/i.test(afterWhere)) {
+          const inputVal = (cleanParams[0] || '').toString().trim().toLowerCase();
+          const cleanPhone = (cleanParams[cleanParams.length - 1] || inputVal).toString().replace(/\D/g, '').slice(-10);
+
+          rows = rows.filter(r => {
+            const mId = (r.member_id || '').toString().toLowerCase();
+            const em = (r.email || '').toString().toLowerCase();
+            const ph = (r.phone || '').toString().replace(/\D/g, '').slice(-10);
+            return (mId && mId === inputVal) || (em && em === inputVal) || (ph && ph === cleanPhone);
+          });
+        }
+        // Phone check: WHERE phone = ?
+        else if (/phone\s*=\s*\?/i.test(afterWhere)) {
+          const phTarget = (cleanParams[0] || '').toString().replace(/\D/g, '').slice(-10);
+          rows = rows.filter(r => {
+            const ph = (r.phone || '').toString().replace(/\D/g, '').slice(-10);
+            return ph === phTarget;
+          });
+        }
+        // ID check: WHERE id = ?
+        else if (/id\s*=\s*\?/i.test(afterWhere)) {
+          const idTarget = Number(cleanParams[0]);
+          rows = rows.filter(r => r.id === idTarget);
+        }
+        // Key check for app_settings: WHERE key IN (...)
+        else if (/key\s+IN\s*\(([^)]+)\)/i.test(afterWhere)) {
+          const inKeys = afterWhere.match(/key\s+IN\s*\(([^)]+)\)/i)[1]
+            .split(',').map(k => k.trim().replace(/'/g, ''));
+          rows = rows.filter(r => inKeys.includes(r.key));
+        }
+        // Single key check: WHERE key = ?
+        else if (/key\s*=\s*\?/i.test(afterWhere)) {
+          const targetKey = cleanParams[0];
+          rows = rows.filter(r => r.key === targetKey);
+        }
+        // Username check: WHERE username = ?
+        else if (/username\s*=\s*\?/i.test(afterWhere)) {
+          const targetUser = (cleanParams[0] || '').toString().toLowerCase();
+          rows = rows.filter(r => (r.username || '').toString().toLowerCase() === targetUser);
+        }
+      }
+
+      // Filter out deleted if deleted_at IS NULL is specified
+      if (/deleted_at\s+IS\s+NULL/i.test(trimmed)) {
+        rows = rows.filter(r => !r.deleted_at);
+      }
+
+      // Order by
+      if (/ORDER\s+BY\s+([a-zA-Z0-9_]+)(?:\s+(ASC|DESC))?/i.test(trimmed)) {
+        const om = trimmed.match(/ORDER\s+BY\s+([a-zA-Z0-9_]+)(?:\s+(ASC|DESC))?/i);
+        const col = om[1];
+        const isDesc = (om[2] || 'ASC').toUpperCase() === 'DESC';
+        rows.sort((a, b) => {
+          if (a[col] < b[col]) return isDesc ? 1 : -1;
+          if (a[col] > b[col]) return isDesc ? -1 : 1;
+          return 0;
+        });
+      }
+
+      // Limit
+      if (/LIMIT\s+(\d+)/i.test(trimmed)) {
+        const lim = parseInt(trimmed.match(/LIMIT\s+(\d+)/i)[1], 10);
+        rows = rows.slice(0, lim);
+      }
+
+      if (callback) callback(null, rows);
+    },
+
+    get: function (sql, params, cb) {
+      db.all(sql, params, (err, rows) => {
+        if (err) return cb ? cb(err) : null;
+        if (cb) cb(null, (rows && rows.length > 0) ? rows[0] : null);
+      });
+    }
+  };
+
+  return db;
+}
+
+// Auto-seed function when tables are empty
+function seedInitialDataIfEmpty(db) {
+  const initPath = path.join(__dirname, '..', 'database', 'initial_data.json');
+  if (!fs.existsSync(initPath)) return;
+  try {
+    const data = JSON.parse(fs.readFileSync(initPath, 'utf8'));
+    if (data.members && data.members.length > 0) {
+      db.get("SELECT count(*) as cnt FROM members", (err, row) => {
+        if (!err && (!row || row.cnt === 0)) {
+          console.log('[DB Auto-Seed] Seeding initial members into database...');
+          data.members.forEach(m => {
+            db.run(
+              `INSERT OR IGNORE INTO members (id, member_id, name, email, phone, password_hash, balance, status, activation_status, payment_status, group_category, upi_id, profile_photo) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [m.id, m.member_id, m.name, m.email, m.phone, m.password_hash, m.balance || 0, m.status || 'ACTIVE', m.activation_status || 'ACTIVE', m.payment_status || 'UNPAID', m.group_category || 'General', m.upi_id || null, m.profile_photo || null]
+            );
+          });
+        }
+      });
+    }
+    if (data.app_settings && data.app_settings.length > 0) {
+      data.app_settings.forEach(s => {
+        db.run(`INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)`, [s.key, s.value]);
+      });
+    }
+    if (data.admin_users && data.admin_users.length > 0) {
+      data.admin_users.forEach(a => {
+        db.run(`INSERT OR IGNORE INTO admin_users (username, password_hash, email, status) VALUES (?, ?, ?, ?)`, [a.username, a.password_hash, a.email, a.status]);
+      });
+    }
+  } catch (e) {
+    console.warn('[DB Auto-Seed Error]', e.message);
+  }
+}
+
 // SQLite Driver & Fallback Logic
 function initSQLiteFallback() {
   if (sqliteDb) return sqliteDb;
@@ -68,21 +435,8 @@ function initSQLiteFallback() {
     sqliteDb = new sqlite3.Database(sqliteDbPath);
   } catch (sqliteErr) {
     console.warn('[SQLite Native Module Warning]', sqliteErr.message);
-    sqliteDb = {
-      serialize: (fn) => fn && fn(),
-      run: (sql, params, cb) => {
-        const callback = typeof params === 'function' ? params : cb;
-        if (callback) callback(null);
-      },
-      all: (sql, params, cb) => {
-        const callback = typeof params === 'function' ? params : cb;
-        if (callback) callback(null, []);
-      },
-      get: (sql, params, cb) => {
-        const callback = typeof params === 'function' ? params : cb;
-        if (callback) callback(null, null);
-      }
-    };
+    console.warn('[DB NOTICE] Switching to pure-JavaScript persistent JSON Store engine.');
+    sqliteDb = createJsonStore(path.join(dbDir, 'payment_system_store.json'));
   }
 
   // Initialize SQLite Schema
@@ -587,6 +941,7 @@ function initSQLiteFallback() {
       `);
     });
     console.log('[SQLite DB] All tables verified and ready.');
+    seedInitialDataIfEmpty(sqliteDb);
   }
 
   useSQLite = true;
@@ -634,13 +989,18 @@ function execSQLiteQuery(sqlText, params = []) {
         resolve({ rows: rows || [], rowCount: (rows || []).length });
       });
     } else {
-      db.run(sql, cleanParams, function (err) {
+      let runSql = sql;
+      if (/RETURNING/i.test(runSql)) {
+        runSql = runSql.replace(/\s+RETURNING\s+[\s\S]*$/i, '');
+      }
+
+      db.run(runSql, cleanParams, function (err) {
         if (err) {
           console.error('[SQLite Exec Error]', err.message, 'SQL:', sql);
           return reject(err);
         }
-        const lastID = this.lastID;
-        const changes = this.changes;
+        const lastID = this ? this.lastID : null;
+        const changes = this ? this.changes : 0;
 
         // If RETURNING clause is present, fetch returned row
         if (/RETURNING/i.test(sql)) {
