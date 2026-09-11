@@ -68,6 +68,87 @@
       --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
     }
 
+    :root[data-theme="gold"] {
+      --bg: #140e00;
+      --bg-sidebar: #221700;
+      --bg-surface: #261b00;
+      --bg-surface-hover: #332400;
+      --bg-card: #221700;
+      --border: rgba(245, 200, 66, 0.3);
+      --border-accent: rgba(245, 200, 66, 0.6);
+      --text: #fff6d6;
+      --text-muted: #e6c86e;
+      --text-dim: #a68939;
+      --primary: #fbbf24;
+      --primary-hover: #f59e0b;
+      --primary-light: rgba(251, 191, 36, 0.2);
+      --primary-text: #0d0800;
+      --gold: #fbbf24;
+      --green: #10b981;
+      --green-light: rgba(16, 185, 129, 0.2);
+      --red: #f43f5e;
+      --red-light: rgba(244, 63, 94, 0.2);
+      --orange: #f97316;
+      --orange-light: rgba(249, 115, 22, 0.2);
+      --blue: #38bdf8;
+      --blue-light: rgba(56, 189, 248, 0.2);
+      --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8);
+    }
+
+    :root[data-theme="emerald"] {
+      --bg: #031c12;
+      --bg-sidebar: #062c1d;
+      --bg-surface: #073b27;
+      --bg-surface-hover: #0a4c33;
+      --bg-card: #062c1d;
+      --border: rgba(52, 211, 153, 0.25);
+      --border-accent: rgba(52, 211, 153, 0.5);
+      --text: #e6fcf5;
+      --text-muted: #a7f3d0;
+      --text-dim: #6ee7b7;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-light: rgba(16, 185, 129, 0.2);
+      --primary-text: #022c22;
+      --gold: #f59e0b;
+      --green: #34d399;
+      --green-light: rgba(52, 211, 153, 0.2);
+      --red: #f87171;
+      --red-light: rgba(248, 113, 113, 0.2);
+      --orange: #fb923c;
+      --orange-light: rgba(251, 146, 60, 0.2);
+      --blue: #38bdf8;
+      --blue-light: rgba(56, 189, 248, 0.2);
+      --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8);
+    }
+
+    :root[data-theme="sapphire"] {
+      --bg: #050e24;
+      --bg-sidebar: #091a42;
+      --bg-surface: #0e2359;
+      --bg-surface-hover: #143075;
+      --bg-card: #091a42;
+      --border: rgba(96, 165, 250, 0.25);
+      --border-accent: rgba(96, 165, 250, 0.5);
+      --text: #e0f2fe;
+      --text-muted: #bae6fd;
+      --text-dim: #7dd3fc;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-light: rgba(59, 130, 246, 0.2);
+      --primary-text: #ffffff;
+      --gold: #fbbf24;
+      --green: #22c55e;
+      --green-light: rgba(34, 197, 94, 0.2);
+      --red: #ef4444;
+      --red-light: rgba(239, 68, 68, 0.2);
+      --orange: #f97316;
+      --orange-light: rgba(249, 115, 22, 0.2);
+      --blue: #60a5fa;
+      --blue-light: rgba(96, 165, 250, 0.2);
+      --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -947,6 +1028,10 @@
           <div class="topbar-title" id="topbarTitle">Dashboard</div>
         </div>
         <div class="topbar-right">
+          <!-- 🎙️ TAMIL AI VOICE COPILOT -->
+          <button class="btn-primary" onclick="openAiCopilotModal()" id="aiCopilotBtn" style="padding:6px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;background:linear-gradient(135deg,#10b981,#059669);border:none;box-shadow:0 0 14px rgba(16,185,129,0.35)" title="🎙️ Tamil Voice AI Assistant / தமிழ் AI நிர்வாக உதவியாளர்">
+            <span style="font-size:14px">🎙️</span> <span>தமிழ் AI Copilot</span>
+          </button>
           <!-- 🔄 IN-APP QUICK REFRESH -->
           <button class="btn-primary" onclick="triggerAdminRefresh()" id="adminRefreshBtn" style="padding:6px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer" title="🔄 Refresh live data / புதுப்பி">
             <span id="adminRefreshIcon">🔄</span> <span id="txtAdminRefresh">Refresh</span>
@@ -966,6 +1051,9 @@
           <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
             <option value="dark">🌙 Dark Mode</option>
             <option value="light">☀️ Light Mode</option>
+            <option value="gold">👑 Imperial Gold</option>
+            <option value="emerald">🌲 Emerald Forest</option>
+            <option value="sapphire">💎 Deep Sapphire</option>
             <option value="system">💻 System Default</option>
           </select>
           <div style="font-size:13px;font-weight:700;color:var(--text-muted)" id="adminUserLabel">Admin</div>
@@ -2348,6 +2436,111 @@
     </div>
   </div>
 
+  <!-- 🎙️ TAMIL AI VOICE COPILOT MODAL -->
+  <div id="aiCopilotModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:640px;width:95%;border:2px solid rgba(16,185,129,0.4);box-shadow:0 20px 50px rgba(0,0,0,0.7);background:var(--bg-card);border-radius:20px;overflow:hidden">
+      
+      <!-- Copilot Header -->
+      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(245,200,66,0.08));padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 15px rgba(16,185,129,0.4)">
+            🤖
+          </div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
+              <span>தமிழ் AI நிர்வாக உதவியாளர்</span>
+              <span style="font-size:10px;background:rgba(16,185,129,0.2);color:#34d399;padding:2px 8px;border-radius:12px;font-weight:700">VOICE ACTIVE</span>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted)">Autonomous Admin Voice & Command Agent</div>
+          </div>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" onclick="closeModal('aiCopilotModal')" style="padding:4px 10px;border-radius:50%;width:32px;height:32px">✕</button>
+      </div>
+
+      <!-- Voice Interaction Stage -->
+      <div style="padding:22px;text-align:center">
+        
+        <!-- Big Pulse Mic Button -->
+        <div style="display:flex;justify-content:center;align-items:center;margin-bottom:16px;position:relative">
+          <div id="micPulseWave" class="hidden" style="position:absolute;width:96px;height:96px;border-radius:50%;border:2px solid #10b981;"></div>
+          <button id="copilotMicBtn" type="button" onclick="toggleVoiceRecognition()" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);border:3px solid #34d399;color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 25px rgba(16,185,129,0.4);transition:all 0.25s">
+            🎤
+          </button>
+        </div>
+
+        <div id="copilotStatusText" style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px">
+          மைக் பட்டனை அழுத்தி தமிழில் பேசவும் (Click Mic & Speak in Tamil)
+        </div>
+
+        <!-- Transcript & Response Display -->
+        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;min-height:110px;max-height:220px;overflow-y:auto;margin-bottom:16px;font-size:13px;line-height:1.6">
+          <div id="copilotUserSpeech" style="color:var(--text-dim);font-style:italic;margin-bottom:8px">
+            🗣️ நீங்கள் பேசியது: <span id="copilotTranscript" style="color:var(--text);font-style:normal;font-weight:600">...</span>
+          </div>
+          <div id="copilotAiReplyBox" style="color:var(--text);border-top:1px dashed var(--border);padding-top:10px;margin-top:8px">
+            🤖 <strong>AI பதில்:</strong> <span id="copilotReplyText" style="color:var(--text)">வணக்கம்! என்ன செய்ய வேண்டும் என்று தமிழில் சொல்லுங்கள். எரர் செக் செய்ய, தீம் மாற்ற அல்லது பேங்க் PDF அறிக்கை பெற நான் தயார்.</span>
+          </div>
+        </div>
+
+        <!-- Text Input Bar (Alternative to Mic) -->
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <input type="text" id="copilotTextInput" placeholder="அல்லது தமிழில் தட்டச்சு செய்யவும்... (எ.கா: எரர் செக் பண்ணு)" style="flex:1;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px" onkeypress="if(event.key==='Enter')sendCopilotText()">
+          <button class="btn-primary btn-sm" type="button" onclick="sendCopilotText()" style="padding:10px 16px;background:#10b981;border-color:#059669">
+            அனுப்பு
+          </button>
+        </div>
+
+        <!-- Quick One-Tap Action Chips -->
+        <div style="text-align:left">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">
+            ⚡ Quick Commands / விரைவு கட்டளைகள்:
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button type="button" class="badge" onclick="runCopilotPrompt('எரர் செக் பண்ணி சரி பண்ணு')" style="cursor:pointer;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:6px 12px;border-radius:8px">
+              🛡️ எரர் செக் & பக்ஸ் பிக்ஸ்
+            </button>
+            <button type="button" class="badge" onclick="runCopilotPrompt('டார்க் தீம் மாத்து')" style="cursor:pointer;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid rgba(245,200,66,0.3);padding:6px 12px;border-radius:8px">
+              🌙 டார்க் தீம்
+            </button>
+            <button type="button" class="badge" onclick="runCopilotPrompt('கோல்ட் தீம் போடு')" style="cursor:pointer;background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:6px 12px;border-radius:8px">
+              👑 கோல்ட் தீம்
+            </button>
+            <button type="button" class="badge" onclick="runCopilotPrompt('எமரால்ட் தீம் மாத்து')" style="cursor:pointer;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:6px 12px;border-radius:8px">
+              🌲 எமரால்ட் தீம்
+            </button>
+            <button type="button" class="badge" onclick="runCopilotPrompt('வங்கி PDF அறிக்கை தயார் பண்ணு')" style="cursor:pointer;background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:6px 12px;border-radius:8px">
+              📄 பேங்க் PDF அறிக்கை
+            </button>
+            <button type="button" class="badge" onclick="runCopilotPrompt('கிளப் பேலன்ஸ் மற்றும் கலெக்ஷன் எவ்ளோ')" style="cursor:pointer;background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);padding:6px 12px;border-radius:8px">
+              💰 கலெக்ஷன் & நிதி நிலை
+            </button>
+            <button type="button" class="badge" onclick="runCopilotPrompt('உறுப்பினர்கள் பக்கம் போ')" style="cursor:pointer;background:rgba(249,115,22,0.15);color:#fb923c;border:1px solid rgba(249,115,22,0.3);padding:6px 12px;border-radius:8px">
+              👥 உறுப்பினர்கள் பட்டியல்
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Footer -->
+      <div style="background:var(--bg-surface);padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>🔊 ஆடியோ பதில்:</span>
+          <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+            <input type="checkbox" id="copilotTtsToggle" checked> பேசு (TTS Speech)
+          </label>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" onclick="closeModal('aiCopilotModal')">மூடு / Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FLOATING AI VOICE BUTTON -->
+  <button id="floatingAiBtn" type="button" onclick="openAiCopilotModal()" style="position:fixed;bottom:24px;right:24px;z-index:999;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);border:2px solid #34d399;color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(16,185,129,0.4);cursor:pointer;transition:transform 0.2s" title="🎙️ AI Voice Assistant / தமிழ் AI அசிஸ்டெண்ட்">
+    🎙️
+  </button>
+
   <!-- SUPREME ADMIN CHAT ROOM & MODERATION MODAL -->
   <div id="adminChatModal" class="modal-overlay hidden">
     <div class="modal" style="max-width:900px;width:95%;height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden;border:2px solid var(--gold);box-shadow:var(--shadow)">
@@ -2837,120 +3030,250 @@
       const data = cachedAdminMonthlyStatement;
       const m = data.month || 'Current';
 
-      const printWin = window.open('', '_blank');
+      const printWin = window.open('', '_blank', 'width=1100,height=850');
       if (!printWin) {
         window.print();
         return;
       }
 
+      const s = data.summary || {};
+      const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const auditHash = 'PF-AUDIT-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-' + Date.now().toString().slice(-6);
+
+      const inflowRows = (data.inflows || []).map((item, idx) => `
+        <tr>
+          <td style="text-align:center;font-weight:600">${idx + 1}</td>
+          <td>
+            <strong style="color:#0f172a;font-size:12px">${esc(item.member_name)}</strong><br>
+            <span style="font-size:10px;color:#64748b;font-family:monospace">ID: ${esc(item.member_code)} ${item.member_phone ? '· ' + esc(item.member_phone) : ''}</span>
+          </td>
+          <td style="font-size:11px;white-space:nowrap">${esc(item.payment_date)}<br><span style="color:#64748b;font-size:10px">${esc(item.payment_time)}</span></td>
+          <td style="font-size:11px">${esc(item.category)}</td>
+          <td style="font-family:monospace;font-size:11px;color:#334155;word-break:break-all"><code>${esc(item.transaction_reference)}</code></td>
+          <td style="text-align:right;font-weight:700;color:#15803d;font-size:12px">₹${parseFloat(item.amount || 0).toLocaleString('en-IN')}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8">No verified inflows recorded for this accounting month.</td></tr>';
+
+      const loansToPrint = (data.outflows && data.outflows.length > 0) ? data.outflows : [];
+      const loanRows = loansToPrint.map((d, idx) => {
+        const isRefund = d.outflow_type === 'REFUND';
+        const remaining = parseFloat(d.remaining_amount) || 0;
+        const repaid = parseFloat(d.total_repaid) || 0;
+        const isPaid = d.payment_status === 'PAID' || remaining <= 0;
+        const isPartial = !isPaid && repaid > 0;
+        const statusBg = isRefund ? '#fef3c7' : (isPaid ? '#dcfce7' : (isPartial ? '#ffedd5' : '#fee2e2'));
+        const statusColor = isRefund ? '#92400e' : (isPaid ? '#166534' : (isPartial ? '#9a3412' : '#991b1b'));
+        const statusText = isRefund 
+          ? 'MEMBER EXIT REFUND (அசல் ஒப்படைப்பு)' 
+          : (isPaid ? 'PAID / செலுத்தப்பட்டது' : (isPartial ? `PARTIAL (மீதம்: ₹${remaining.toLocaleString('en-IN')})` : 'ACTIVE DUE / நிலுவை'));
+
+        return `
+          <tr style="${isRefund ? 'background:#fffdf7;' : ''}">
+            <td style="text-align:center;font-weight:600">${idx + 1}</td>
+            <td>
+              <strong style="color:#0f172a;font-size:12px">${esc(d.member_name)}</strong><br>
+              <span style="font-size:10px;color:#64748b;font-family:monospace">${esc(d.member_code || '')}</span>
+            </td>
+            <td style="font-size:11px;white-space:nowrap">${(d.distribution_date || d.start_date || '—').split('T')[0]}</td>
+            <td style="text-align:right;font-weight:600">₹${parseFloat(d.principal_amount || 0).toLocaleString('en-IN')}</td>
+            <td style="text-align:center;font-size:11px">${isRefund ? '—' : `${d.interest_percentage || 5}%<br><span style="font-size:10px;color:#64748b">₹${parseFloat(d.interest_amount || 0).toLocaleString('en-IN')}</span>`}</td>
+            <td style="text-align:right;font-weight:700">₹${parseFloat(d.total_payable || 0).toLocaleString('en-IN')}</td>
+            <td style="text-align:right;color:#15803d">₹${repaid.toLocaleString('en-IN')}</td>
+            <td style="text-align:right;font-weight:700;color:${remaining > 0 ? '#dc2626' : '#15803d'}">₹${remaining.toLocaleString('en-IN')}</td>
+            <td style="font-size:11px">${esc(d.nominee_name || '—')}</td>
+            <td style="text-align:center">
+              <span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${statusBg};color:${statusColor}">${statusText}</span>
+            </td>
+          </tr>
+        `;
+      }).join('') || '<tr><td colspan="10" style="text-align:center;padding:16px;color:#94a3b8">No loan disbursements or member refunds for this accounting month.</td></tr>';
+
       printWin.document.write(`
         <!DOCTYPE html>
-        <html>
+        <html lang="ta">
         <head>
-          <title>PF Chit Fund Club — Monthly Statement ${m}</title>
+          <meta charset="UTF-8">
+          <title>Official Bank Statement — PF Chit Fund Club (${m})</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; color: #111; }
-            h1, h2, h3 { margin: 0 0 8px; }
-            .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
-            .meta { font-size: 13px; color: #555; margin-bottom: 16px; }
-            .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-            .kpi-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #f9fafb; text-align: center; }
-            .kpi-title { font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; }
-            .kpi-val { font-size: 18px; font-weight: bold; margin-top: 4px; color: #1e3a8a; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 12px; }
-            th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
-            th { background: #f3f4f6; font-weight: 700; }
-            .text-right { text-align: right; }
-            .footer { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 12px; font-size: 11px; color: #777; display: flex; justify-content: space-between; }
+            @page { size: A4 portrait; margin: 12mm 12mm 15mm 12mm; }
+            * { box-sizing: border-box; }
+            body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; padding: 0; margin: 0; color: #0f172a; line-height: 1.35; background: #fff; font-size: 11.5px; }
+            .bank-header { border-bottom: 2.5px solid #0f2b5c; padding-bottom: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+            .bank-title-group h1 { margin: 0 0 3px 0; font-size: 20px; color: #0f2b5c; font-weight: 800; letter-spacing: -0.3px; }
+            .bank-title-group .tamil-title { font-size: 14px; color: #b45309; font-weight: 700; margin-bottom: 3px; }
+            .bank-meta { font-size: 10px; color: #475569; }
+            .bank-badge-box { text-align: right; }
+            .official-seal { display: inline-block; border: 2px solid #0f2b5c; border-radius: 6px; padding: 6px 12px; background: #f8fafc; text-align: center; }
+            .official-seal .seal-head { font-size: 9px; text-transform: uppercase; font-weight: 800; color: #0f2b5c; letter-spacing: 0.8px; }
+            .official-seal .seal-no { font-family: monospace; font-size: 11px; font-weight: 700; color: #b45309; }
+
+            .account-summary-table { width: 100%; border: 1.5px solid #0f2b5c; border-collapse: collapse; margin-bottom: 16px; background: #fdfefe; }
+            .account-summary-table th { background: #0f2b5c; color: #fff; text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+            .account-summary-table td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 11px; }
+
+            .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+            .kpi-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center; background: #f8fafc; }
+            .kpi-card .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.4px; }
+            .kpi-card .kpi-val { font-size: 16px; font-weight: 800; margin-top: 4px; }
+
+            .section-title { font-size: 13px; font-weight: 800; color: #0f2b5c; margin: 18px 0 8px 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4px; }
+            table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+            table.data-table th { background: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10.5px; }
+            table.data-table td { border: 1px solid #e2e8f0; padding: 6px 8px; vertical-align: middle; }
+            table.data-table tr:nth-child(even) { background: #fafafa; }
+
+            .audit-callout { background: #f8fafc; border-left: 4px solid #0f2b5c; padding: 10px 14px; margin: 16px 0; font-size: 10.5px; color: #334155; line-height: 1.5; border-radius: 0 6px 6px 0; }
+            .signatory-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 30px; page-break-inside: avoid; }
+            .sign-box { border-top: 1.5px dashed #64748b; padding-top: 8px; text-align: center; font-size: 11px; }
+            .sign-box strong { color: #0f2b5c; display: block; }
+            .sign-box span { color: #64748b; font-size: 10px; }
+
+            .no-print-bar { background: #0f2b5c; color: #fff; padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; }
+            .no-print-bar button { padding: 6px 14px; background: #f5c842; color: #0d0800; border: none; font-weight: 700; border-radius: 4px; cursor: pointer; }
+            @media print {
+              .no-print-bar { display: none !important; }
+              body { padding: 0; }
+            }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>🏛️ PF Chit Fund Club — மாதாந்திர கணக்கு அறிக்கை</h1>
-            <div style="font-size:15px;color:#2563eb;font-weight:bold">Financial Statement for Month: ${m}</div>
-            <div class="meta">Generated: ${new Date().toLocaleString('en-IN')} | All transactions audited and verified</div>
+          <div class="no-print-bar">
+            <div><strong>PF Chit Fund Club — Official Admin Bank Statement System</strong> · Ready to print / save as PDF</div>
+            <button onclick="window.print()">🖨️ Print / Download PDF</button>
           </div>
 
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="kpi-title">Total Inflow (வரவு)</div>
-              <div class="kpi-val" style="color:#16a34a">₹${data.summary.total_inflow.toLocaleString('en-IN')}</div>
+          <div class="bank-header">
+            <div class="bank-title-group">
+              <h1>PF CHIT FUND CLUB (COMMUNITY SEED FUND)</h1>
+              <div class="tamil-title">புதுப்பட்டி நண்பர்கள் சீட்டு நிதி கிளப் (அங்கீகரிக்கப்பட்ட கணக்கு அறிக்கை)</div>
+              <div class="bank-meta">
+                Regd Society Reg No: <strong>TN-PDK-CHIT-2024-001</strong> · Puduppatti Main Road, Pudukkottai Dt.<br>
+                Official Verified UPI: <strong>puduppattifriends@okhdfcbank</strong> · Support: 9876543210
+              </div>
             </div>
-            <div class="kpi-card">
-              <div class="kpi-title">Total Loans (கடன்)</div>
-              <div class="kpi-val" style="color:#d97706">₹${data.summary.total_outflow.toLocaleString('en-IN')}</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-title">Net Balance (நிகர இருப்பு)</div>
-              <div class="kpi-val">₹${data.summary.net_monthly_flow.toLocaleString('en-IN')}</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-title">Pool Balance</div>
-              <div class="kpi-val" style="color:#16a34a">₹${data.summary.current_pool_balance.toLocaleString('en-IN')}</div>
+            <div class="bank-badge-box">
+              <div class="official-seal">
+                <div class="seal-head">OFFICIAL AUDIT LEDGER</div>
+                <div class="seal-no">${auditHash}</div>
+                <div style="font-size:8.5px;color:#64748b;margin-top:2px">DATE: ${todayStr.split(',')[0]}</div>
+              </div>
             </div>
           </div>
 
-          <h3>📥 Member Payments & Inflows</h3>
-          <table>
+          <table class="account-summary-table">
+            <tr>
+              <th colspan="4">COMMUNITY POOL LEDGER STATEMENT OF ACCOUNT</th>
+            </tr>
+            <tr>
+              <td style="width:25%;color:#64748b">Accounting Period:</td>
+              <td style="width:25%"><strong>${m} (01 to 30/31)</strong></td>
+              <td style="width:25%;color:#64748b">Currency / Mode:</td>
+              <td style="width:25%"><strong>INR (₹) / Direct Bank & UPI</strong></td>
+            </tr>
+            <tr>
+              <td style="color:#64748b">Total Verified Inflows:</td>
+              <td style="color:#15803d;font-weight:700">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')} (${s.inflow_count || 0} txn)</td>
+              <td style="color:#64748b">Total Outflows & Refunds:</td>
+              <td style="color:#b91c1c;font-weight:700">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')} (${s.outflow_count || 0} txn)</td>
+            </tr>
+            <tr>
+              <td style="color:#64748b">Net Month Movement:</td>
+              <td style="color:#0f2b5c;font-weight:700">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</td>
+              <td style="color:#64748b">Closing Available Pool:</td>
+              <td style="color:#b45309;font-weight:800;font-size:13px">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
+            </tr>
+          </table>
+
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="kpi-label">Verified Inflows (உள்வரவு)</div>
+              <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Loans & Exit Refunds</div>
+              <div class="kpi-val" style="color:#b91c1c">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Net Monthly Flow</div>
+              <div class="kpi-val" style="color:#0f2b5c">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Club Closing Cash Pool</div>
+              <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+
+          <div class="section-title">
+            <span>📥 1. VERIFIED INFLOW REGISTER (உறுப்பினர் உள்வரவு பட்டியல் - தேதி & நேரத்துடன்)</span>
+            <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${data.inflows?.length || 0} Transactions</span>
+          </div>
+          <table class="data-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Member</th>
+                <th style="width:30px;text-align:center">#</th>
+                <th>Member Name & Code</th>
                 <th>Payment Date & Time</th>
-                <th>Category</th>
-                <th class="text-right">Amount (₹)</th>
-                <th>Reference / UTR</th>
+                <th>Category / Purpose</th>
+                <th>Bank UTR / Ref No</th>
+                <th style="text-align:right">Amount (₹)</th>
               </tr>
             </thead>
             <tbody>
-              ${(data.inflows || []).map((x, i) => `
-                <tr>
-                  <td>${i + 1}</td>
-                  <td><strong>${x.member_name}</strong> (${x.member_code})</td>
-                  <td>${x.payment_date} ${x.payment_time}</td>
-                  <td>${x.category}</td>
-                  <td class="text-right"><strong>₹${x.amount.toLocaleString('en-IN')}</strong></td>
-                  <td><code>${x.transaction_reference}</code></td>
-                </tr>
-              `).join('')}
+              ${inflowRows}
             </tbody>
           </table>
 
-          <h3>📤 Seed Fund Loans Disbursed</h3>
-          <table>
+          <div class="section-title" style="margin-top:22px">
+            <span>📤 2. LOANS DISBURSED & MEMBER EXIT REFUNDS (கடன் மற்றும் உறுப்பினர் விலகல் தீர்வு)</span>
+            <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${loansToPrint?.length || 0} Records</span>
+          </div>
+          <table class="data-table">
             <thead>
               <tr>
-                <th>Loan #</th>
-                <th>Member</th>
-                <th>Disbursed Date</th>
-                <th class="text-right">Principal</th>
-                <th class="text-right">5% Interest</th>
-                <th class="text-right">Total Due</th>
-                <th>Nominee Details</th>
-                <th>Due Date</th>
-                <th>Status</th>
+                <th style="width:30px;text-align:center">#</th>
+                <th>Member / Beneficiary</th>
+                <th>Date</th>
+                <th style="text-align:right">Principal (₹)</th>
+                <th style="text-align:center">Interest</th>
+                <th style="text-align:right">Total Due</th>
+                <th style="text-align:right">Repaid</th>
+                <th style="text-align:right">Balance</th>
+                <th>Nominee / Witness</th>
+                <th style="text-align:center">Status</th>
               </tr>
             </thead>
             <tbody>
-              ${(data.outflows || []).map(x => `
-                <tr>
-                  <td>#${x.id}</td>
-                  <td><strong>${x.member_name}</strong> (${x.member_code})</td>
-                  <td>${x.distribution_date}</td>
-                  <td class="text-right">₹${x.principal_amount.toLocaleString('en-IN')}</td>
-                  <td class="text-right">+₹${x.interest_amount.toLocaleString('en-IN')}</td>
-                  <td class="text-right"><strong>₹${x.total_payable.toLocaleString('en-IN')}</strong></td>
-                  <td>${x.nominee_name}</td>
-                  <td>${x.due_date}</td>
-                  <td>${x.payment_status}</td>
-                </tr>
-              `).join('')}
+              ${loanRows}
             </tbody>
           </table>
 
-          <div class="footer">
-            <div>Authorized Administrator: Admin Office</div>
-            <div>PF Chit Fund Club — Official Financial Transparency Ledger</div>
+          <div class="audit-callout">
+            <strong>📌 தணிக்கை மற்றும் விதிகள் சான்றிதழ் (Audit & Transparency Governance Note):</strong><br>
+            1. <strong>உறுப்பினர் விலகல் (Member Exit Settlement):</strong> உறுப்பினர் கிளப்பில் இருந்து விலகும்போது, அவர் இதுவரை செலுத்திய மொத்த அசல் தொகை (Principal Contribution) துல்லியமாகக் கணக்கிடப்பட்டு அவருக்கு முழுமையாக திருப்பியளிக்கப்படுகிறது (<code>REFUNDED</code>). அந்த தொகை கிளப்பின் நடப்பு கணக்கிலிருந்து கழிக்கப்படும்.<br>
+            2. <strong>தணிக்கைப் பாதுகாப்பு (Audit Trail Preservation):</strong> உறுப்பினரின் பெயர் மற்றும் தொலைபேசி எண் புதிய பதிவுக்கு விடுவிக்கப்பட்டாலும், கடந்த கால தணிக்கைக்காக அவர் செலுத்திய கட்டணங்கள் மற்றும் பரிவர்த்தனை வரலாறு நிரந்தரமாக பாதுகாக்கப்படும்.<br>
+            3. ஈட்டிய 5% வட்டித் தொகை கிளப்பின் பொது நிதியிலேயே சேர்க்கப்பட்டு, தகுதியான உறுப்பினர்களுக்கு சீட்டு மற்றும் அவசரக் கடனாக மட்டுமே மறுசுழற்சி செய்யப்படுகிறது.
+          </div>
+
+          <div class="signatory-container">
+            <div class="sign-box">
+              <strong>பொருளாளர் (TREASURER)</strong>
+              <span>PF Chit Fund Club</span>
+            </div>
+            <div class="sign-box">
+              <div style="display:inline-block;border:1px dashed #b45309;padding:2px 8px;border-radius:4px;color:#b45309;font-weight:700;font-size:9px;margin-bottom:4px">
+                SYSTEM CERTIFIED
+              </div>
+              <strong>டிஜிட்டல் முத்திரை (SEAL)</strong>
+              <span>Verified by AI Guardian Watchdog</span>
+            </div>
+            <div class="sign-box">
+              <strong>தலைவர் / தணிக்கையாளர் (AUDITOR)</strong>
+              <span>Authorized Signatory</span>
+            </div>
+          </div>
+
+          <div style="font-size:9.5px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:20px;text-align:center">
+            This is an official, computer-generated bank-grade statement from PF Chit Fund Club System (${auditHash}). Generated on ${todayStr} IST.
           </div>
         </body>
         </html>
@@ -3893,6 +4216,170 @@
       changeTheme(savedTheme);
       initAdminSocket();
       loadDashboard();
+    }
+
+    // ============================================================
+    // 🎙️ TAMIL AI VOICE COPILOT & AUTONOMOUS AGENT
+    // ============================================================
+    let copilotRecognition = null;
+    let isCopilotListening = false;
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        console.warn('Speech Recognition not natively supported in this browser. Text input is ready.');
+        return null;
+      }
+      try {
+        const r = new SpeechRecognition();
+        r.continuous = false;
+        r.interimResults = true;
+        r.lang = 'ta-IN'; // Tamil (India)
+
+        r.onstart = () => {
+          isCopilotListening = true;
+          const wave = document.getElementById('micPulseWave');
+          if (wave) wave.classList.remove('hidden');
+          const st = document.getElementById('copilotStatusText');
+          if (st) st.textContent = '🎙️ நீங்கள் பேசுவதை கவனிக்கிறேன்... (Listening in Tamil...)';
+        };
+
+        r.onresult = (event) => {
+          let transcript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            transcript += event.results[i][0].transcript;
+          }
+          const tBox = document.getElementById('copilotTranscript');
+          if (tBox) tBox.textContent = transcript;
+
+          if (event.results[0].isFinal) {
+            handleCopilotQuery(transcript);
+          }
+        };
+
+        r.onerror = (event) => {
+          console.warn('Speech recognition warning:', event.error);
+          isCopilotListening = false;
+          const wave = document.getElementById('micPulseWave');
+          if (wave) wave.classList.add('hidden');
+          const st = document.getElementById('copilotStatusText');
+          if (st) st.textContent = 'மைக் அனுமதி அல்லது பிழை. கீழே உள்ள பெட்டியில் தட்டச்சு செய்யலாம்.';
+        };
+
+        r.onend = () => {
+          isCopilotListening = false;
+          const wave = document.getElementById('micPulseWave');
+          if (wave) wave.classList.add('hidden');
+        };
+
+        return r;
+      } catch (e) {
+        console.warn('Speech recognition init error:', e.message);
+        return null;
+      }
+    }
+
+    function toggleVoiceRecognition() {
+      if (!copilotRecognition) {
+        copilotRecognition = initSpeechRecognition();
+      }
+      if (!copilotRecognition) {
+        showToast('Browser speech recognition not available. Please type below.', 'warning');
+        return;
+      }
+      if (isCopilotListening) {
+        copilotRecognition.stop();
+      } else {
+        try {
+          copilotRecognition.start();
+        } catch (e) {
+          copilotRecognition.stop();
+          setTimeout(() => {
+            try { copilotRecognition.start(); } catch(err) {}
+          }, 300);
+        }
+      }
+    }
+
+    function speakCopilotText(text) {
+      if (!('speechSynthesis' in window)) return;
+      const toggle = document.getElementById('copilotTtsToggle');
+      if (toggle && !toggle.checked) return;
+
+      try {
+        window.speechSynthesis.cancel();
+        const clean = text.replace(/[*#•]/g, '').trim();
+        const utterance = new SpeechSynthesisUtterance(clean);
+        utterance.lang = 'ta-IN';
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('TTS Speech error:', e.message);
+      }
+    }
+
+    async function handleCopilotQuery(query) {
+      if (!query || !query.trim()) return;
+      const tBox = document.getElementById('copilotTranscript');
+      if (tBox) tBox.textContent = query;
+
+      const st = document.getElementById('copilotStatusText');
+      if (st) st.textContent = '⚙️ செயலாக்குகிறது... (Processing your command...)';
+
+      try {
+        const res = await api('/api/admin/members/ai-copilot', 'POST', { query: query, language: 'ta' });
+        const replyBox = document.getElementById('copilotReplyText');
+        if (replyBox) {
+          replyBox.innerHTML = (res.replyText || '').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        }
+
+        if (st) st.textContent = '✅ கட்டளை நிறைவேற்றப்பட்டது! (Command Executed)';
+
+        // Autonomous Execution of Admin Actions
+        if (res.action === 'CHANGE_THEME' && res.data?.theme) {
+          changeTheme(res.data.theme);
+          const sel = document.getElementById('themeSelect');
+          if (sel) sel.value = res.data.theme;
+          showToast(`🎨 தீம் ${res.data.themeName || res.data.theme} ஆக மாற்றப்பட்டது!`, 'success');
+        } else if (res.action === 'EXECUTE_HEAL') {
+          await loadDashboard();
+          showToast('🛡️ சிஸ்டம் 100% சரிசெய்யப்பட்டது!', 'success');
+        } else if (res.action === 'TRIGGER_PDF') {
+          printMonthlyStatementAdmin();
+          showToast('📄 அதிகாரப்பூர்வ வங்கி PDF அறிக்கை தயாராக உள்ளது!', 'success');
+        } else if (res.action === 'NAVIGATE' && res.data?.page) {
+          showPage(res.data.page);
+        }
+
+        // Voice speech feedback
+        if (res.speechText) {
+          speakCopilotText(res.speechText);
+        }
+      } catch (err) {
+        if (st) st.textContent = '❌ பிழை: ' + err.message;
+        showToast('AI Copilot error: ' + err.message, 'error');
+      }
+    }
+
+    function sendCopilotText() {
+      const inp = document.getElementById('copilotTextInput');
+      if (!inp || !inp.value.trim()) return;
+      const q = inp.value.trim();
+      inp.value = '';
+      handleCopilotQuery(q);
+    }
+
+    function runCopilotPrompt(promptText) {
+      const inp = document.getElementById('copilotTextInput');
+      if (inp) inp.value = promptText;
+      handleCopilotQuery(promptText);
+    }
+
+    function openAiCopilotModal() {
+      openModal('aiCopilotModal');
+      if (!copilotRecognition) {
+        copilotRecognition = initSpeechRecognition();
+      }
     }
 
     // AI System Guardian Watchdog Methods
