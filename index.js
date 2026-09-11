@@ -40,6 +40,7 @@ const nomineesRoutes = require('./server/routes/nominees');
 const schedulesRoutes = require('./server/routes/schedules');
 const noticesRoutes = require('./server/routes/notices');
 const publicDashboardRoutes = require('./server/routes/public-dashboard');
+const expensesRoutes = require('./server/routes/expenses');
 const { endAuction } = require('./server/routes/auction');
 const { startBackgroundCleaner } = require('./server/services/auto-deduplicator');
 
@@ -598,6 +599,9 @@ app.use('/notifications', notificationsRoutes);
 
 app.use('/api/settings', settingsRoutes);
 app.use('/settings', settingsRoutes);
+
+app.use('/api/expenses', expensesRoutes);
+app.use('/expenses', expensesRoutes);
 
 // ============================================================
 // Health Check (detailed)

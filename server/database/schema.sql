@@ -459,6 +459,23 @@ CREATE TABLE IF NOT EXISTS notice_board (
 );
 
 -- ============================================================
+-- CLUB EXPENSES TABLE (செலவு கணக்கு)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS expenses (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(100) DEFAULT 'General',
+    amount DECIMAL(10, 2) NOT NULL,
+    expense_date DATE NOT NULL,
+    expense_month VARCHAR(7) NOT NULL,
+    remarks TEXT,
+    created_by INTEGER REFERENCES admin_users(id),
+    created_by_name VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
 -- DEFAULT ADMIN USER (password: Admin@123456)
 -- ============================================================
 

@@ -179,6 +179,7 @@ router.get('/dashboard-stats', async (req, res) => {
         COALESCE((SELECT SUM(p.amount) FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'APPROVED' AND m.deleted_at IS NULL AND m.status = 'ACTIVE'), 0) AS total_collected,
         COALESCE((SELECT SUM(amount) FROM withdrawals WHERE reason = 'MEMBER_EXIT_REFUND'), 0) AS total_refunded_exited,
         COALESCE((SELECT SUM(amount) FROM withdrawals), 0) AS total_withdrawn,
+        COALESCE((SELECT SUM(amount) FROM expenses), 0) AS total_expenses,
         COALESCE((SELECT SUM(interest_amount) FROM seed_fund_distributions), 0) AS total_interest_earned,
         COALESCE((SELECT SUM(principal_amount) FROM seed_fund_distributions), 0) AS total_loans_given,
         COALESCE((SELECT SUM(payment_amount) FROM repayments WHERE status = 'COMPLETED'), 0) AS total_repaid
@@ -189,12 +190,13 @@ router.get('/dashboard-stats', async (req, res) => {
     const totalCollected = parseFloat(row.total_collected || 0);
     const totalRefundedExited = parseFloat(row.total_refunded_exited || 0);
     const totalWithdrawn = parseFloat(row.total_withdrawn || 0);
+    const totalExpenses = parseFloat(row.total_expenses || 0);
     const totalInterestEarned = parseFloat(row.total_interest_earned || 0);
     const totalLoansGiven = parseFloat(row.total_loans_given || 0);
     const totalRepaid = parseFloat(row.total_repaid || 0);
 
-    // Net current balance in fund
-    const currentBalance = Math.max(0, Math.round((totalCollected + totalRepaid - totalLoansGiven - (totalWithdrawn - totalRefundedExited) - totalRefundedExited) * 100) / 100);
+    // Net current balance in fund (Collections + Repayments - Loans - Withdrawals - Total Expenses)
+    const currentBalance = Math.max(0, Math.round((totalCollected + totalRepaid - totalLoansGiven - totalWithdrawn - totalExpenses) * 100) / 100);
 
     res.json({
       total_members: parseInt(row.total_members || 0, 10),
@@ -208,6 +210,7 @@ router.get('/dashboard-stats', async (req, res) => {
       failed_payments: parseInt(row.failed_payments || 0, 10),
       total_collected: totalCollected,
       total_refunded_exited: totalRefundedExited,
+      total_expenses: totalExpenses,
       total_interest_earned: totalInterestEarned,
       total_loans_given: totalLoansGiven,
       current_balance: currentBalance

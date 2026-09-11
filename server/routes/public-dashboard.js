@@ -93,12 +93,18 @@ router.get(['/summary', '/'], async (req, res) => {
     );
     const totalRefundedToExited = parseFloat(exitRefundsRes.rows[0]?.total || 0);
 
+    // 4b. Total Club Expenses
+    const expensesRes = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM expenses"
+    );
+    const totalExpenses = parseFloat(expensesRes.rows[0]?.total || 0);
+
     // 5. Total Amount Given to Members
     const totalGivenToMembers = Math.round(totalDistributed * 100) / 100;
 
     // 6. Current Fund Balance / Available Cash Balance
-    // Current Balance = Initial Pool + Total Received - Total Distributed - Total Withdrawn
-    const currentBalance = Math.max(0, Math.round((initialFundPool + totalReceivedFromMembers - totalGivenToMembers - totalWithdrawn) * 100) / 100);
+    // Current Balance = Initial Pool + Total Received - Total Distributed - Total Withdrawn - Total Expenses
+    const currentBalance = Math.max(0, Math.round((initialFundPool + totalReceivedFromMembers - totalGivenToMembers - totalWithdrawn - totalExpenses) * 100) / 100);
 
     // 7. Total Fund Amount (Total Pool Value: Available Balance + Outstanding Funds Outside)
     const totalFundAmount = Math.round((currentBalance + amountOutsideFund) * 100) / 100;
@@ -145,6 +151,7 @@ router.get(['/summary', '/'], async (req, res) => {
         total_member_contributions: totalMemberContributions,
         total_distributed: totalGivenToMembers,
         total_refunded_to_exited: totalRefundedToExited,
+        total_expenses: totalExpenses,
         total_available: currentBalance,
         current_balance: currentBalance,
         total_members: totalMembers,
@@ -579,19 +586,42 @@ router.get('/monthly-statement', async (req, res) => {
       }))
     ];
 
+    // 2b. Fetch Expenses for target month (சங்கச் செலவுகள்)
+    const expensesSql = `
+      SELECT id, title, category, amount, expense_date, expense_month, remarks, created_by_name, created_at
+      FROM expenses
+      WHERE expense_month = $1 OR expense_date LIKE $1 || '%'
+      ORDER BY expense_date DESC, id DESC
+    `;
+    const expensesRes = await pool.query(expensesSql, [targetMonth]);
+    const expensesList = (expensesRes.rows || []).map(e => ({
+      id: e.id,
+      title: e.title,
+      category: e.category || 'General',
+      amount: parseFloat(e.amount) || 0,
+      expense_date: e.expense_date,
+      expense_month: e.expense_month,
+      remarks: e.remarks || '—',
+      created_by_name: e.created_by_name || 'Admin'
+    }));
+
     // 3. Totals
     const totalInflow = Math.round(allInflows.reduce((acc, x) => acc + x.amount, 0) * 100) / 100;
     const totalOutflow = Math.round(outflows.reduce((acc, x) => acc + x.principal_amount, 0) * 100) / 100;
-    const netMonthlyFlow = Math.round((totalInflow - totalOutflow) * 100) / 100;
+    const totalExpenses = Math.round(expensesList.reduce((acc, x) => acc + x.amount, 0) * 100) / 100;
+    // Net Monthly Flow = Inflows - Outflows - Expenses
+    const netMonthlyFlow = Math.round((totalInflow - totalOutflow - totalExpenses) * 100) / 100;
 
     // Overall metrics for closing balance
     const overallColl = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payment_proofs WHERE status = 'APPROVED' OR status = 'PAID'`);
     const overallRepay = await pool.query(`SELECT COALESCE(SUM(payment_amount), 0) as total FROM repayments WHERE status = 'COMPLETED'`);
     const overallLoans = await pool.query(`SELECT COALESCE(SUM(principal_amount), 0) as total FROM seed_fund_distributions`);
     const overallWithdrawals = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM withdrawals`);
+    const overallExpenses = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM expenses`);
 
     const poolCollection = parseFloat(overallColl.rows[0]?.total || 0) + parseFloat(overallRepay.rows[0]?.total || 0);
-    const poolDisbursed = parseFloat(overallLoans.rows[0]?.total || 0) + parseFloat(overallWithdrawals.rows[0]?.total || 0);
+    const poolExpenses = parseFloat(overallExpenses.rows[0]?.total || 0);
+    const poolDisbursed = parseFloat(overallLoans.rows[0]?.total || 0) + parseFloat(overallWithdrawals.rows[0]?.total || 0) + poolExpenses;
     const currentPoolBalance = Math.max(0, Math.round((poolCollection - poolDisbursed) * 100) / 100);
 
     // 4. Generate list of available months (last 12 months including target)
@@ -611,14 +641,17 @@ router.get('/monthly-statement', async (req, res) => {
       summary: {
         total_inflow: totalInflow,
         total_outflow: totalOutflow,
+        total_expenses: totalExpenses,
         net_monthly_flow: netMonthlyFlow,
-        total_transactions_count: allInflows.length + outflows.length,
+        total_transactions_count: allInflows.length + outflows.length + expensesList.length,
         inflow_count: allInflows.length,
         outflow_count: outflows.length,
+        expense_count: expensesList.length,
         current_pool_balance: currentPoolBalance
       },
       inflows: allInflows,
-      outflows: outflows
+      outflows: outflows,
+      expenses: expensesList
     });
   } catch (error) {
     console.error('Monthly Statement Error:', error);

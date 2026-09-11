@@ -247,6 +247,84 @@ test('MEMBER FLOW AND PAYMENT SUITE', async (t) => {
     assert.match(wrongPwdData.error, /incorrect password/i);
   });
 
+  await t.test('Scenario 8: Club Expenses Management, Validation & Negative Balance Deduction', async () => {
+    // 1. Initial stats
+    const statsRes1 = await fetch(`${BASE_URL}/api/admin/members/dashboard-stats`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` }
+    });
+    assert.equal(statsRes1.status, 200);
+    const stats1 = await statsRes1.json();
+    const initialBal = parseFloat(stats1.current_balance || 0);
+    const initialExp = parseFloat(stats1.total_expenses || 0);
+
+    // 2. Reject negative or invalid expense
+    const badRes = await fetch(`${BASE_URL}/api/expenses`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: '', amount: -100 })
+    });
+    assert.equal(badRes.status, 400);
+
+    // 3. Create ₹1,000 meeting expense
+    const testMonth = '2026-09';
+    const testAmount = 1000;
+    const createRes = await fetch(`${BASE_URL}/api/expenses`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Monthly Meeting Refreshments (மாதாந்திர கூட்டம் டீ & பிஸ்கட்)',
+        category: 'Food & Refreshments (உணவு & டீ)',
+        amount: testAmount,
+        expense_date: '2026-09-11',
+        expense_month: testMonth,
+        remarks: 'Tea and snacks for 20 members'
+      })
+    });
+    assert.equal(createRes.status, 201);
+    const createData = await createRes.json();
+    assert.ok(createData.success);
+    const expId = createData.expense.id;
+
+    // 4. Verify in GET /api/expenses?month=2026-09
+    const listRes = await fetch(`${BASE_URL}/api/expenses?month=${testMonth}`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` }
+    });
+    assert.equal(listRes.status, 200);
+    const listData = await listRes.json();
+    assert.ok(listData.expenses.some(e => e.id === expId));
+    assert.ok(listData.total_expenses >= testAmount);
+
+    // 5. Verify stats updated: total_expenses increased, balance decreased
+    const statsRes2 = await fetch(`${BASE_URL}/api/admin/members/dashboard-stats`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` }
+    });
+    const stats2 = await statsRes2.json();
+    assert.equal(parseFloat(stats2.total_expenses), initialExp + testAmount);
+    if (initialBal >= testAmount) {
+      assert.equal(parseFloat(stats2.current_balance), initialBal - testAmount);
+    }
+
+    // 6. Verify monthly statement includes expenses
+    const stmtRes = await fetch(`${BASE_URL}/api/public-dashboard/monthly-statement?month=${testMonth}`);
+    assert.equal(stmtRes.status, 200);
+    const stmtData = await stmtRes.json();
+    assert.ok(stmtData.expenses.some(e => e.id === expId));
+    assert.ok(stmtData.summary.total_expenses >= testAmount);
+
+    // 7. Delete expense and verify balance restored
+    const delRes = await fetch(`${BASE_URL}/api/expenses/${expId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${adminToken}` }
+    });
+    assert.equal(delRes.status, 200);
+
+    const statsRes3 = await fetch(`${BASE_URL}/api/admin/members/dashboard-stats`, {
+      headers: { 'Authorization': `Bearer ${adminToken}` }
+    });
+    const stats3 = await statsRes3.json();
+    assert.equal(parseFloat(stats3.current_balance), initialBal);
+  });
+
   // Clean up all test data created in this test run so DB remains pristine
   try {
     const toClean = [registeredDbId, secondDbId].filter(Boolean);

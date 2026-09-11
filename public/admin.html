@@ -1401,6 +1401,7 @@
         <button class="nav-item" onclick="showPage('notice-board')" id="nav-notice-board"><span class="nav-icon">📢</span> Notice Board</button>
         <button class="nav-item" onclick="showPage('transactions')" id="nav-transactions"><span class="nav-icon">📑</span> Transaction Ledger</button>
         <button class="nav-item" onclick="showPage('reports')" id="nav-reports"><span class="nav-icon">📈</span> Financial Reports</button>
+        <button class="nav-item" onclick="showPage('expenses')" id="nav-expenses"><span class="nav-icon">💸</span> Expenses (செலவு கணக்கு)</button>
 
         <div class="nav-group-label">System</div>
         <button class="nav-item" onclick="showPage('audit-log')" id="nav-audit-log"><span class="nav-icon">📜</span>
@@ -1486,12 +1487,16 @@
               <div class="stat-label">Total Collected (Active)</div>
               <div class="stat-value green" id="dTotalCollected">—</div>
             </div>
+            <div class="stat-card" onclick="showPage('expenses')" style="cursor:pointer;border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.05)">
+              <div class="stat-label" style="color:#ef4444;font-weight:700">Total Expenses (செலவு கணக்கு)</div>
+              <div class="stat-value red" id="dTotalExpenses" style="color:#ef4444;font-weight:800">-₹0</div>
+            </div>
             <div class="stat-card">
               <div class="stat-label">Refunded on Exit</div>
               <div class="stat-value orange" id="dRefundedExited">₹0</div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Net Available Balance</div>
+              <div class="stat-label">Net Available Balance (கையிருப்பு)</div>
               <div class="stat-value primary" id="dCurrentBalance">₹0</div>
             </div>
             <div class="stat-card">
@@ -2070,26 +2075,31 @@
               </div>
             </div>
 
-            <!-- 4 Monthly Summary KPI Cards -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px">
+            <!-- 5 Monthly Summary KPI Cards -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px">
               <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
                 <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Total Inflow (வரவு)</div>
-                <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px" id="admStmtInflow">₹0</div>
+                <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="admStmtInflow">₹0</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:2px" id="admStmtInflowCount">0 payments</div>
               </div>
               <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
-                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Total Outflow / Loans (கடன்)</div>
-                <div style="font-size:22px;font-weight:800;color:var(--gold);margin-top:4px" id="admStmtOutflow">₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Total Loans (கடன்)</div>
+                <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px" id="admStmtOutflow">₹0</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:2px" id="admStmtOutflowCount">0 loans given</div>
               </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1.5px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.04)">
+                <div style="font-size:11px;color:#ef4444;text-transform:uppercase;font-weight:700">Monthly Expenses (செலவு)</div>
+                <div style="font-size:20px;font-weight:800;color:#ef4444;margin-top:4px" id="admStmtExpenses">-₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px" id="admStmtExpensesCount">0 expenses</div>
+              </div>
               <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
-                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Net Monthly Flow (நிகர இருப்பு)</div>
-                <div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:4px" id="admStmtNetFlow">₹0</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Inflow minus Outflow</div>
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Net Month Flow (நிகர இருப்பு)</div>
+                <div style="font-size:20px;font-weight:800;color:var(--primary);margin-top:4px" id="admStmtNetFlow">₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Inflow - Outflow - Expenses</div>
               </div>
               <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
                 <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Available Pool Balance</div>
-                <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px" id="admStmtClosingBalance">₹0</div>
+                <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="admStmtClosingBalance">₹0</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Current Fund Pool</div>
               </div>
             </div>
@@ -2119,7 +2129,7 @@
             </div>
 
             <!-- Outflows Table -->
-            <div>
+            <div style="margin-bottom:24px">
               <div style="font-size:15px;font-weight:800;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:6px">
                 <span>📤 Loans Disbursed & Outflows (வழங்கப்பட்ட கடன்கள் & பட்டுவாடா)</span>
               </div>
@@ -2143,6 +2153,97 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <!-- Monthly Expenses Table -->
+            <div>
+              <div style="font-size:15px;font-weight:800;color:#ef4444;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                <span>💸 Monthly Club Expenses & Deductions (சங்க செலவுகள் - மைனஸ் கழித்தல்)</span>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Date (தேதி)</th>
+                      <th>Category (வகை)</th>
+                      <th>Expense Purpose / Title (செலவு விவரம்)</th>
+                      <th>Remarks / Notes (குறிப்பு)</th>
+                      <th style="text-align:right">Deducted Amount (₹)</th>
+                      <th>Recorded By</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admStmtExpensesTableBody">
+                    <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">No operational expenses recorded for this month.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= EXPENSES MANAGEMENT (செலவு கணக்கு) ================= -->
+        <div id="expenses" class="page">
+          <div class="card">
+            <div class="card-header" style="flex-wrap:wrap;gap:12px">
+              <div>
+                <div class="card-title" style="display:flex;align-items:center;gap:8px">
+                  <span>💸 Club Expenses & Expenditure Management</span>
+                  <span style="font-size:12px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:2px 8px;border-radius:12px;font-weight:700">செலவு கணக்கு கழித்தல்</span>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+                  சங்கத்தின் செலவுகளை பதிவு செய்தல், மாத வாரியாக கண்காணித்தல் மற்றும் மொத்த தொகையில் இருந்து தானாக மைனஸ் செய்யும் அமைப்பு
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <label style="font-size:12px;color:var(--text-muted);font-weight:700">Filter Month:</label>
+                <input type="month" id="expenseFilterMonth" onchange="loadAdminExpenses()" style="padding:6px 12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-weight:700">
+                <button class="btn-secondary btn-sm" onclick="clearExpenseMonthFilter()">All Months</button>
+                <button class="btn-primary btn-sm" onclick="openAddExpenseModal()" style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;box-shadow:0 0 12px rgba(239,68,68,0.35);font-weight:700">
+                  ➕ Add Expense (செலவு சேர்க்க)
+                </button>
+              </div>
+            </div>
+
+            <!-- Expense Summary Cards -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px">
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1.5px solid rgba(239,68,68,0.35);background:rgba(239,68,68,0.04)">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Total Expenses (மொத்த சங்கச் செலவு)</div>
+                <div style="font-size:24px;font-weight:800;color:#ef4444;margin-top:4px" id="expSummaryTotal">-₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px" id="expSummaryTotalCount">0 records</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Selected Month Expenses (மாதச் செலவு)</div>
+                <div style="font-size:24px;font-weight:800;color:#ef4444;margin-top:4px" id="expSummaryMonth">-₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px" id="expSummaryMonthCount">0 this month</div>
+              </div>
+              <div style="background:var(--bg-surface-hover);padding:14px;border-radius:12px;border:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;font-weight:700">Net Available Pool (நிகர கையிருப்பு)</div>
+                <div style="font-size:24px;font-weight:800;color:var(--green);margin-top:4px" id="expSummaryNetPool">₹0</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Total Inflow - Outflow - Expenses</div>
+              </div>
+            </div>
+
+            <!-- Expenses Table -->
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:40px;text-align:center">#</th>
+                    <th>Date (தேதி)</th>
+                    <th>Month (மாதம்)</th>
+                    <th>Category (வகை)</th>
+                    <th>Expense Purpose / Title (செலவு விவரம்)</th>
+                    <th>Remarks / Notes (குறிப்பு)</th>
+                    <th style="text-align:right">Deduction Amount (₹)</th>
+                    <th>Added By (பதிவு)</th>
+                    <th style="text-align:center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminExpensesTableBody">
+                  <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Loading expenses...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2292,7 +2393,69 @@
           </div>
         </div>
 
+  <!-- ================= ADD EXPENSE MODAL (செலவு பதிவு மாடல்) ================= -->
+  <div id="addExpenseModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:480px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="modal-title" style="margin-bottom:0;display:flex;align-items:center;gap:8px">
+          <span>💸</span> <span>Add New Club Expense (செலவு பதிவு)</span>
+        </div>
+        <button type="button" onclick="closeAddExpenseModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted)">&times;</button>
       </div>
+      <div id="expenseModalAlert"></div>
+      <form id="addExpenseForm" onsubmit="submitNewExpense(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expense Date (செலவு தேதி) *</label>
+            <input type="date" id="expInputDate" required onchange="syncExpenseMonthFromDate()">
+          </div>
+          <div class="form-group">
+            <label>Accounting Month (மாதம்) *</label>
+            <input type="month" id="expInputMonth" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Expense Category (செலவு வகை) *</label>
+          <select id="expInputCategory" required>
+            <option value="Food & Refreshments (உணவு & டீ)">Food & Refreshments (உணவு & டீ/காபி)</option>
+            <option value="Stationery & Office (ஸ்டேஷனரி & ஆபிஸ்)">Stationery & Office (ஸ்டேஷனரி & ரசீது நோட்டு)</option>
+            <option value="Printing & Documents (பிரிண்டிங்)">Printing & Documents (பிரிண்டிங் & ஜெராக்ஸ்)</option>
+            <option value="Pooja & Festival (பூஜை & திருவிழா)">Pooja & Festival (பூஜை & திருவிழா செலவு)</option>
+            <option value="Meeting & Room Rent (மீட்டிங் & வாடகை)">Meeting & Room Rent (மீட்டிங் & இட வாடகை)</option>
+            <option value="Travel & Conveyance (பயண செலவு)">Travel & Conveyance (பயண செலவு / ஆட்டோ)</option>
+            <option value="Bank / UPI Charges (வங்கி கட்டணம்)">Bank / UPI Charges (வங்கி கட்டணம்)</option>
+            <option value="Maintenance (மராமத்து செலவு)">Maintenance (மராமத்து செலவு)</option>
+            <option value="Miscellaneous (இதர செலவுகள்)">Miscellaneous (இதர செலவுகள்)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Expense Purpose / Title (செலவு விவரம்) *</label>
+          <input type="text" id="expInputTitle" required placeholder="எ.கா: மாதாந்திர கூட்டம் டீ & பிஸ்கட் செலவு">
+        </div>
+
+        <div class="form-group">
+          <label>Deduction Amount (கழிக்கப்படும் தொகை ₹) *</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:10px;font-weight:800;color:#ef4444;font-size:16px">- ₹</span>
+            <input type="number" id="expInputAmount" required min="1" step="any" placeholder="1000" style="padding-left:42px;color:#ef4444;font-weight:800;font-size:16px;border-color:rgba(239,68,68,0.5)">
+          </div>
+          <div style="font-size:11px;color:#ef4444;margin-top:4px">⚠️ இத்தொகை சங்கத்தின் மொத்த வசூலில் இருந்து தானாகவே மைனஸ் செய்யப்படும்.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Remarks / Notes (கூடுதல் குறிப்பு)</label>
+          <textarea id="expInputRemarks" rows="2" placeholder="எ.கா: கூட்டம் நடைபெற்ற போது 20 பேருக்கு டீ செலவு"></textarea>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px">
+          <button type="button" class="btn-secondary" onclick="closeAddExpenseModal()">Cancel (ரத்து)</button>
+          <button type="submit" class="btn-primary" style="background:linear-gradient(135deg,#ef4444,#dc2626);border:none;font-weight:700;box-shadow:0 0 12px rgba(239,68,68,0.35)">
+            💾 Record Expense (செலவை பதிவு செய்)
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -3260,6 +3423,10 @@
       if (name === 'notice-board') loadAdminNotices();
       if (name === 'transactions') loadTransactionLedger();
       if (name === 'reports') loadFinancialReports();
+      if (name === 'expenses') {
+        document.getElementById('topbarTitle').textContent = 'EXPENSES (செலவு கணக்கு)';
+        loadAdminExpenses();
+      }
     }
 
     // ============================================================
@@ -3396,6 +3563,8 @@
         if (document.getElementById('admStmtInflowCount')) document.getElementById('admStmtInflowCount').textContent = `${s.inflow_count || 0} payments received`;
         if (document.getElementById('admStmtOutflow')) document.getElementById('admStmtOutflow').textContent = `₹${(s.total_outflow || 0).toLocaleString('en-IN')}`;
         if (document.getElementById('admStmtOutflowCount')) document.getElementById('admStmtOutflowCount').textContent = `${s.outflow_count || 0} loans disbursed`;
+        if (document.getElementById('admStmtExpenses')) document.getElementById('admStmtExpenses').textContent = `-₹${(s.total_expenses || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('admStmtExpensesCount')) document.getElementById('admStmtExpensesCount').textContent = `${s.expense_count || 0} expenses recorded`;
         if (document.getElementById('admStmtNetFlow')) {
           const net = s.net_monthly_flow || 0;
           document.getElementById('admStmtNetFlow').textContent = `${net >= 0 ? '+' : ''}₹${net.toLocaleString('en-IN')}`;
@@ -3443,6 +3612,26 @@
             `).join('');
           }
         }
+
+        // Expenses Table
+        const expTbody = document.getElementById('admStmtExpensesTableBody');
+        if (expTbody) {
+          if (!data.expenses || data.expenses.length === 0) {
+            expTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted)">No operational expenses recorded for this month.</td></tr>';
+          } else {
+            expTbody.innerHTML = data.expenses.map((e, idx) => `
+              <tr>
+                <td><strong>#${idx + 1}</strong></td>
+                <td><strong>${esc(e.expense_date)}</strong> <span style="font-size:11px;color:var(--text-muted)">(${esc(e.expense_month)})</span></td>
+                <td><span class="badge" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3)">${esc(e.category)}</span></td>
+                <td><strong>${esc(e.title)}</strong></td>
+                <td style="color:var(--text-muted);font-size:12px">${esc(e.remarks || '—')}</td>
+                <td style="color:#ef4444;font-weight:800;font-size:14px;text-align:right">-₹${parseFloat(e.amount || 0).toLocaleString('en-IN')}</td>
+                <td style="font-size:12px">${esc(e.created_by_name || 'Admin')}</td>
+              </tr>
+            `).join('');
+          }
+        }
       } catch (err) {
         showToast('Failed to load monthly statement: ' + err.message, 'error');
       }
@@ -3461,10 +3650,11 @@
       csv += `Generated On: ${new Date().toLocaleString('en-IN')}\n\n`;
 
       csv += `SUMMARY METRICS\n`;
-      csv += `Total Inflow (வரவு),₹${data.summary.total_inflow}\n`;
-      csv += `Total Outflow (கடன்),₹${data.summary.total_outflow}\n`;
-      csv += `Net Monthly Balance (நிகர இருப்பு),₹${data.summary.net_monthly_flow}\n`;
-      csv += `Available Fund Pool,₹${data.summary.current_pool_balance}\n\n`;
+      csv += `Total Inflow (வரவு),₹${data.summary.total_inflow || 0}\n`;
+      csv += `Total Outflow (கடன்),₹${data.summary.total_outflow || 0}\n`;
+      csv += `Total Expenses (செலவு),-₹${data.summary.total_expenses || 0}\n`;
+      csv += `Net Monthly Balance (நிகர இருப்பு),₹${data.summary.net_monthly_flow || 0}\n`;
+      csv += `Available Fund Pool,₹${data.summary.current_pool_balance || 0}\n\n`;
 
       csv += `INFLOWS & MEMBER PAYMENTS\n`;
       csv += `S.No,Member Name,Member Code,Date,Time,Category,Amount (INR),Transaction Reference\n`;
@@ -3476,6 +3666,12 @@
       csv += `Loan ID,Member Name,Member Code,Date Disbursed,Principal (INR),Interest (5%),Total Payable (INR),Nominee Name,Due Date,Status\n`;
       (data.outflows || []).forEach(row => {
         csv += `"${row.id}","${row.member_name}","${row.member_code}","${row.distribution_date}","${row.principal_amount}","${row.interest_amount}","${row.total_payable}","${row.nominee_name}","${row.due_date}","${row.payment_status}"\n`;
+      });
+
+      csv += `\nCLUB EXPENSES & DEDUCTIONS (சங்க செலவுகள்)\n`;
+      csv += `S.No,Date,Month,Category,Purpose,Remarks,Deducted Amount (INR),Recorded By\n`;
+      (data.expenses || []).forEach((row, i) => {
+        csv += `"${i+1}","${row.expense_date}","${row.expense_month}","${row.category}","${row.title}","${row.remarks || ''}","-${row.amount}","${row.created_by_name || 'Admin'}"\n`;
       });
 
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -3554,6 +3750,19 @@
         `;
       }).join('') || '<tr><td colspan="10" style="text-align:center;padding:16px;color:#94a3b8">No loan disbursements or member refunds for this accounting month.</td></tr>';
 
+      const expensesToPrint = (data.expenses && data.expenses.length > 0) ? data.expenses : [];
+      const expenseRows = expensesToPrint.map((e, idx) => `
+        <tr>
+          <td style="text-align:center;font-weight:600">${idx + 1}</td>
+          <td style="font-size:11px;white-space:nowrap">${esc(e.expense_date)}<br><span style="color:#64748b;font-size:10px">${esc(e.expense_month)}</span></td>
+          <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b">${esc(e.category)}</span></td>
+          <td><strong style="color:#0f172a;font-size:12px">${esc(e.title)}</strong></td>
+          <td style="font-size:11px;color:#475569">${esc(e.remarks || '—')}</td>
+          <td style="font-size:10px;color:#64748b">${esc(e.created_by_name || 'Admin')}</td>
+          <td style="text-align:right;font-weight:800;color:#dc2626;font-size:12px">-₹${parseFloat(e.amount || 0).toLocaleString('en-IN')}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="7" style="text-align:center;padding:16px;color:#94a3b8">No operational expenses incurred in this accounting month (செலவுகள் இல்லை).</td></tr>';
+
       printWin.document.write(`
         <!DOCTYPE html>
         <html lang="ta">
@@ -3577,10 +3786,10 @@
             .account-summary-table th { background: #0f2b5c; color: #fff; text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
             .account-summary-table td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 11px; }
 
-            .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+            .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
             .kpi-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center; background: #f8fafc; }
-            .kpi-card .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.4px; }
-            .kpi-card .kpi-val { font-size: 16px; font-weight: 800; margin-top: 4px; }
+            .kpi-card .kpi-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.4px; }
+            .kpi-card .kpi-val { font-size: 15px; font-weight: 800; margin-top: 4px; }
 
             .section-title { font-size: 13px; font-weight: 800; color: #0f2b5c; margin: 18px 0 8px 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4px; }
             table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
@@ -3643,29 +3852,37 @@
               <td style="color:#b91c1c;font-weight:700">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')} (${s.outflow_count || 0} txn)</td>
             </tr>
             <tr>
+              <td style="color:#64748b">Total Club Expenses (செலவு):</td>
+              <td style="color:#dc2626;font-weight:800">-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')} (${s.expense_count || 0} items)</td>
               <td style="color:#64748b">Net Month Movement:</td>
               <td style="color:#0f2b5c;font-weight:700">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</td>
-              <td style="color:#64748b">Closing Available Pool:</td>
-              <td style="color:#b45309;font-weight:800;font-size:13px">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td colspan="2" style="color:#64748b;font-weight:600">Fund Pool Closing Balance (கையிருப்பு நிதி):</td>
+              <td colspan="2" style="color:#15803d;font-weight:800;font-size:13px;text-align:right">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
             </tr>
           </table>
 
           <div class="kpi-row">
             <div class="kpi-card">
-              <div class="kpi-label">Verified Inflows (உள்வரவு)</div>
+              <div class="kpi-label">Verified Inflows (வரவு)</div>
               <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')}</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label">Loans & Exit Refunds</div>
-              <div class="kpi-val" style="color:#b91c1c">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
+              <div class="kpi-label">Loans & Refunds (கடன்)</div>
+              <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
+            </div>
+            <div class="kpi-card" style="background:#fff5f5;border-color:#fecaca">
+              <div class="kpi-label" style="color:#dc2626">Expenses (செலவு)</div>
+              <div class="kpi-val" style="color:#dc2626">-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label">Net Monthly Flow</div>
+              <div class="kpi-label">Net Month Movement</div>
               <div class="kpi-val" style="color:#0f2b5c">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Club Closing Cash Pool</div>
-              <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
+              <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
             </div>
           </div>
 
@@ -3713,11 +3930,33 @@
             </tbody>
           </table>
 
+          <div class="section-title" style="margin-top:22px;border-bottom:1.5px solid #fee2e2">
+            <span style="color:#b91c1c">💸 3. CLUB EXPENSES AUDIT REGISTER (சங்க செலவு கணக்கு அறிக்கை - விவரங்களுடன்)</span>
+            <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${expensesToPrint?.length || 0} Records</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:30px;text-align:center">#</th>
+                <th>Expense Date (தேதி)</th>
+                <th>Category (வகை)</th>
+                <th>Expense Purpose / Title (செலவு விவரம்)</th>
+                <th>Remarks / Reason (காரணம்)</th>
+                <th>Authorized By</th>
+                <th style="text-align:right">Deducted Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${expenseRows}
+            </tbody>
+          </table>
+
           <div class="audit-callout">
             <strong>📌 தணிக்கை மற்றும் விதிகள் சான்றிதழ் (Audit & Transparency Governance Note):</strong><br>
             1. <strong>உறுப்பினர் விலகல் (Member Exit Settlement):</strong> உறுப்பினர் கிளப்பில் இருந்து விலகும்போது, அவர் இதுவரை செலுத்திய மொத்த அசல் தொகை (Principal Contribution) துல்லியமாகக் கணக்கிடப்பட்டு அவருக்கு முழுமையாக திருப்பியளிக்கப்படுகிறது (<code>REFUNDED</code>). அந்த தொகை கிளப்பின் நடப்பு கணக்கிலிருந்து கழிக்கப்படும்.<br>
             2. <strong>தணிக்கைப் பாதுகாப்பு (Audit Trail Preservation):</strong> உறுப்பினரின் பெயர் மற்றும் தொலைபேசி எண் புதிய பதிவுக்கு விடுவிக்கப்பட்டாலும், கடந்த கால தணிக்கைக்காக அவர் செலுத்திய கட்டணங்கள் மற்றும் பரிவர்த்தனை வரலாறு நிரந்தரமாக பாதுகாக்கப்படும்.<br>
-            3. ஈட்டிய 5% வட்டித் தொகை கிளப்பின் பொது நிதியிலேயே சேர்க்கப்பட்டு, தகுதியான உறுப்பினர்களுக்கு சீட்டு மற்றும் அவசரக் கடனாக மட்டுமே மறுசுழற்சி செய்யப்படுகிறது.
+            3. ஈட்டிய 5% வட்டித் தொகை கிளப்பின் பொது நிதியிலேயே சேர்க்கப்பட்டு, தகுதியான உறுப்பினர்களுக்கு சீட்டு மற்றும் அவசரக் கடனாக மட்டுமே மறுசுழற்சி செய்யப்படுகிறது.<br>
+            4. <strong>சங்கச் செலவுகள் (Club Operational Expenses):</strong> சங்கத்தின் செயல்பாட்டுச் செலவுகள் (ஸ்டேஷனரி, கூட்டம், உணவு/டீ, மராமத்து, போன்றவை) வெளிப்படைத்தன்மையுடன் பதிவு செய்யப்பட்டு, சங்கத்தின் மொத்த கையிருப்பு தொகையிலிருந்து முறையாகக் கழிக்கப்பட்டுள்ளது.
           </div>
 
           <div class="signatory-container">
@@ -5374,6 +5613,9 @@
         document.getElementById('dPendingActivations').textContent = d.pending_activations || 0;
         document.getElementById('dPossibleDuplicates').textContent = d.possible_duplicates || 0;
         document.getElementById('dTotalCollected').textContent = `₹${parseFloat(d.total_collected || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('dTotalExpenses')) {
+          document.getElementById('dTotalExpenses').textContent = `-₹${parseFloat(d.total_expenses || 0).toLocaleString('en-IN')}`;
+        }
         if (document.getElementById('dRefundedExited')) {
           document.getElementById('dRefundedExited').textContent = `₹${parseFloat(d.total_refunded_exited || 0).toLocaleString('en-IN')}`;
         }
@@ -7312,6 +7554,188 @@
       }
     }
 
+    // ============================================================
+    // EXPENSES (செலவு கணக்கு) MANAGEMENT HANDLERS
+    // ============================================================
+    let cachedExpensesList = [];
+
+    async function loadAdminExpenses() {
+      const monthInput = document.getElementById('expenseFilterMonth');
+      const month = monthInput ? monthInput.value : '';
+      const tbody = document.getElementById('adminExpensesTableBody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Loading expenses / செலவு கணக்கு ஏற்றப்படுகிறது...</td></tr>';
+      }
+
+      try {
+        let url = '/api/expenses';
+        if (month) url += `?month=${encodeURIComponent(month)}`;
+        const res = await api(url);
+        cachedExpensesList = res.expenses || [];
+
+        // Update KPIs
+        const expTotal = document.getElementById('expSummaryTotal');
+        const expTotalCount = document.getElementById('expSummaryTotalCount');
+        const expMonth = document.getElementById('expSummaryMonth');
+        const expMonthCount = document.getElementById('expSummaryMonthCount');
+        const expNetPool = document.getElementById('expSummaryNetPool');
+
+        if (expTotal) expTotal.textContent = `-₹${parseFloat(res.total_expenses || 0).toLocaleString('en-IN')}`;
+        if (expTotalCount) expTotalCount.textContent = `${res.total_count || cachedExpensesList.length} total records`;
+        if (expMonth) expMonth.textContent = `-₹${parseFloat(res.month_expenses || 0).toLocaleString('en-IN')}`;
+        if (expMonthCount) expMonthCount.textContent = month ? `${month}: ${res.month_count || 0} entries` : 'Select month to view';
+
+        // Fetch dashboard stats to get latest net available pool
+        try {
+          const dash = await api('/api/admin/members/dashboard-stats');
+          if (expNetPool) expNetPool.textContent = `₹${parseFloat(dash.current_balance || 0).toLocaleString('en-IN')}`;
+          if (document.getElementById('dTotalExpenses')) {
+            document.getElementById('dTotalExpenses').textContent = `-₹${parseFloat(dash.total_expenses || 0).toLocaleString('en-IN')}`;
+          }
+          if (document.getElementById('dCurrentBalance')) {
+            document.getElementById('dCurrentBalance').textContent = `₹${parseFloat(dash.current_balance || 0).toLocaleString('en-IN')}`;
+          }
+        } catch (e) {
+          console.warn('Dashboard stats sync note:', e);
+        }
+
+        if (!tbody) return;
+        if (!cachedExpensesList.length) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted)">
+            <div style="font-size:28px;margin-bottom:8px">💸</div>
+            <strong>செலவு பதிவுகள் எதுவும் இல்லை (No expenses recorded)</strong><br>
+            <span style="font-size:12px">மேலே உள்ள "Add Expense (செலவு சேர்க்க)" பொத்தானைப் பயன்படுத்தி புதிய செலவை பதிவு செய்யவும்.</span>
+          </td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = cachedExpensesList.map((e, idx) => `
+          <tr>
+            <td style="text-align:center;font-weight:700;color:var(--text-muted)">${idx + 1}</td>
+            <td style="white-space:nowrap;font-weight:600">${esc(e.expense_date)}</td>
+            <td style="white-space:nowrap;color:var(--text-muted);font-size:12px">${esc(e.expense_month)}</td>
+            <td>
+              <span style="display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25)">
+                ${esc(e.category)}
+              </span>
+            </td>
+            <td><strong style="color:var(--text);font-size:14px">${esc(e.title)}</strong></td>
+            <td style="font-size:12px;color:var(--text-muted);max-width:220px">${esc(e.remarks || '—')}</td>
+            <td style="text-align:right;font-weight:800;color:#ef4444;font-size:15px;white-space:nowrap">
+              -₹${parseFloat(e.amount || 0).toLocaleString('en-IN')}
+            </td>
+            <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${esc(e.created_by_name || 'Admin')}</td>
+            <td style="text-align:center">
+              <button class="btn-danger btn-sm" onclick="deleteExpenseAdmin(${e.id}, '${esc(e.title)}', ${e.amount})" style="padding:4px 8px;font-size:11px" title="Delete expense record">
+                🗑️ Delete
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--red)">Failed to load expenses: ${esc(err.message)}</td></tr>`;
+        }
+        showToast('Expense load error: ' + err.message, 'error');
+      }
+    }
+
+    function clearExpenseMonthFilter() {
+      const monthInput = document.getElementById('expenseFilterMonth');
+      if (monthInput) monthInput.value = '';
+      loadAdminExpenses();
+    }
+
+    function openAddExpenseModal() {
+      const form = document.getElementById('addExpenseForm');
+      if (form) form.reset();
+      const alertEl = document.getElementById('expenseModalAlert');
+      if (alertEl) alertEl.innerHTML = '';
+
+      // Default date to today, month to current YYYY-MM
+      const today = new Date().toISOString().split('T')[0];
+      const curMonth = today.slice(0, 7);
+      const dateEl = document.getElementById('expInputDate');
+      const monthEl = document.getElementById('expInputMonth');
+      if (dateEl) dateEl.value = today;
+      if (monthEl) monthEl.value = curMonth;
+
+      const modal = document.getElementById('addExpenseModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAddExpenseModal() {
+      const modal = document.getElementById('addExpenseModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function syncExpenseMonthFromDate() {
+      const dateEl = document.getElementById('expInputDate');
+      const monthEl = document.getElementById('expInputMonth');
+      if (dateEl && dateEl.value && monthEl) {
+        monthEl.value = dateEl.value.slice(0, 7);
+      }
+    }
+
+    async function submitNewExpense(e) {
+      if (e) e.preventDefault();
+      const alertEl = document.getElementById('expenseModalAlert');
+      if (alertEl) alertEl.innerHTML = '';
+
+      const date = document.getElementById('expInputDate')?.value;
+      const month = document.getElementById('expInputMonth')?.value;
+      const category = document.getElementById('expInputCategory')?.value;
+      const title = document.getElementById('expInputTitle')?.value?.trim();
+      const amount = parseFloat(document.getElementById('expInputAmount')?.value);
+      const remarks = document.getElementById('expInputRemarks')?.value?.trim();
+
+      if (!date || !month || !title || isNaN(amount) || amount <= 0) {
+        if (alertEl) alertEl.innerHTML = '<div class="alert alert-error">Please fill in all required fields with a valid amount greater than 0.</div>';
+        return;
+      }
+
+      try {
+        const payload = {
+          expense_date: date,
+          expense_month: month,
+          category: category || 'Miscellaneous (இதர செலவுகள்)',
+          title,
+          amount,
+          remarks
+        };
+
+        await api('/api/expenses', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        showToast(`✅ Expense of ₹${amount.toLocaleString('en-IN')} recorded & deducted from pool balance!`, 'success');
+        closeAddExpenseModal();
+        await loadAdminExpenses();
+        await loadDashboard();
+      } catch (err) {
+        if (alertEl) alertEl.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+        showToast('Failed to record expense: ' + err.message, 'error');
+      }
+    }
+
+    function deleteExpenseAdmin(id, title, amount) {
+      openConfirm(
+        '🗑️ Delete Expense / செலவு பதிவை நீக்கு',
+        `"${title}" (-₹${parseFloat(amount || 0).toLocaleString('en-IN')}) செலவு பதிவை நீக்க விரும்புகிறீர்களா?\n\nநீக்கினால், இத்தொகை மீண்டும் சங்கத்தின் மொத்த கையிருப்பு நிதியில் சேர்க்கப்படும்.\n(Deleting this will restore the amount back to the net available cash pool.)`,
+        async () => {
+          try {
+            await api(`/api/expenses/${id}`, { method: 'DELETE' });
+            showToast('✅ Expense deleted & amount restored to pool balance!', 'info');
+            await loadAdminExpenses();
+            await loadDashboard();
+          } catch (err) {
+            showToast('Failed to delete expense: ' + err.message, 'error');
+          }
+        }
+      );
+    }
+
     // 3-Way Language System for Admin Portal
     let currentAdminLang = localStorage.getItem('adminLang') || 'en';
 
@@ -7342,6 +7766,7 @@
           noticeBoard: 'Notice Board',
           transactions: 'Transaction Ledger',
           reports: 'Financial Reports',
+          expenses: 'Expenses (செலவு கணக்கு)',
           auditLog: 'Audit Logs',
           settings: 'Settings'
         },
@@ -7363,6 +7788,7 @@
           noticeBoard: 'அறிவிப்பு பலகை',
           transactions: 'கணக்கு பதிவேடு',
           reports: 'நிதி அறிக்கைகள்',
+          expenses: 'செலவு கணக்கு',
           auditLog: 'தணிக்கை பதிவு',
           settings: 'அமைப்புகள்'
         },
@@ -7384,6 +7810,7 @@
           noticeBoard: 'அறிவிப்பு (Notice Board)',
           transactions: 'பதிவேடு (Transactions)',
           reports: 'அறிக்கைகள் (Reports)',
+          expenses: 'செலவு கணக்கு (Expenses)',
           auditLog: 'தணிக்கை பதிவு (Audit Logs)',
           settings: 'அமைப்புகள் (Settings)'
         }
@@ -7410,6 +7837,7 @@
         'nav-notice-board': t.noticeBoard,
         'nav-transactions': t.transactions,
         'nav-reports': t.reports,
+        'nav-expenses': t.expenses,
         'nav-audit-log': t.auditLog,
         'nav-settings': t.settings
       };

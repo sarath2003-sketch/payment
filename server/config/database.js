@@ -947,6 +947,22 @@ function initSQLiteFallback() {
         );
       `);
 
+      sqliteDb.run(`
+        CREATE TABLE IF NOT EXISTS expenses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          category TEXT DEFAULT 'General',
+          amount REAL NOT NULL,
+          expense_date TEXT NOT NULL,
+          expense_month TEXT NOT NULL,
+          remarks TEXT,
+          created_by INTEGER,
+          created_by_name TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // Seed initial admin user if missing
       sqliteDb.run(`
         INSERT OR IGNORE INTO admin_users (username, password_hash, email, status)

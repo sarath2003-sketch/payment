@@ -1102,6 +1102,18 @@
       </div>
     </div>
 
+    <!-- 3b. Total Expenses (செலவு கணக்கு) -->
+    <div class="stat-card" style="border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.05)">
+      <div class="card-top">
+        <span class="card-label" id="lblTotalExpenses" style="color:#ef4444;font-weight:700">Total Expenses (செலவு கணக்கு)</span>
+        <div class="card-icon">💸</div>
+      </div>
+      <div class="card-value" id="valTotalExpenses" style="color:#ef4444;font-weight:800">-₹0</div>
+      <div class="card-subtext">
+        <span style="color:#ef4444">🔻 சங்க செலவுகள் (தானாக கழிக்கப்பட்டது)</span>
+      </div>
+    </div>
+
     <!-- 4. Current Available Fund Balance -->
     <div class="stat-card card-purple">
       <div class="card-top">
@@ -1395,8 +1407,8 @@
       </div>
     </div>
 
-    <!-- Monthly Summary 4 KPI Cards -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:20px">
+    <!-- Monthly Summary 5 KPI Cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;margin-bottom:20px">
       <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:14px">
         <div style="font-size:11px;color:var(--green-light);font-weight:700;text-transform:uppercase">📥 Monthly Inflow (மாத வரவு)</div>
         <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="pubStmtInflow">₹0</div>
@@ -1407,10 +1419,15 @@
         <div style="font-size:20px;font-weight:800;color:var(--red);margin-top:4px" id="pubStmtOutflow">₹0</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px" id="pubStmtOutflowCount">0 loans disbursed</div>
       </div>
+      <div style="background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.4);border-radius:12px;padding:14px">
+        <div style="font-size:11px;color:#ef4444;font-weight:700;text-transform:uppercase">💸 Monthly Expenses (சங்க செலவு)</div>
+        <div style="font-size:20px;font-weight:800;color:#ef4444;margin-top:4px" id="pubStmtExpenses">-₹0</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px" id="pubStmtExpensesCount">0 expenses recorded</div>
+      </div>
       <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:14px">
         <div style="font-size:11px;color:#93c5fd;font-weight:700;text-transform:uppercase">⚖️ Net Monthly Flow (நிகர வரவு/செலவு)</div>
         <div style="font-size:20px;font-weight:800;color:#60a5fa;margin-top:4px" id="pubStmtNetFlow">₹0</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">Inflow - Outflow</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">Inflow - Outflow - Expenses</div>
       </div>
       <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:12px;padding:14px">
         <div style="font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase">🏦 Total Pool Balance (மொத்த இருப்பு)</div>
@@ -1419,13 +1436,16 @@
       </div>
     </div>
 
-    <!-- Toggle Tabs: Inflows vs Loans -->
+    <!-- Toggle Tabs: Inflows vs Loans vs Expenses -->
     <div style="display:flex;gap:10px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap">
       <button class="filter-chip active" id="tabBtnPubInflows" onclick="switchPubStatementTab('inflows', this)">
         📥 <span style="font-weight:700">மாதாந்திர உள்வரவு (Inflows)</span> (<span id="cntPubInflows">0</span>)
       </button>
       <button class="filter-chip" id="tabBtnPubLoans" onclick="switchPubStatementTab('loans', this)">
         💰 <span style="font-weight:700">கடன் & மறுசெலுத்துகை (Loans & Repayments)</span> (<span id="cntPubLoans">0</span>)
+      </button>
+      <button class="filter-chip" id="tabBtnPubExpenses" onclick="switchPubStatementTab('expenses', this)">
+        💸 <span style="font-weight:700">சங்கச் செலவுகள் (Expenses)</span> (<span id="cntPubExpenses">0</span>)
       </button>
     </div>
 
@@ -1495,6 +1515,32 @@
           <tbody id="loansTableBody">
             <tr>
               <td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">Loading loan distributions...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: EXPENSES VIEW -->
+    <div id="pubStatementExpensesView" style="display:none">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">
+        ℹ️ இம்முறையில் சங்கத்தின் செயல்பாடுகளுக்காக செய்யப்பட்ட செலவுகள் வெளிப்படைத்தன்மையுடன் பதியப்பட்டு, மொத்த நிதியிலிருந்து கழிக்கப்பட்டுள்ளது.
+      </div>
+      <div class="table-responsive">
+        <table class="feed-table" style="width:100%" id="pubExpensesTable">
+          <thead>
+            <tr>
+              <th style="width:40px;text-align:center">#</th>
+              <th>Date (தேதி)</th>
+              <th>Category (வகை)</th>
+              <th>Expense Purpose / Title (செலவு விவரம்)</th>
+              <th>Remarks / Notes (குறிப்பு)</th>
+              <th style="text-align:right">Deducted Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="pubStmtExpensesTableBody">
+            <tr>
+              <td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Loading monthly expenses...</td>
             </tr>
           </tbody>
         </table>
@@ -1628,6 +1674,7 @@
       lblTotalFund: "Total Fund Amount",
       lblTotalCollected: "Total Amount Received",
       lblTotalDistributed: "Total Amount Distributed",
+      lblTotalExpenses: "Total Expenses (செலவு கணக்கு)",
       lblCurrentBalance: "Current Fund Balance",
       lblTotalMembers: "Total Members",
       lblMembersReceived: "Received Fund Amount",
@@ -1683,6 +1730,7 @@
       lblTotalFund: "மொத்த நிதி தொகை",
       lblTotalCollected: "மொத்தம் வரப்பெற்ற தொகை",
       lblTotalDistributed: "மொத்தம் வழங்கப்பட்ட தொகை",
+      lblTotalExpenses: "மொத்த சங்க செலவுகள்",
       lblCurrentBalance: "தற்போதைய நிதி இருப்பு",
       lblTotalMembers: "மொத்த உறுப்பினர்கள்",
       lblMembersReceived: "நிதி பெற்ற உறுப்பினர்கள்",
@@ -1738,6 +1786,7 @@
       lblTotalFund: "மொத்த நிதி (Total Fund)",
       lblTotalCollected: "வரப்பெற்ற தொகை (Total Received)",
       lblTotalDistributed: "வழங்கப்பட்ட தொகை (Total Distributed)",
+      lblTotalExpenses: "சங்க செலவுகள் (Total Expenses)",
       lblCurrentBalance: "தற்போதைய இருப்பு (Current Balance)",
       lblTotalMembers: "மொத்த உறுப்பினர்கள் (Total Members)",
       lblMembersReceived: "நிதி பெற்றவர்கள் (Received Fund)",
@@ -1834,6 +1883,8 @@
     document.getElementById('lblTotalFund').textContent = t.lblTotalFund;
     document.getElementById('lblTotalCollected').textContent = t.lblTotalCollected;
     document.getElementById('lblTotalDistributed').textContent = t.lblTotalDistributed;
+    const expLabelEl = document.getElementById('lblTotalExpenses');
+    if (expLabelEl) expLabelEl.textContent = t.lblTotalExpenses || 'Total Expenses';
     document.getElementById('lblCurrentBalance').textContent = t.lblCurrentBalance;
     document.getElementById('lblTotalMembers').textContent = t.lblTotalMembers;
     document.getElementById('lblMembersReceived').textContent = t.lblMembersReceived;
@@ -2129,6 +2180,9 @@
     document.getElementById('valTotalFund').textContent = formatINR(m.total_fund_amount);
     document.getElementById('valTotalCollected').textContent = formatINR(m.total_collected);
     document.getElementById('valTotalDistributed').textContent = formatINR(m.total_distributed);
+    if (document.getElementById('valTotalExpenses')) {
+      document.getElementById('valTotalExpenses').textContent = `-₹${parseFloat(m.total_expenses || 0).toLocaleString('en-IN')}`;
+    }
     document.getElementById('valCurrentBalance').textContent = formatINR(m.current_balance);
 
     // 2. Member Statistics Cards
@@ -2266,18 +2320,25 @@
 
   function switchPubStatementTab(tab, btn) {
     document.querySelectorAll('#seedFundLoansSection .filter-chip').forEach(c => {
-      if (c.id === 'tabBtnPubInflows' || c.id === 'tabBtnPubLoans') c.classList.remove('active');
+      if (c.id === 'tabBtnPubInflows' || c.id === 'tabBtnPubLoans' || c.id === 'tabBtnPubExpenses') c.classList.remove('active');
     });
     if (btn) btn.classList.add('active');
 
     const inView = document.getElementById('pubStatementInflowsView');
     const outView = document.getElementById('pubStatementLoansView');
+    const expView = document.getElementById('pubStatementExpensesView');
     if (tab === 'inflows') {
       if (inView) inView.style.display = 'block';
       if (outView) outView.style.display = 'none';
-    } else {
+      if (expView) expView.style.display = 'none';
+    } else if (tab === 'loans') {
       if (inView) inView.style.display = 'none';
       if (outView) outView.style.display = 'block';
+      if (expView) expView.style.display = 'none';
+    } else if (tab === 'expenses') {
+      if (inView) inView.style.display = 'none';
+      if (outView) outView.style.display = 'none';
+      if (expView) expView.style.display = 'block';
     }
   }
 
@@ -2315,6 +2376,8 @@
       const inflowCntEl = document.getElementById('pubStmtInflowCount');
       const outflowEl = document.getElementById('pubStmtOutflow');
       const outflowCntEl = document.getElementById('pubStmtOutflowCount');
+      const expEl = document.getElementById('pubStmtExpenses');
+      const expCntEl = document.getElementById('pubStmtExpensesCount');
       const netFlowEl = document.getElementById('pubStmtNetFlow');
       const closingBalEl = document.getElementById('pubStmtClosingBalance');
 
@@ -2322,6 +2385,8 @@
       if (inflowCntEl) inflowCntEl.textContent = `${s.inflow_count || 0} payments received`;
       if (outflowEl) outflowEl.textContent = formatINR(s.total_outflow || 0);
       if (outflowCntEl) outflowCntEl.textContent = `${s.outflow_count || 0} loans disbursed`;
+      if (expEl) expEl.textContent = `-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}`;
+      if (expCntEl) expCntEl.textContent = `${s.expense_count || 0} expenses recorded`;
       if (netFlowEl) {
         const net = s.net_monthly_flow || 0;
         netFlowEl.textContent = `${net >= 0 ? '+' : ''}${formatINR(net)}`;
@@ -2332,6 +2397,10 @@
       // Inflows badge counter
       const cntInEl = document.getElementById('cntPubInflows');
       if (cntInEl) cntInEl.textContent = data.inflows ? data.inflows.length : 0;
+
+      // Expenses badge counter
+      const cntExpEl = document.getElementById('cntPubExpenses');
+      if (cntExpEl) cntExpEl.textContent = data.expenses ? data.expenses.length : 0;
 
       // Inflows Table Rendering
       const inTbody = document.getElementById('pubStmtInflowsTableBody');
@@ -2360,6 +2429,38 @@
               </td>
               <td>
                 <code style="font-size:12px;background:rgba(255,255,255,0.05);padding:3px 6px;border-radius:4px;color:var(--text2)">${esc(item.transaction_reference)}</code>
+              </td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // Expenses Table Rendering
+      const expTbody = document.getElementById('pubStmtExpensesTableBody');
+      if (expTbody) {
+        if (!data.expenses || data.expenses.length === 0) {
+          expTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">No club expenses recorded for this month (செலவுகள் இல்லை).</td></tr>';
+        } else {
+          expTbody.innerHTML = data.expenses.map((e, idx) => `
+            <tr>
+              <td style="text-align:center"><strong style="color:var(--text3)">#${idx + 1}</strong></td>
+              <td style="white-space:nowrap;font-size:13px;color:var(--text)">
+                📅 <strong>${esc(e.expense_date)}</strong>
+                <div style="font-size:11px;color:var(--text3)">${esc(e.expense_month)}</div>
+              </td>
+              <td>
+                <span style="display:inline-flex;align-items:center;padding:3px 9px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:12px;font-size:11px;font-weight:700">
+                  ${esc(e.category)}
+                </span>
+              </td>
+              <td>
+                <strong style="color:var(--text);font-size:13px">${esc(e.title)}</strong>
+              </td>
+              <td style="font-size:12px;color:var(--text3)">
+                ${esc(e.remarks || '—')}
+              </td>
+              <td style="text-align:right;color:#ef4444;font-weight:800;font-size:15px;white-space:nowrap">
+                -₹${parseFloat(e.amount || 0).toLocaleString('en-IN')}
               </td>
             </tr>
           `).join('');
@@ -2547,6 +2648,7 @@
     lines.push(`"Generated Date","${new Date().toLocaleString('en-IN')}"`);
     lines.push(`"Total Monthly Inflows (Rs)","${s.total_inflow || 0}"`);
     lines.push(`"Total Monthly Outflows (Rs)","${s.total_outflow || 0}"`);
+    lines.push(`"Total Monthly Expenses (Rs)","-${s.total_expenses || 0}"`);
     lines.push(`"Net Monthly Balance (Rs)","${s.net_monthly_flow || 0}"`);
     lines.push(`"Total Pool Balance (Rs)","${s.closing_pool_balance || 0}"`);
     lines.push(``);
@@ -2570,6 +2672,14 @@
       const isPaid = d.payment_status === 'PAID' || remaining <= 0;
       const statusText = isRefund ? 'REFUNDED TO EXITED MEMBER' : (isPaid ? 'FULLY PAID' : (repaid > 0 ? 'PARTIALLY PAID' : 'PENDING'));
       lines.push(`"${d.id}","${isRefund ? 'MEMBER EXIT REFUND' : 'LOAN DISBURSEMENT'}","${d.member_code || ''}","${(d.member_name || '').replace(/"/g, '""')}","${d.member_phone || '—'}","${(d.distribution_date || d.start_date || '').split('T')[0]}","${d.principal_amount || 0}","${d.interest_percentage || 0}","${d.interest_amount || 0}","${d.total_payable || 0}","${repaid}","${remaining}","${(d.nominee_name || '').replace(/"/g, '""')}","${(d.due_date || '').split('T')[0]}","${statusText}"`);
+    });
+
+    lines.push(``);
+    // Section 3: Club Expenses & Deductions
+    lines.push(`"--- CLUB EXPENSES & DEDUCTIONS (சங்க செலவுகள்) ---"`);
+    lines.push(`"#","Expense Date","Accounting Month","Category","Title / Purpose","Remarks","Deducted Amount (Rs)","Authorized By"`);
+    (data.expenses || []).forEach((e, idx) => {
+      lines.push(`"${idx + 1}","${e.expense_date}","${e.expense_month}","${e.category}","${(e.title || '').replace(/"/g, '""')}","${(e.remarks || '').replace(/"/g, '""')}","-${e.amount}","${(e.created_by_name || 'Admin').replace(/"/g, '""')}"`);
     });
 
     const csvContent = '\uFEFF' + lines.join('\r\n');
@@ -2655,6 +2765,19 @@
       `;
     }).join('') || '<tr><td colspan="10" style="text-align:center;padding:16px;color:#94a3b8">No loan disbursements or member refunds for this accounting month.</td></tr>';
 
+    const expensesToPrint = (data.expenses && data.expenses.length > 0) ? data.expenses : [];
+    const expenseRows = expensesToPrint.map((e, idx) => `
+      <tr>
+        <td style="text-align:center;font-weight:600">${idx + 1}</td>
+        <td style="font-size:11px;white-space:nowrap">${esc(e.expense_date)}<br><span style="color:#64748b;font-size:10px">${esc(e.expense_month)}</span></td>
+        <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b">${esc(e.category)}</span></td>
+        <td><strong style="color:#0f172a;font-size:12px">${esc(e.title)}</strong></td>
+        <td style="font-size:11px;color:#475569">${esc(e.remarks || '—')}</td>
+        <td style="font-size:10px;color:#64748b">${esc(e.created_by_name || 'Admin')}</td>
+        <td style="text-align:right;font-weight:800;color:#dc2626;font-size:12px">-₹${parseFloat(e.amount || 0).toLocaleString('en-IN')}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="7" style="text-align:center;padding:16px;color:#94a3b8">No operational expenses incurred in this accounting month (செலவுகள் இல்லை).</td></tr>';
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html lang="ta">
@@ -2678,10 +2801,10 @@
           .account-summary-table th { background: #0f2b5c; color: #fff; text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
           .account-summary-table td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 11px; }
 
-          .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+          .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
           .kpi-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center; background: #f8fafc; }
-          .kpi-card .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.4px; }
-          .kpi-card .kpi-val { font-size: 16px; font-weight: 800; margin-top: 4px; }
+          .kpi-card .kpi-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.4px; }
+          .kpi-card .kpi-val { font-size: 15px; font-weight: 800; margin-top: 4px; }
 
           .section-title { font-size: 13px; font-weight: 800; color: #0f2b5c; margin: 18px 0 8px 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4px; }
           table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
@@ -2740,33 +2863,41 @@
           <tr>
             <td style="color:#64748b">Total Verified Inflows:</td>
             <td style="color:#15803d;font-weight:700">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')} (${s.inflow_count || 0} txn)</td>
-            <td style="color:#64748b">Total Outflows & Refunds:</td>
-            <td style="color:#b91c1c;font-weight:700">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')} (${s.outflow_count || 0} txn)</td>
+            <td style="color:#64748b">Total Outflows & Loans:</td>
+            <td style="color:#b45309;font-weight:700">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')} (${s.outflow_count || 0} txn)</td>
           </tr>
           <tr>
+            <td style="color:#64748b">Total Club Expenses (செலவு):</td>
+            <td style="color:#dc2626;font-weight:800">-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')} (${s.expense_count || 0} items)</td>
             <td style="color:#64748b">Net Month Movement:</td>
             <td style="color:#0f2b5c;font-weight:700">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</td>
-            <td style="color:#64748b">Closing Available Pool:</td>
-            <td style="color:#b45309;font-weight:800;font-size:13px">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="color:#64748b;font-weight:600">Fund Pool Closing Balance (கையிருப்பு நிதி):</td>
+            <td colspan="2" style="color:#15803d;font-weight:800;font-size:13px;text-align:right">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
           </tr>
         </table>
 
         <div class="kpi-row">
           <div class="kpi-card">
-            <div class="kpi-label">Verified Inflows (உள்வரவு)</div>
+            <div class="kpi-label">Verified Inflows (வரவு)</div>
             <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')}</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Loans & Exit Refunds</div>
-            <div class="kpi-val" style="color:#b91c1c">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-label">Loans & Refunds (கடன்)</div>
+            <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
+          </div>
+          <div class="kpi-card" style="background:#fff5f5;border-color:#fecaca">
+            <div class="kpi-label" style="color:#dc2626">Expenses (செலவு)</div>
+            <div class="kpi-val" style="color:#dc2626">-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Net Monthly Flow</div>
+            <div class="kpi-label">Net Month Movement</div>
             <div class="kpi-val" style="color:#0f2b5c">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Club Closing Cash Pool</div>
-            <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
           </div>
         </div>
 
@@ -2814,11 +2945,33 @@
           </tbody>
         </table>
 
+        <div class="section-title" style="margin-top:22px;border-bottom:1.5px solid #fee2e2">
+          <span style="color:#b91c1c">💸 3. CLUB EXPENSES AUDIT REGISTER (சங்க செலவு கணக்கு அறிக்கை - விவரங்களுடன்)</span>
+          <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${expensesToPrint?.length || 0} Records</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:30px;text-align:center">#</th>
+              <th>Expense Date (தேதி)</th>
+              <th>Category (வகை)</th>
+              <th>Expense Purpose / Title (செலவு விவரம்)</th>
+              <th>Remarks / Reason (காரணம்)</th>
+              <th>Authorized By</th>
+              <th style="text-align:right">Deducted Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${expenseRows}
+          </tbody>
+        </table>
+
         <div class="audit-callout">
           <strong>📌 தணிக்கை மற்றும் விதிகள் சான்றிதழ் (Audit & Transparency Governance Note):</strong><br>
           1. <strong>உறுப்பினர் விலகல் (Member Exit Settlement):</strong> உறுப்பினர் கிளப்பில் இருந்து விலகும்போது, அவர் இதுவரை செலுத்திய மொத்த அசல் தொகை (Principal Contribution) துல்லியமாகக் கணக்கிடப்பட்டு அவருக்கு முழுமையாக திருப்பியளிக்கப்படுகிறது (<code>REFUNDED</code>). அந்த தொகை கிளப்பின் நடப்பு கணக்கிலிருந்து கழிக்கப்படும்.<br>
           2. <strong>தணிக்கைப் பாதுகாப்பு (Audit Trail Preservation):</strong> உறுப்பினரின் பெயர் மற்றும் தொலைபேசி எண் புதிய பதிவுக்கு விடுவிக்கப்பட்டாலும், கடந்த கால தணிக்கைக்காக அவர் செலுத்திய கட்டணங்கள் மற்றும் பரிவர்த்தனை வரலாறு நிரந்தரமாக பாதுகாக்கப்படும்.<br>
-          3. ஈட்டிய 5% வட்டித் தொகை கிளப்பின் பொது நிதியிலேயே சேர்க்கப்பட்டு, தகுதியான உறுப்பினர்களுக்கு சீட்டு மற்றும் அவசரக் கடனாக மட்டுமே மறுசுழற்சி செய்யப்படுகிறது.
+          3. ஈட்டிய 5% வட்டித் தொகை கிளப்பின் பொது நிதியிலேயே சேர்க்கப்பட்டு, தகுதியான உறுப்பினர்களுக்கு சீட்டு மற்றும் அவசரக் கடனாக மட்டுமே மறுசுழற்சி செய்யப்படுகிறது.<br>
+          4. <strong>சங்கச் செலவுகள் (Club Operational Expenses):</strong> சங்கத்தின் செயல்பாட்டுச் செலவுகள் (ஸ்டேஷனரி, கூட்டம், உணவு/டீ, மராமத்து, போன்றவை) வெளிப்படைத்தன்மையுடன் பதிவு செய்யப்பட்டு, சங்கத்தின் மொத்த கையிருப்பு தொகையிலிருந்து முறையாகக் கழிக்கப்பட்டுள்ளது.
         </div>
 
         <div class="signatory-container">

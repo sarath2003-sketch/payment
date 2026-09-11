@@ -58,11 +58,24 @@ router.get('/summary', authenticateToken, async (req, res) => {
     );
     const totalWithdrawn = parseFloat(withdrawnResult.rows[0]?.total || 0);
 
-    // Current Available Fund Balance: Total Collections + Repayments - Distributed - Withdrawn
-    const availableBalance = Math.max(0, Math.round((grandTotalCollected + totalRepaid - totalDistributed - totalWithdrawn) * 100) / 100);
+    // Current month identifier
+    const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+
+    // Total expenses (all-time)
+    const expensesRes = await pool.query('SELECT COALESCE(SUM(amount), 0) as total FROM expenses');
+    const totalExpenses = parseFloat(expensesRes.rows[0]?.total || 0);
+
+    // Current month expenses
+    const monthlyExpensesRes = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE expense_month = $1 OR expense_date LIKE $1 || '%'",
+      [currentMonth]
+    );
+    const monthlyExpenses = parseFloat(monthlyExpensesRes.rows[0]?.total || 0);
+
+    // Current Available Fund Balance: Total Collections + Repayments - Distributed - Withdrawn - Total Expenses
+    const availableBalance = Math.max(0, Math.round((grandTotalCollected + totalRepaid - totalDistributed - totalWithdrawn - totalExpenses) * 100) / 100);
 
     // Current month income vs outgoing
-    const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
     const incomeRes = await pool.query(`
       SELECT COALESCE(SUM(amount), 0) as total FROM transactions 
       WHERE (transaction_type = 'MEMBER_CONTRIBUTION' OR transaction_type = 'REPAYMENT' OR transaction_type = 'PAYMENT')
@@ -101,6 +114,8 @@ router.get('/summary', authenticateToken, async (req, res) => {
       total_repayments: totalRepaid,
       pending_repayments: pendingRepayments,
       overdue_repayments: overdueRepayments,
+      total_expenses: totalExpenses,
+      monthly_expenses: monthlyExpenses,
       current_balance: availableBalance,
       available_balance: availableBalance,
       monthly_income: monthlyIncome,
