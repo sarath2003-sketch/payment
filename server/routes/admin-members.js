@@ -37,6 +37,12 @@ async function logAudit(req, action, entityType, entityId, details) {
        VALUES ('ADMIN', $1, $2, $3, $4, $5, $6, $7)`,
       [actorId, actorName, action, entityType, entityId, details ? JSON.stringify(details) : null, ip]
     );
+
+    if (entityType === 'MEMBER' || entityType === 'settings') {
+      if (typeof pool.syncDatabaseToJson === 'function') {
+        pool.syncDatabaseToJson().catch(e => console.warn('[Auto-Sync Warning]', e.message));
+      }
+    }
   } catch (err) {
     console.warn('[Audit Log Warning]', err.message);
   }
@@ -82,6 +88,54 @@ router.post('/reconcile', async (req, res) => {
     res.json({ message: 'Database reconciled successfully and synced', details: result });
   } catch (err) {
     res.status(500).json({ error: 'Reconcile failed: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/admin/members/restore-all
+ * Restore all registered members from permanent initial_data.json
+ */
+router.post('/restore-all', async (req, res) => {
+  try {
+    const initPath = path.join(__dirname, '..', 'database', 'initial_data.json');
+    if (!fs.existsSync(initPath)) {
+      return res.status(404).json({ error: 'initial_data.json template not found' });
+    }
+    const data = JSON.parse(fs.readFileSync(initPath, 'utf8'));
+    const members = data.members || [];
+    let restoredCount = 0;
+
+    for (const m of members) {
+      await pool.query(
+        `INSERT INTO members (id, member_id, name, email, phone, password_hash, balance, status, activation_status, payment_status, group_category, upi_id, profile_photo, is_duplicate, duplicate_reviewed, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0, 0, $14, $15)
+         ON CONFLICT (id) DO UPDATE SET
+           member_id = EXCLUDED.member_id,
+           name = EXCLUDED.name,
+           phone = EXCLUDED.phone,
+           email = EXCLUDED.email,
+           status = 'ACTIVE',
+           activation_status = 'ACTIVE',
+           deleted_at = NULL`,
+        [m.id, m.member_id, m.name, m.email, m.phone, m.password_hash, m.balance || 0, m.status || 'ACTIVE', m.activation_status || 'ACTIVE', m.payment_status || 'UNPAID', m.group_category || 'General', m.upi_id || null, m.profile_photo || null, m.created_at || '2026-09-11 10:00:00', m.updated_at || '2026-09-11 10:00:00']
+      );
+      restoredCount++;
+    }
+
+    if (typeof pool.syncDatabaseToJson === 'function') {
+      await pool.syncDatabaseToJson();
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('member:status-change');
+      io.emit('stats:updated');
+    }
+
+    res.json({ success: true, message: `All ${restoredCount} members restored and synchronized successfully!`, restoredCount });
+  } catch (err) {
+    console.error('Error restoring members:', err);
+    res.status(500).json({ error: 'Failed to restore members: ' + err.message });
   }
 });
 

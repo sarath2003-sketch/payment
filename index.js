@@ -43,6 +43,7 @@ const publicDashboardRoutes = require('./server/routes/public-dashboard');
 const expensesRoutes = require('./server/routes/expenses');
 const { endAuction } = require('./server/routes/auction');
 const { startBackgroundCleaner } = require('./server/services/auto-deduplicator');
+const aiAgentService = require('./server/services/aiAgentService');
 
 const app = express();
 const server = http.createServer(app);
@@ -602,6 +603,36 @@ app.use('/settings', settingsRoutes);
 
 app.use('/api/expenses', expensesRoutes);
 app.use('/expenses', expensesRoutes);
+
+// ============================================================
+// Universal 2-Way Voice Gemini AI Assistant API (Public, Member & Admin)
+// ============================================================
+app.post(['/api/ai-copilot', '/api/ai-assistant'], async (req, res) => {
+  try {
+    const userQuery = req.body.query || req.body.message || '';
+    const sessionIdentifier = req.body.sessionId || 'global-session';
+    const lang = req.body.language || req.body.lang || 'ta';
+    const ioInstance = req.app.get('io') || io;
+    const user = req.user || { username: 'Member' };
+    const result = await aiAgentService.processQuery({
+      query: userQuery,
+      sessionId: sessionIdentifier,
+      language: lang,
+      adminUser: user,
+      io: ioInstance
+    });
+    res.json({
+      ...result,
+      reply: result.replyText || '',
+      spoken_text: result.speechText || result.replyText || '',
+      actions_taken: result.action ? [result.action] : [],
+      lang: lang
+    });
+  } catch (err) {
+    console.error('Global AI Copilot Error:', err);
+    res.status(500).json({ error: 'AI Copilot processing error: ' + err.message });
+  }
+});
 
 // ============================================================
 // Health Check (detailed)

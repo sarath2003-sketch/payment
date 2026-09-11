@@ -387,24 +387,20 @@ function createJsonStore(storeFilePath) {
   return db;
 }
 
-// Auto-seed function when tables are empty
+// Auto-seed function when tables are empty or missing members
 function seedInitialDataIfEmpty(db) {
   const initPath = path.join(__dirname, '..', 'database', 'initial_data.json');
   if (!fs.existsSync(initPath)) return;
   try {
     const data = JSON.parse(fs.readFileSync(initPath, 'utf8'));
     if (data.members && data.members.length > 0) {
-      db.get("SELECT count(*) as cnt FROM members", (err, row) => {
-        if (!err && (!row || row.cnt === 0)) {
-          console.log('[DB Auto-Seed] Seeding initial members into database...');
-          data.members.forEach(m => {
-            db.run(
-              `INSERT OR IGNORE INTO members (id, member_id, name, email, phone, password_hash, balance, status, activation_status, payment_status, group_category, upi_id, profile_photo) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [m.id, m.member_id, m.name, m.email, m.phone, m.password_hash, m.balance || 0, m.status || 'ACTIVE', m.activation_status || 'ACTIVE', m.payment_status || 'UNPAID', m.group_category || 'General', m.upi_id || null, m.profile_photo || null]
-            );
-          });
-        }
+      console.log('[DB Auto-Seed] Ensuring initial members are seeded into database...');
+      data.members.forEach(m => {
+        db.run(
+          `INSERT OR IGNORE INTO members (id, member_id, name, email, phone, password_hash, balance, status, activation_status, payment_status, group_category, upi_id, profile_photo, is_duplicate, duplicate_reviewed, created_at, updated_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`,
+          [m.id, m.member_id, m.name, m.email, m.phone, m.password_hash, m.balance || 0, m.status || 'ACTIVE', m.activation_status || 'ACTIVE', m.payment_status || 'UNPAID', m.group_category || 'General', m.upi_id || null, m.profile_photo || null, m.created_at || '2026-09-11 10:00:00', m.updated_at || '2026-09-11 10:00:00']
+        );
       });
     }
     if (data.app_settings && data.app_settings.length > 0) {
@@ -418,20 +414,63 @@ function seedInitialDataIfEmpty(db) {
       });
     }
     if (data.monthly_payments && data.monthly_payments.length > 0) {
-      db.get("SELECT count(*) as cnt FROM monthly_payments", (err, row) => {
-        if (!err && (!row || row.cnt === 0)) {
-          data.monthly_payments.forEach(p => {
-            db.run(
-              `INSERT OR IGNORE INTO monthly_payments (id, member_id, year, month, amount_due, amount_paid, status, due_date) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-              [p.id, p.member_id, p.year, p.month, p.amount_due, p.amount_paid, p.status, p.due_date]
-            );
-          });
-        }
+      data.monthly_payments.forEach(p => {
+        db.run(
+          `INSERT OR IGNORE INTO monthly_payments (id, member_id, year, month, amount_due, amount_paid, status, due_date) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [p.id, p.member_id, p.year, p.month, p.amount_due, p.amount_paid, p.status, p.due_date]
+        );
       });
     }
   } catch (e) {
     console.warn('[DB Auto-Seed Error]', e.message);
+  }
+}
+
+// Persist active members and settings back to initial_data.json file
+async function syncDatabaseToJson() {
+  try {
+    const initPath = path.join(__dirname, '..', 'database', 'initial_data.json');
+    let currentData = {};
+    if (fs.existsSync(initPath)) {
+      try {
+        currentData = JSON.parse(fs.readFileSync(initPath, 'utf8'));
+      } catch(e) {}
+    }
+    
+    // Fetch all active members
+    const membersRes = await query(`
+      SELECT id, member_id, name, email, phone, password_hash, balance, status, 
+             activation_status, payment_status, group_category, upi_id, profile_photo,
+             is_duplicate, duplicate_reason, duplicate_of_id, duplicate_reviewed,
+             deleted_at, created_at, updated_at, is_online, last_active_at
+      FROM members 
+      WHERE deleted_at IS NULL
+      ORDER BY id ASC
+    `);
+
+    // Fetch app_settings
+    const settingsRes = await query(`SELECT key, value, updated_at FROM app_settings`);
+
+    // Fetch monthly_payments
+    const paymentsRes = await query(`SELECT * FROM monthly_payments WHERE member_id IN (SELECT id FROM members WHERE deleted_at IS NULL)`);
+
+    if (membersRes.rows && membersRes.rows.length > 0) {
+      currentData.members = membersRes.rows;
+    }
+    if (settingsRes.rows && settingsRes.rows.length > 0) {
+      currentData.app_settings = settingsRes.rows;
+    }
+    if (paymentsRes.rows && paymentsRes.rows.length > 0) {
+      currentData.monthly_payments = paymentsRes.rows;
+    }
+
+    fs.writeFileSync(initPath, JSON.stringify(currentData, null, 2), 'utf8');
+    console.log(`[DB Auto-Sync] Persisted ${currentData.members.length} members to initial_data.json`);
+    return { success: true, count: currentData.members.length };
+  } catch (err) {
+    console.warn('[DB Auto-Sync Warning]', err.message);
+    return { success: false, error: err.message };
   }
 }
 
@@ -1128,6 +1167,7 @@ async function connect() {
 module.exports = {
   query,
   connect,
+  syncDatabaseToJson,
   on: (event, handler) => {
     if (pgPool) pgPool.on(event, handler);
   }

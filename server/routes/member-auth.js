@@ -144,6 +144,11 @@ router.post(['/', '/register'], async (req, res) => {
 
     console.log(`[REGISTRATION SUCCESS] Member ID: ${finalMemberId}, Name: ${finalName}, Phone: ${finalPhone}, Email: ${finalEmail}`);
 
+    // Automatically persist to initial_data.json so ephemeral cloud container never loses this member
+    if (typeof pool.syncDatabaseToJson === 'function') {
+      pool.syncDatabaseToJson().catch(e => console.warn('[Auto-Sync Warning]', e.message));
+    }
+
     // Generate JWT token for instant login
     const token = jwt.sign(
       { 
