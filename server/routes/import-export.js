@@ -321,7 +321,9 @@ router.get('/export/complete-report', authenticateToken, async (req, res) => {
     // Payments sheet
     const paymentsResult = await pool.query(`
       SELECT 
+        m.member_id as "Member ID",
         m.name as "Member Name",
+        m.status as "Member Status",
         mp.month as "Month",
         mp.payment_date as "Date",
         mp.amount as "Amount",
@@ -336,10 +338,14 @@ router.get('/export/complete-report', authenticateToken, async (req, res) => {
     // Withdrawals sheet
     const withdrawalsResult = await pool.query(`
       SELECT 
+        m.member_id as "Member ID",
         m.name as "Member Name",
+        m.status as "Member Status",
         w.month as "Month",
         w.withdrawal_date as "Date",
-        w.amount as "Amount"
+        w.amount as "Amount",
+        w.reason as "Reason",
+        w.notes as "Notes"
       FROM withdrawals w
       JOIN members m ON w.member_id = m.id
       ORDER BY w.withdrawal_date DESC
@@ -350,7 +356,9 @@ router.get('/export/complete-report', authenticateToken, async (req, res) => {
     // Transactions sheet
     const transactionsResult = await pool.query(`
       SELECT 
+        m.member_id as "Member ID",
         m.name as "Member Name",
+        m.status as "Member Status",
         t.transaction_date as "Date",
         t.transaction_type as "Type",
         t.amount as "Amount",

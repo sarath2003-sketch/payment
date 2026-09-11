@@ -14,7 +14,7 @@ router.get(['/summary', '/'], async (req, res) => {
   try {
     // 1. Total Registered Members (Active & Total)
     const membersRes = await pool.query(
-      "SELECT COUNT(*) as total_count, SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_count FROM members WHERE deleted_at IS NULL"
+      "SELECT COUNT(*) as total_count, SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_count FROM members WHERE deleted_at IS NULL AND status = 'ACTIVE'"
     );
     const totalMembers = parseInt(membersRes.rows[0]?.total_count || 0, 10);
     const activeMembers = parseInt(membersRes.rows[0]?.active_count || totalMembers, 10);
@@ -32,31 +32,31 @@ router.get(['/summary', '/'], async (req, res) => {
       qrPathVersioned = `${setMap['qr_path']}?v=${qrVersion}`;
     }
 
-    // 2. Total Payments / Contributions Received from Valid Members
+    // 2. Total Payments / Contributions Received from Valid Active Members
     const monthlyPaidRes = await pool.query(
-      "SELECT COALESCE(SUM(mp.amount_paid), 0) as total FROM monthly_payments mp JOIN members m ON mp.member_id = m.id WHERE (mp.status = 'PAID' OR mp.amount_paid > 0) AND m.deleted_at IS NULL"
+      "SELECT COALESCE(SUM(mp.amount_paid), 0) as total FROM monthly_payments mp JOIN members m ON mp.member_id = m.id WHERE (mp.status = 'PAID' OR mp.amount_paid > 0) AND m.deleted_at IS NULL AND m.status = 'ACTIVE'"
     );
     const totalMonthlyPaid = parseFloat(monthlyPaidRes.rows[0]?.total || 0);
 
-    // Approved payment proofs
+    // Approved payment proofs from active members
     const paymentProofsRes = await pool.query(
-      "SELECT COALESCE(SUM(p.amount), 0) as total FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'APPROVED' AND m.deleted_at IS NULL"
+      "SELECT COALESCE(SUM(p.amount), 0) as total FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'APPROVED' AND m.deleted_at IS NULL AND m.status = 'ACTIVE'"
     );
     const totalPaymentProofs = parseFloat(paymentProofsRes.rows[0]?.total || 0);
 
     // Member total contributions (take higher of monthly_payments or payment_proofs)
     const totalMemberContributions = Math.max(totalMonthlyPaid, totalPaymentProofs);
 
-    // Loan/Distribution Repayments received from members
+    // Loan/Distribution Repayments received from active members
     const repaymentsRes = await pool.query(
-      "SELECT COALESCE(SUM(r.payment_amount), 0) as total FROM repayments r JOIN members m ON r.member_id = m.id WHERE r.status = 'COMPLETED' AND m.deleted_at IS NULL"
+      "SELECT COALESCE(SUM(r.payment_amount), 0) as total FROM repayments r JOIN members m ON r.member_id = m.id WHERE r.status = 'COMPLETED' AND m.deleted_at IS NULL AND m.status = 'ACTIVE'"
     );
     const totalRepaymentsReceived = parseFloat(repaymentsRes.rows[0]?.total || 0);
 
     // Total Amount Received From Members
     const totalReceivedFromMembers = Math.round((totalMemberContributions + totalRepaymentsReceived) * 100) / 100;
 
-    // 3. Seed Fund Distributions & Loan Statistics (Valid Members Only)
+    // 3. Seed Fund Distributions & Loan Statistics (Valid Active Members Only)
     const seedRes = await pool.query(`
       SELECT 
         COALESCE(SUM(d.principal_amount), 0) as total_distributed,
@@ -69,7 +69,7 @@ router.get(['/summary', '/'], async (req, res) => {
         SUM(CASE WHEN d.remaining_amount <= 0.01 THEN 1 ELSE 0 END) as completed_distributions_count
       FROM seed_fund_distributions d
       JOIN members m ON d.member_id = m.id
-      WHERE m.deleted_at IS NULL
+      WHERE m.deleted_at IS NULL AND m.status = 'ACTIVE'
     `);
 
     const seedRow = seedRes.rows[0] || {};
@@ -82,11 +82,16 @@ router.get(['/summary', '/'], async (req, res) => {
     const activeDistributionsCount = parseInt(seedRow.active_distributions_count || 0, 10);
     const completedDistributionsCount = parseInt(seedRow.completed_distributions_count || 0, 10);
 
-    // 4. Withdrawals from fund if any
+    // 4. Withdrawals from fund & Member Exit Refunds
     const withdrawalsRes = await pool.query(
       "SELECT COALESCE(SUM(amount), 0) as total FROM withdrawals"
     );
     const totalWithdrawn = parseFloat(withdrawalsRes.rows[0]?.total || 0);
+
+    const exitRefundsRes = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM withdrawals WHERE reason = 'MEMBER_EXIT_REFUND'"
+    );
+    const totalRefundedToExited = parseFloat(exitRefundsRes.rows[0]?.total || 0);
 
     // 5. Total Amount Given to Members
     const totalGivenToMembers = Math.round(totalDistributed * 100) / 100;
@@ -133,11 +138,13 @@ router.get(['/summary', '/'], async (req, res) => {
         qr_path_versioned: qrPathVersioned
       },
       metrics: {
-        // Core 11 Requested Figures
+        // Core Requested Figures
         initial_fund_pool: initialFundPool,
         total_fund_amount: totalFundAmount,
         total_collected: totalReceivedFromMembers,
+        total_member_contributions: totalMemberContributions,
         total_distributed: totalGivenToMembers,
+        total_refunded_to_exited: totalRefundedToExited,
         total_available: currentBalance,
         current_balance: currentBalance,
         total_members: totalMembers,
@@ -439,8 +446,8 @@ router.get('/monthly-statement', async (req, res) => {
           id: r.id,
           member_id: r.member_id,
           member_name: r.member_name,
-          member_code: r.member_code,
-          member_phone: r.member_phone,
+          member_code: String(r.member_code || '').split('_exited_')[0],
+          member_phone: String(r.member_phone || '').split('_exited_')[0],
           amount: parseFloat(r.amount) || 0,
           payment_date: r.payment_date,
           payment_time: timeStr,
@@ -462,8 +469,8 @@ router.get('/monthly-statement', async (req, res) => {
           id: r.id,
           member_id: r.member_id,
           member_name: r.member_name,
-          member_code: r.member_code,
-          member_phone: r.member_phone,
+          member_code: String(r.member_code || '').split('_exited_')[0],
+          member_phone: String(r.member_phone || '').split('_exited_')[0],
           amount: parseFloat(r.amount) || 0,
           payment_date: r.payment_date,
           payment_time: timeStr,
@@ -475,7 +482,7 @@ router.get('/monthly-statement', async (req, res) => {
 
     allInflows.sort((a, b) => (b.payment_date + b.payment_time).localeCompare(a.payment_date + a.payment_time));
 
-    // 2. Fetch Outflows (Loans Distributed in target month)
+    // 2. Fetch Outflows (Loans Distributed + Exit Principal Refunds in target month)
     const outflowsSql = `
       SELECT 
         d.id,
@@ -493,31 +500,84 @@ router.get('/monthly-statement', async (req, res) => {
         d.notes,
         COALESCE(m.name, 'Member #' || d.member_id) as member_name,
         COALESCE(m.member_id, '' || d.member_id) as member_code,
-        COALESCE(m.phone, '—') as member_phone
+        COALESCE(m.phone, '—') as member_phone,
+        'LOAN' as outflow_type
       FROM seed_fund_distributions d
       LEFT JOIN members m ON d.member_id = m.id
       WHERE d.distribution_date LIKE $1 || '%'
       ORDER BY d.distribution_date DESC, d.id DESC
     `;
     const outflowsRes = await pool.query(outflowsSql, [targetMonth]);
-    const outflows = outflowsRes.rows.map(d => ({
-      id: d.id,
-      member_id: d.member_id,
-      member_name: d.member_name,
-      member_code: d.member_code,
-      member_phone: d.member_phone,
-      principal_amount: parseFloat(d.principal_amount) || 0,
-      interest_percentage: parseFloat(d.interest_percentage) || 5,
-      interest_amount: parseFloat(d.interest_amount) || 0,
-      total_payable: parseFloat(d.total_payable) || 0,
-      total_repaid: parseFloat(d.total_repaid) || 0,
-      remaining_amount: parseFloat(d.remaining_amount) || 0,
-      distribution_date: d.distribution_date,
-      due_date: d.due_date,
-      nominee_name: d.nominee_name || '—',
-      payment_status: d.payment_status || 'PENDING',
-      notes: d.notes
-    }));
+
+    // Also fetch exit refunds and other withdrawals in target month
+    const withdrawalsSql = `
+      SELECT 
+        w.id,
+        w.member_id,
+        w.amount as principal_amount,
+        0 as interest_percentage,
+        0 as interest_amount,
+        w.amount as total_payable,
+        w.amount as total_repaid,
+        0 as remaining_amount,
+        w.withdrawal_date as distribution_date,
+        w.withdrawal_date as due_date,
+        'Principal Refund (அசல் திருப்பியளிப்பு)' as nominee_name,
+        'REFUNDED' as payment_status,
+        COALESCE(w.notes, 'Principal Refund on Member Exit') as notes,
+        COALESCE(m.name, 'Exited Member #' || w.member_id) as member_name,
+        COALESCE(m.member_id, '' || w.member_id) as member_code,
+        COALESCE(m.phone, '—') as member_phone,
+        'REFUND' as outflow_type
+      FROM withdrawals w
+      LEFT JOIN members m ON w.member_id = m.id
+      WHERE w.withdrawal_date LIKE $1 || '%'
+      ORDER BY w.withdrawal_date DESC, w.id DESC
+    `;
+    const withdrawalsRes = await pool.query(withdrawalsSql, [targetMonth]);
+
+    const outflows = [
+      ...outflowsRes.rows.map(d => ({
+        id: `loan_${d.id}`,
+        raw_id: d.id,
+        outflow_type: 'LOAN',
+        member_id: d.member_id,
+        member_name: d.member_name,
+        member_code: String(d.member_code || '').split('_exited_')[0],
+        member_phone: String(d.member_phone || '').split('_exited_')[0],
+        principal_amount: parseFloat(d.principal_amount) || 0,
+        interest_percentage: parseFloat(d.interest_percentage) || 5,
+        interest_amount: parseFloat(d.interest_amount) || 0,
+        total_payable: parseFloat(d.total_payable) || 0,
+        total_repaid: parseFloat(d.total_repaid) || 0,
+        remaining_amount: parseFloat(d.remaining_amount) || 0,
+        distribution_date: d.distribution_date,
+        due_date: d.due_date,
+        nominee_name: d.nominee_name || '—',
+        payment_status: d.payment_status || 'PENDING',
+        notes: d.notes
+      })),
+      ...withdrawalsRes.rows.map(w => ({
+        id: `refund_${w.id}`,
+        raw_id: w.id,
+        outflow_type: 'REFUND',
+        member_id: w.member_id,
+        member_name: `${w.member_name} (விலகல் / Exited)`,
+        member_code: String(w.member_code || '').split('_exited_')[0],
+        member_phone: String(w.member_phone || '').split('_exited_')[0],
+        principal_amount: parseFloat(w.principal_amount) || 0,
+        interest_percentage: 0,
+        interest_amount: 0,
+        total_payable: parseFloat(w.principal_amount) || 0,
+        total_repaid: parseFloat(w.principal_amount) || 0,
+        remaining_amount: 0,
+        distribution_date: w.distribution_date,
+        due_date: w.due_date,
+        nominee_name: 'Principal Refund (அசல் திருப்பியளிப்பு)',
+        payment_status: 'PAID',
+        notes: w.notes
+      }))
+    ];
 
     // 3. Totals
     const totalInflow = Math.round(allInflows.reduce((acc, x) => acc + x.amount, 0) * 100) / 100;
@@ -526,11 +586,12 @@ router.get('/monthly-statement', async (req, res) => {
 
     // Overall metrics for closing balance
     const overallColl = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payment_proofs WHERE status = 'APPROVED' OR status = 'PAID'`);
-    const overallRepay = await pool.query(`SELECT COALESCE(SUM(payment_amount), 0) as total FROM repayments`);
+    const overallRepay = await pool.query(`SELECT COALESCE(SUM(payment_amount), 0) as total FROM repayments WHERE status = 'COMPLETED'`);
     const overallLoans = await pool.query(`SELECT COALESCE(SUM(principal_amount), 0) as total FROM seed_fund_distributions`);
+    const overallWithdrawals = await pool.query(`SELECT COALESCE(SUM(amount), 0) as total FROM withdrawals`);
 
     const poolCollection = parseFloat(overallColl.rows[0]?.total || 0) + parseFloat(overallRepay.rows[0]?.total || 0);
-    const poolDisbursed = parseFloat(overallLoans.rows[0]?.total || 0);
+    const poolDisbursed = parseFloat(overallLoans.rows[0]?.total || 0) + parseFloat(overallWithdrawals.rows[0]?.total || 0);
     const currentPoolBalance = Math.max(0, Math.round((poolCollection - poolDisbursed) * 100) / 100);
 
     // 4. Generate list of available months (last 12 months including target)

@@ -476,8 +476,8 @@ function initSQLiteFallback() {
         });
       });
 
-      // Auto-backfill & clean any legacy member_id values to preserve strict sequential 101, 102, 103... numbering
-      sqliteDb.run(`UPDATE members SET member_id = CAST(100 + id AS TEXT) WHERE member_id IS NULL OR member_id = '' OR member_id > '5000' OR length(member_id) > 3`);
+      // Auto-backfill missing member_id only if null or empty
+      sqliteDb.run(`UPDATE members SET member_id = CAST(100 + id AS TEXT) WHERE member_id IS NULL OR TRIM(member_id) = ''`);
 
       sqliteDb.run(`
         CREATE TABLE IF NOT EXISTS admin_users (

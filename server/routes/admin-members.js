@@ -41,7 +41,7 @@ async function logAudit(req, action, entityType, entityId, details) {
   }
 }
 
-// Helper to generate next sequential Member ID starting at SF001
+// Helper to generate next sequential Member ID starting at 101
 async function getNextMemberId(clientOrPool) {
   try {
     const res = await clientOrPool.query(`
@@ -49,21 +49,19 @@ async function getNextMemberId(clientOrPool) {
       WHERE deleted_at IS NULL
     `);
     
-    let maxNum = 0;
+    let maxNum = 100;
     for (const row of res.rows || []) {
       if (!row.member_id) continue;
-      const match = String(row.member_id).match(/(\d+)/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (!isNaN(num) && num > maxNum) {
-          maxNum = num;
-        }
+      const cleanId = String(row.member_id).replace(/\D/g, '');
+      const num = parseInt(cleanId, 10);
+      if (!isNaN(num) && num >= 100 && num < 100000 && num > maxNum) {
+        maxNum = num;
       }
     }
     const nextNum = maxNum + 1;
-    return `SF${String(nextNum).padStart(3, '0')}`;
+    return String(nextNum);
   } catch (e) {
-    return 'SF001';
+    return '101';
   }
 }
 
@@ -71,27 +69,106 @@ async function getNextMemberId(clientOrPool) {
 router.use(authenticateToken, requireAdmin);
 
 /**
+ * POST /api/admin/members/reconcile
+ * On-demand self-healing: purges orphans, recalculates ledger, syncs WebSocket
+ */
+router.post('/reconcile', async (req, res) => {
+  try {
+    const reconciler = req.app.get('reconcileService');
+    const io = req.app.get('io');
+    if (!reconciler) return res.status(500).json({ error: 'Reconciliation service unavailable' });
+    const result = await reconciler.reconcileNow(io, true);
+    res.json({ message: 'Database reconciled successfully and synced', details: result });
+  } catch (err) {
+    res.status(500).json({ error: 'Reconcile failed: ' + err.message });
+  }
+});
+
+/**
+ * GET /api/admin/members/agent/status
+ * Get real-time health diagnostics from AI System Guardian / Self-Healing Agent
+ */
+router.get('/agent/status', async (req, res) => {
+  try {
+    const reconciler = req.app.get('reconcileService');
+    if (!reconciler) return res.status(500).json({ error: 'Reconciliation service unavailable' });
+    const diagnostics = await reconciler.getDiagnostics();
+    res.json(diagnostics);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve agent status: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/admin/members/agent/heal-now
+ * Trigger deep diagnostics scan & immediate self-healing sweep
+ */
+router.post('/agent/heal-now', async (req, res) => {
+  try {
+    const reconciler = req.app.get('reconcileService');
+    const io = req.app.get('io');
+    if (!reconciler) return res.status(500).json({ error: 'Reconciliation service unavailable' });
+    const result = await reconciler.reconcileNow(io, true);
+    const diagnostics = await reconciler.getDiagnostics();
+    res.json({ message: 'Self-healing sweep completed successfully', result, diagnostics });
+  } catch (err) {
+    res.status(500).json({ error: 'Self-healing failed: ' + err.message });
+  }
+});
+
+/**
  * GET /api/admin/members/dashboard-stats
- * Admin dashboard summary stats
+ * Admin dashboard summary stats (Synchronized strictly with active members)
  */
 router.get('/dashboard-stats', async (req, res) => {
   try {
     const statsRes = await pool.query(`
       SELECT 
-        COUNT(CASE WHEN deleted_at IS NULL THEN 1 END) AS total_members,
-        COUNT(CASE WHEN deleted_at IS NULL AND activation_status = 'ACTIVE' THEN 1 END) AS active_members,
+        COUNT(CASE WHEN deleted_at IS NULL AND status = 'ACTIVE' THEN 1 END) AS total_members,
+        COUNT(CASE WHEN deleted_at IS NULL AND status = 'ACTIVE' AND activation_status = 'ACTIVE' THEN 1 END) AS active_members,
         COUNT(CASE WHEN deleted_at IS NULL AND (activation_status = 'INACTIVE' OR status = 'INACTIVE') THEN 1 END) AS inactive_members,
         COUNT(CASE WHEN deleted_at IS NULL AND activation_status = 'PENDING' THEN 1 END) AS pending_activations,
         COUNT(CASE WHEN deleted_at IS NULL AND is_duplicate = true AND duplicate_reviewed = false THEN 1 END) AS possible_duplicates,
-        (SELECT COUNT(*) FROM payment_proofs) AS total_payments,
-        COUNT(CASE WHEN deleted_at IS NULL AND payment_status = 'PAID' THEN 1 END) AS paid_members,
-        (SELECT COUNT(*) FROM payment_proofs WHERE status = 'PENDING') AS pending_payments,
-        (SELECT COUNT(*) FROM payment_proofs WHERE status = 'REJECTED') AS failed_payments,
-        COALESCE((SELECT SUM(amount) FROM payment_proofs WHERE status = 'APPROVED'), 0) AS total_collected
+        (SELECT COUNT(*) FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE m.deleted_at IS NULL AND m.status = 'ACTIVE') AS total_payments,
+        COUNT(CASE WHEN deleted_at IS NULL AND status = 'ACTIVE' AND payment_status = 'PAID' THEN 1 END) AS paid_members,
+        (SELECT COUNT(*) FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'PENDING' AND m.deleted_at IS NULL AND m.status = 'ACTIVE') AS pending_payments,
+        (SELECT COUNT(*) FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'REJECTED' AND m.deleted_at IS NULL AND m.status = 'ACTIVE') AS failed_payments,
+        COALESCE((SELECT SUM(p.amount) FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'APPROVED' AND m.deleted_at IS NULL AND m.status = 'ACTIVE'), 0) AS total_collected,
+        COALESCE((SELECT SUM(amount) FROM withdrawals WHERE reason = 'MEMBER_EXIT_REFUND'), 0) AS total_refunded_exited,
+        COALESCE((SELECT SUM(amount) FROM withdrawals), 0) AS total_withdrawn,
+        COALESCE((SELECT SUM(interest_amount) FROM seed_fund_distributions), 0) AS total_interest_earned,
+        COALESCE((SELECT SUM(principal_amount) FROM seed_fund_distributions), 0) AS total_loans_given,
+        COALESCE((SELECT SUM(payment_amount) FROM repayments WHERE status = 'COMPLETED'), 0) AS total_repaid
       FROM members
     `);
 
-    res.json(statsRes.rows[0]);
+    const row = statsRes.rows[0] || {};
+    const totalCollected = parseFloat(row.total_collected || 0);
+    const totalRefundedExited = parseFloat(row.total_refunded_exited || 0);
+    const totalWithdrawn = parseFloat(row.total_withdrawn || 0);
+    const totalInterestEarned = parseFloat(row.total_interest_earned || 0);
+    const totalLoansGiven = parseFloat(row.total_loans_given || 0);
+    const totalRepaid = parseFloat(row.total_repaid || 0);
+
+    // Net current balance in fund
+    const currentBalance = Math.max(0, Math.round((totalCollected + totalRepaid - totalLoansGiven - (totalWithdrawn - totalRefundedExited) - totalRefundedExited) * 100) / 100);
+
+    res.json({
+      total_members: parseInt(row.total_members || 0, 10),
+      active_members: parseInt(row.active_members || 0, 10),
+      inactive_members: parseInt(row.inactive_members || 0, 10),
+      pending_activations: parseInt(row.pending_activations || 0, 10),
+      possible_duplicates: parseInt(row.possible_duplicates || 0, 10),
+      total_payments: parseInt(row.total_payments || 0, 10),
+      paid_members: parseInt(row.paid_members || 0, 10),
+      pending_payments: parseInt(row.pending_payments || 0, 10),
+      failed_payments: parseInt(row.failed_payments || 0, 10),
+      total_collected: totalCollected,
+      total_refunded_exited: totalRefundedExited,
+      total_interest_earned: totalInterestEarned,
+      total_loans_given: totalLoansGiven,
+      current_balance: currentBalance
+    });
   } catch (err) {
     console.error('Error fetching dashboard stats:', err);
     res.status(500).json({ error: 'Failed to fetch dashboard summary stats' });
@@ -100,18 +177,29 @@ router.get('/dashboard-stats', async (req, res) => {
 
 /**
  * GET /api/admin/members/lookup/:query
- * Fast lookup of member by Member ID or Name for auto-fill
+ * Fast lookup of member by Member ID, Name, or Phone for auto-fill
  */
 router.get('/lookup/:query', async (req, res) => {
   try {
     const q = req.params.query.trim();
+    const cleanDigits = q.replace(/\D/g, '');
+    const strippedSF = q.replace(/^SF/i, '').trim();
     const result = await pool.query(`
       SELECT id, member_id AS member_code, name, phone, email, upi_id
       FROM members
-      WHERE (CAST(id AS TEXT) = $1 OR member_id = $1 OR phone = $1 OR LOWER(name) LIKE LOWER($2))
-        AND deleted_at IS NULL
-      LIMIT 5
-    `, [q, `%${q}%`]);
+      WHERE (
+        CAST(id AS TEXT) = $1 
+        OR member_id = $1 
+        OR member_id = $2
+        OR ('SF' || member_id) = $1
+        OR phone = $1 
+        OR (phone = $3 AND LENGTH($3) >= 10)
+        OR LOWER(TRIM(name)) = LOWER(TRIM($1))
+        OR LOWER(name) LIKE LOWER($4)
+      )
+      AND deleted_at IS NULL
+      LIMIT 10
+    `, [q, strippedSF, cleanDigits, `%${q}%`]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Member not found' });
@@ -305,8 +393,11 @@ router.post('/', async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    // Check if phone number is already registered to another member
-    const existingPhone = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1', [phone]);
+    // Clean up any old soft-deleted records holding this phone or email
+    await client.query('DELETE FROM members WHERE (phone = $1 OR email = $2) AND deleted_at IS NOT NULL', [phone, email]);
+
+    // Check if phone number is already registered to another active member
+    const existingPhone = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1 AND deleted_at IS NULL', [phone]);
     if (existingPhone.rows.length > 0) {
       await client.query('ROLLBACK');
       const m = existingPhone.rows[0];
@@ -317,21 +408,21 @@ router.post('/', async (req, res) => {
     if (!email) {
       email = `member_${phone}@pfchitfund.com`;
     }
-    const existingEmail = await client.query('SELECT id FROM members WHERE email = $1', [email]);
+    await client.query('DELETE FROM members WHERE email = $1 AND deleted_at IS NOT NULL', [email]);
+    const existingEmail = await client.query('SELECT id FROM members WHERE email = $1 AND deleted_at IS NULL', [email]);
     if (existingEmail.rows.length > 0) {
       email = `${email.split('@')[0]}_${Date.now().toString().slice(-4)}@${email.split('@')[1] || 'pfchitfund.com'}`;
     }
 
-    // Check for potential duplicate matching by Name or UPI
+    // Check for potential duplicate matching by Name
     let isDuplicate = false;
     let duplicateReason = null;
     let duplicateOfId = null;
 
     const dupCheck = await client.query(
       `SELECT id, member_id, name FROM members 
-       WHERE (LOWER(TRIM(name)) = LOWER(TRIM($1)) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2)))
-         AND deleted_at IS NULL`,
-      [name, upi_id]
+       WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) AND deleted_at IS NULL`,
+      [name]
     );
 
     if (dupCheck.rows.length > 0) {
@@ -342,13 +433,13 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Auto-generate next Member ID in SF001 format
+    // Auto-generate next Member ID starting at 101
     const nextMemberId = await getNextMemberId(client);
 
-    // Auto-generate simple password if blank (e.g. 1235)
+    // Auto-generate simple password if blank (defaults to standard 123456)
     let defaultPwd = (password || '').trim();
     if (!defaultPwd) {
-      defaultPwd = String(Math.floor(1000 + Math.random() * 9000));
+      defaultPwd = '123456';
     }
 
     const passwordHash = await bcrypt.hash(defaultPwd, 10);
@@ -378,9 +469,15 @@ router.post('/', async (req, res) => {
     );
 
     await client.query('COMMIT');
-    const newMember = insertRes.rows[0];
-
     await logAudit(req, 'ADD_MEMBER', 'MEMBER', newMember.id, { member_id: newMember.member_id, name: newMember.name, phone });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('member:added', newMember);
+      io.emit('stats:updated');
+    }
+    const reconciler = req.app.get('reconcileService');
+    if (reconciler) reconciler.reconcileNow(io, false).catch(e => console.error(e));
 
     res.status(201).json({
       message: 'Member Created Successfully',
@@ -476,6 +573,14 @@ router.patch('/:id/activation', async (req, res) => {
 
     await logAudit(req, 'CHANGE_ACTIVATION', 'MEMBER', id, { new_status: activation_status });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('member:updated', result.rows[0]);
+      io.emit('stats:updated');
+    }
+    const reconciler = req.app.get('reconcileService');
+    if (reconciler) reconciler.reconcileNow(io, false).catch(e => console.error(e));
+
     res.json({ message: `Member status updated to ${activation_status}`, member: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update activation status' });
@@ -506,6 +611,14 @@ router.patch('/:id/payment-status', async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Member not found' });
 
     await logAudit(req, 'CHANGE_PAYMENT_STATUS', 'MEMBER', id, { new_status: payment_status });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('member:updated', result.rows[0]);
+      io.emit('stats:updated');
+    }
+    const reconciler = req.app.get('reconcileService');
+    if (reconciler) reconciler.reconcileNow(io, false).catch(e => console.error(e));
 
     res.json({ message: `Member payment status updated to ${payment_status}`, member: result.rows[0] });
   } catch (err) {
@@ -556,60 +669,106 @@ router.patch('/:id/restore', async (req, res) => {
 });
 
 /**
- * DELETE /api/admin/members/:id (Safe Inactivate / Soft Delete)
- * PRESERVES all payment proofs, transactions, and distributions for financial integrity!
+ * DELETE /api/admin/members/:id
+ * Member Exit Settlement & Audit Preservation:
+ * 1. Calculates total approved principal paid by the member into the fund.
+ * 2. If > 0, records an EXIT_REFUND withdrawal and transaction (funds returned to member).
+ * 3. Keeps past payment_proofs, monthly_payments, and transactions linked for Excel/PDF audits.
+ * 4. Marks member as 'EXITED', deleted_at = CURRENT_TIMESTAMP, balance = 0.
+ * 5. Frees up mobile phone and email so they can register afresh if needed.
+ * 6. Broadcasts real-time events to sync Admin and Public portals immediately.
  */
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { permanent } = req.query;
-    const checkRes = await pool.query('SELECT id, member_id, name FROM members WHERE id = $1', [id]);
+    const checkRes = await pool.query('SELECT id, member_id, name, phone, email FROM members WHERE id = $1', [id]);
     if (checkRes.rows.length === 0) return res.status(404).json({ error: 'Member not found' });
 
     const member = checkRes.rows[0];
 
-    if (permanent === 'true') {
-      // ONLY if explicitly requested for test data cleanup:
-      await pool.query('DELETE FROM payment_schedules WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM repayments WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM transactions WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM seed_fund_distributions WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM payment_proofs WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM monthly_payments WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM notice_board WHERE target_id = $1', [id]);
-      await pool.query('DELETE FROM nominees WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM group_members WHERE member_id = $1', [id]);
-      await pool.query('DELETE FROM members WHERE id = $1', [id]);
+    // 1. Calculate the total principal paid by this member (invest amount / அசல்)
+    const paidProofsRes = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) AS total FROM payment_proofs WHERE member_id = $1 AND (status = 'APPROVED' OR status = 'PAID')",
+      [id]
+    );
+    const paidMonthlyRes = await pool.query(
+      "SELECT COALESCE(SUM(amount_paid), 0) AS total FROM monthly_payments WHERE member_id = $1 AND (status = 'PAID' OR amount_paid > 0)",
+      [id]
+    );
+    const totalPrincipalPaid = Math.max(
+      parseFloat(paidProofsRes.rows[0]?.total || 0),
+      parseFloat(paidMonthlyRes.rows[0]?.total || 0)
+    );
 
-      await logAudit(req, 'DELETE_MEMBER_PERMANENT', 'MEMBER', id, { member_id: member.member_id, name: member.name });
-      return res.json({ message: 'Member and associated records permanently deleted' });
+    const todayDate = new Date().toISOString().split('T')[0];
+    const currentMonth = todayDate.substring(0, 7);
+
+    // 2. If the member had paid principal into the fund, record a formal EXIT_REFUND settlement
+    if (totalPrincipalPaid > 0) {
+      await pool.query(
+        `INSERT INTO withdrawals (member_id, month, withdrawal_date, amount, reason, notes) 
+         VALUES ($1, $2, $3, $4, 'MEMBER_EXIT_REFUND', $5)`,
+        [id, currentMonth, todayDate, totalPrincipalPaid, `Principal contribution of ₹${totalPrincipalPaid} refunded on member exit for ${member.name} (${member.member_id})`]
+      );
+
+      await pool.query(
+        `INSERT INTO transactions (member_id, transaction_date, month, transaction_type, amount, description, balance_after)
+         VALUES ($1, $2, $3, 'EXIT_REFUND', $4, $5, 0)`,
+        [id, todayDate, currentMonth, totalPrincipalPaid, `Member Exit Settlement: Full principal refund of ₹${totalPrincipalPaid} returned to ${member.name} (${member.member_id})`]
+      );
     }
 
-    // SAFE SOFT-DELETE: Inactivate member, NEVER delete historical payments or ledger records!
-    await pool.query(`
-      UPDATE members 
-      SET status = 'INACTIVE', 
-          activation_status = 'INACTIVE', 
-          deleted_at = CURRENT_TIMESTAMP, 
-          updated_at = CURRENT_TIMESTAMP 
-      WHERE id = $1
-    `, [id]);
+    // 3. Remove from active non-financial associations (group membership, nominees, notices)
+    await pool.query('DELETE FROM group_members WHERE member_id = $1', [id]);
+    await pool.query('DELETE FROM nominees WHERE member_id = $1', [id]);
+    await pool.query("DELETE FROM notice_board WHERE target_id = $1 AND target_type = 'MEMBER'", [id]);
+    await pool.query('DELETE FROM payment_schedules WHERE member_id = $1', [id]);
 
-    await logAudit(req, 'INACTIVATE_MEMBER', 'MEMBER', id, { member_id: member.member_id, name: member.name });
+    // 4. Soft-delete the member, preserve history, and free up member_id, phone, and email
+    const exitedPhone = `${member.phone}_exited_${id}_${Date.now()}`;
+    const exitedEmail = `${member.email || ''}_exited_${id}_${Date.now()}`;
+    const exitedMemberId = `${member.member_id}_exited_${id}_${Date.now()}`;
+    await pool.query(
+      `UPDATE members 
+       SET status = 'EXITED',
+           activation_status = 'INACTIVE',
+           member_id = $1,
+           phone = $2,
+           email = $3,
+           balance = 0,
+           deleted_at = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4`,
+      [exitedMemberId, exitedPhone, exitedEmail, id]
+    );
+
+    await logAudit(req, 'MEMBER_EXIT_SETTLED', 'MEMBER', id, { 
+      member_id: member.member_id, 
+      name: member.name,
+      refunded_principal: totalPrincipalPaid 
+    });
 
     const io = req.app.get('io');
     if (io) {
-      io.emit('member:inactivated', { id, member_code: member.member_id, name: member.name });
+      io.emit('member:deleted', { id, member_code: member.member_id, name: member.name, refunded_principal: totalPrincipalPaid });
       io.emit('stats:updated');
+      io.emit('payment:approved');
+      io.emit('seed_fund:updated');
     }
 
-    res.json({ 
-      success: true, 
-      message: 'Member inactivated successfully. All past payment history and financial records are safely preserved.' 
+    const reconciler = req.app.get('reconcileService');
+    if (reconciler) {
+      reconciler.reconcileNow(io, false).catch(e => console.error(e));
+    }
+
+    return res.json({ 
+      success: true,
+      message: `Member ${member.name} exited successfully. Principal of ₹${totalPrincipalPaid} refunded and audit history preserved.`,
+      refunded_principal: totalPrincipalPaid
     });
   } catch (err) {
-    console.error('Delete/inactivate member error:', err);
-    res.status(500).json({ error: 'Failed to inactivate member: ' + err.message });
+    console.error('Error exiting member:', err);
+    res.status(500).json({ error: 'Failed to exit member: ' + err.message });
   }
 });
 

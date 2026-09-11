@@ -181,21 +181,50 @@ router.get('/all-proofs', async (req, res) => {
 
 /**
  * POST /api/admin/payments
- * Manually add payment record for a member ID
+ * Manually add payment or payout/withdrawal record for a member
  */
 router.post('/', async (req, res) => {
   const client = await pool.connect();
   try {
-    let { member_id, amount, payment_date, transaction_reference, status = 'APPROVED', rejection_reason } = req.body;
+    let { 
+      member_id, 
+      amount, 
+      payment_date, 
+      payment_month, 
+      transaction_reference, 
+      status = 'APPROVED', 
+      transaction_type = 'CREDIT', 
+      rejection_reason, 
+      description 
+    } = req.body;
 
-    if (!member_id || !amount) {
+    if (!member_id || amount === undefined || amount === null) {
       return res.status(400).json({ error: 'Member ID and amount are required' });
     }
 
-    // Resolve member by numeric id or string member_id (code)
-    let memberRes = await client.query('SELECT id, member_id, name FROM members WHERE id = $1 OR member_id = $2', [
-      isNaN(parseInt(member_id)) ? -1 : parseInt(member_id),
-      String(member_id)
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number greater than 0' });
+    }
+
+    // Resolve member by numeric id, member_id (code), SF prefix, phone, or name
+    const strippedId = String(member_id).replace(/^SF/i, '').trim();
+    const cleanPhone = String(member_id).replace(/\D/g, '');
+    let memberRes = await client.query(`
+      SELECT id, member_id, name, phone FROM members 
+      WHERE deleted_at IS NULL AND (
+        id = $1 
+        OR member_id = $2 
+        OR member_id = $3 
+        OR ('SF' || member_id) = $2
+        OR LOWER(TRIM(name)) = LOWER(TRIM($2))
+        OR (phone = $4 AND LENGTH($4) >= 10)
+      )
+    `, [
+      isNaN(parseInt(member_id, 10)) ? -1 : parseInt(member_id, 10),
+      String(member_id).trim(),
+      strippedId,
+      cleanPhone
     ]);
 
     if (memberRes.rows.length === 0) {
@@ -204,30 +233,75 @@ router.post('/', async (req, res) => {
     const member = memberRes.rows[0];
 
     const pDate = payment_date || new Date().toISOString().split('T')[0];
-    const numAmount = parseFloat(amount);
+    const pMonth = payment_month || pDate.substring(0, 7);
+    const tType = (transaction_type || 'CREDIT').toUpperCase() === 'DEBIT' ? 'DEBIT' : 'CREDIT';
 
     await client.query('BEGIN');
 
     const proofRes = await client.query(
-      `INSERT INTO payment_proofs (member_id, amount, transaction_reference, payment_date, status, rejection_reason, verified_by, verified_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      `INSERT INTO payment_proofs (member_id, amount, transaction_reference, payment_month, payment_date, status, rejection_reason, verified_by, verified_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
        RETURNING *`,
-      [member.id, numAmount, transaction_reference || `ADMIN_MANUAL_${Date.now()}`, pDate, status, rejection_reason || null, req.admin?.id || 1]
+      [member.id, numAmount, transaction_reference || `ADMIN_MANUAL_${Date.now()}`, pMonth, pDate, status, rejection_reason || null, req.admin?.id || 1]
     );
+    const payment = proofRes.rows[0];
+
+    // Record into transactions ledger (who paid/received)
+    await client.query(`
+      INSERT INTO transactions (
+        member_id, transaction_date, transaction_time, month,
+        transaction_type, amount, description, reference_type, reference_id, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'COMPLETED')
+    `, [
+      member.id,
+      pDate,
+      new Date().toTimeString().split(' ')[0],
+      pMonth,
+      tType,
+      numAmount,
+      description || (tType === 'DEBIT' ? `Payout/Debit to ${member.name} (${member.member_id})` : `Payment from ${member.name} (${member.member_id})`),
+      'PAYMENT_PROOF',
+      payment.id
+    ]);
 
     if (status === 'APPROVED' || status === 'PAID') {
-      await client.query('UPDATE members SET balance = balance + $1, payment_status = \'PAID\', updated_at = CURRENT_TIMESTAMP WHERE id = $2', [
-        numAmount,
-        member.id
-      ]);
+      if (tType === 'CREDIT') {
+        await client.query('UPDATE members SET balance = balance + $1, payment_status = \'PAID\', updated_at = CURRENT_TIMESTAMP WHERE id = $2', [
+          numAmount,
+          member.id
+        ]);
+        
+        // Sync with monthly_payments if exists
+        const parts = pMonth.split('-');
+        if (parts.length === 2) {
+          const yr = parseInt(parts[0], 10);
+          const mo = parseInt(parts[1], 10);
+          if (!isNaN(yr) && !isNaN(mo)) {
+            await client.query(`
+              UPDATE monthly_payments
+              SET amount_paid = amount_paid + $1,
+                  status = CASE WHEN (amount_paid + $1) >= amount_due THEN 'PAID' ELSE 'PARTIAL' END,
+                  payment_date = $2,
+                  payment_proof_id = $3,
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE member_id = $4 AND year = $5 AND month = $6
+            `, [numAmount, pDate, payment.id, member.id, yr, mo]);
+          }
+        }
+      } else {
+        // DEBIT / PAYOUT
+        await client.query('UPDATE members SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [
+          numAmount,
+          member.id
+        ]);
+      }
     }
 
     await client.query('COMMIT');
-    const payment = proofRes.rows[0];
 
-    await logAudit(req, 'ADD_PAYMENT_MANUAL', 'PAYMENT', payment.id, { member_id: member.member_id, amount: numAmount, status });
+    await logAudit(req, 'ADD_PAYMENT_MANUAL', 'PAYMENT', payment.id, { member_id: member.member_id, amount: numAmount, type: tType, month: pMonth, status });
 
-    res.status(201).json({ message: 'Payment recorded successfully', payment });
+    res.status(201).json({ message: `${tType === 'DEBIT' ? 'Payout/Debit' : 'Payment'} recorded successfully`, payment });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error adding manual payment:', err);

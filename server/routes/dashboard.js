@@ -8,20 +8,20 @@ const router = express.Router();
 // Get dashboard summary
 router.get('/summary', authenticateToken, async (req, res) => {
   try {
-    // Total members
-    const membersResult = await pool.query("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active FROM members WHERE deleted_at IS NULL");
+    // Total members (Active only)
+    const membersResult = await pool.query("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active FROM members WHERE deleted_at IS NULL AND status = 'ACTIVE'");
     const totalMembers = parseInt(membersResult.rows[0]?.total || 0, 10);
-    const activeMembers = parseInt(membersResult.rows[0]?.active || 0, 10);
+    const activeMembers = parseInt(membersResult.rows[0]?.active || totalMembers, 10);
 
-    // Total collected
+    // Total collected from active members only
     const collectedResult = await pool.query(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM payment_proofs WHERE status = 'APPROVED'"
+      "SELECT COALESCE(SUM(p.amount), 0) as total FROM payment_proofs p JOIN members m ON p.member_id = m.id WHERE p.status = 'APPROVED' AND m.deleted_at IS NULL AND m.status = 'ACTIVE'"
     );
     const totalCollected = parseFloat(collectedResult.rows[0]?.total || 0);
 
-    // Total monthly_payments collected
+    // Total monthly_payments collected from active members only
     const monthlyPaidRes = await pool.query(
-      "SELECT COALESCE(SUM(amount_paid), 0) as total FROM monthly_payments WHERE status = 'PAID' OR amount_paid > 0"
+      "SELECT COALESCE(SUM(mp.amount_paid), 0) as total FROM monthly_payments mp JOIN members m ON mp.member_id = m.id WHERE (mp.status = 'PAID' OR mp.amount_paid > 0) AND m.deleted_at IS NULL AND m.status = 'ACTIVE'"
     );
     const totalMonthlyPaid = parseFloat(monthlyPaidRes.rows[0]?.total || 0);
     const grandTotalCollected = Math.max(totalCollected, totalMonthlyPaid);

@@ -65,8 +65,11 @@ router.post(['/', '/register'], async (req, res) => {
     client = await pool.connect();
     await client.query('BEGIN');
 
-    // Check if phone already exists
-    const phoneCheck = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1', [cleanPhone]);
+    // Clean up any soft-deleted records holding this phone or email
+    await client.query('DELETE FROM members WHERE (phone = $1 OR email = $2) AND deleted_at IS NOT NULL', [cleanPhone, email]);
+
+    // Check if phone already exists in active members
+    const phoneCheck = await client.query('SELECT id, member_id, name FROM members WHERE phone = $1 AND deleted_at IS NULL', [cleanPhone]);
     if (phoneCheck.rows.length > 0) {
       await client.query('ROLLBACK');
       const existingId = phoneCheck.rows[0]?.member_id || phoneCheck.rows[0]?.id || '';
@@ -74,7 +77,7 @@ router.post(['/', '/register'], async (req, res) => {
     }
 
     // Auto-resolve duplicate email by appending unique suffix if needed
-    const emailCheck = await client.query('SELECT id FROM members WHERE email = $1', [email]);
+    const emailCheck = await client.query('SELECT id FROM members WHERE email = $1 AND deleted_at IS NULL', [email]);
     if (emailCheck.rows.length > 0) {
       email = `${email.split('@')[0]}_${cleanPhone}@${email.split('@')[1] || 'gmail.com'}`;
     }
@@ -82,7 +85,7 @@ router.post(['/', '/register'], async (req, res) => {
     // PREVENT DUPLICATE MEMBER CREATION: Disallow registering under an existing member's name
     const dupCheck = await client.query(
       `SELECT id, member_id, name FROM members 
-       WHERE (LOWER(TRIM(name)) = LOWER(TRIM($1)) OR (upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))) 
+       WHERE (LOWER(TRIM(name)) = LOWER(TRIM($1)) OR ($2 != '' AND upi_id IS NOT NULL AND upi_id != '' AND LOWER(upi_id) = LOWER($2))) 
        AND deleted_at IS NULL`,
       [name, upiId]
     );
@@ -104,8 +107,10 @@ router.post(['/', '/register'], async (req, res) => {
     
     let maxNum = 100;
     for (const row of idRes.rows || []) {
-      const num = parseInt(row.member_id, 10);
-      if (!isNaN(num) && num >= 100 && num < 10000 && num > maxNum) {
+      if (!row.member_id) continue;
+      const cleanId = String(row.member_id).replace(/\D/g, '');
+      const num = parseInt(cleanId, 10);
+      if (!isNaN(num) && num >= 100 && num < 100000 && num > maxNum) {
         maxNum = num;
       }
     }
@@ -186,22 +191,32 @@ router.post(['/login', '/login/'], async (req, res) => {
     password = password || '';
 
     if (!member_id || !password) {
-      return res.status(400).json({ error: 'Member ID, Phone, or Email and password are required.' });
+      return res.status(400).json({ error: 'Member ID, Phone, Email, or Name and password are required.' });
     }
 
-    // Find member by member_id, email, or phone
+    // Find member by member_id (with or without SF prefix), email, phone, or name
     let cleanPhone = member_id.replace(/\D/g, '');
     if (cleanPhone.length > 10) cleanPhone = cleanPhone.slice(-10);
+
+    const strippedId = member_id.replace(/^SF/i, '').trim();
 
     const result = await pool.query(
       `SELECT id, member_id, name, email, phone, upi_id, profile_photo, password_hash, balance, status, activation_status 
        FROM members 
-       WHERE LOWER(member_id) = LOWER($1) OR LOWER(email) = LOWER($1) OR (phone = $2 AND $2 != '')`,
-      [member_id, cleanPhone]
+       WHERE deleted_at IS NULL AND (
+         LOWER(TRIM(member_id)) = LOWER(TRIM($1))
+         OR LOWER(TRIM(member_id)) = LOWER(TRIM($2))
+         OR ('sf' || LOWER(TRIM(member_id))) = LOWER(TRIM($1))
+         OR LOWER(TRIM(email)) = LOWER(TRIM($1))
+         OR LOWER(TRIM(name)) = LOWER(TRIM($1))
+         OR (phone = $3 AND LENGTH($3) >= 10)
+         OR (phone = $1 AND LENGTH($1) >= 10)
+       )`,
+      [member_id, strippedId, cleanPhone]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid Member ID, Email, or Password.' });
+      return res.status(404).json({ error: 'Member is not registered. Please check your credentials or register.' });
     }
 
     const member = result.rows[0];
@@ -212,7 +227,7 @@ router.post(['/login', '/login/'], async (req, res) => {
 
     const passwordMatch = await bcrypt.compare(password, member.password_hash);
     if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid Member ID, Email, or Password.' });
+      return res.status(401).json({ error: 'Incorrect password. Please try again.' });
     }
 
     const token = jwt.sign(
@@ -235,7 +250,7 @@ router.post(['/login', '/login/'], async (req, res) => {
       email: member.email,
       upi_id: member.upi_id,
       profile_photo: member.profile_photo,
-      balance: parseFloat(member.balance)
+      balance: parseFloat(member.balance || 0)
     });
 
   } catch (error) {

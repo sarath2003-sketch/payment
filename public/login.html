@@ -8,6 +8,11 @@
   <meta name="theme-color" content="#1a0a00">
   <title>PF Chit Fund Club — Member Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script>
+    if (window.location.pathname.endsWith('login.html')) {
+      window.location.replace('/index.html' + window.location.search + window.location.hash);
+    }
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
@@ -1589,9 +1594,13 @@
     <div class="holo-layer reveal">
       <div class="auth-card">
         <div class="auth-logo">
-          <img id="authLogoImg" src="assets/logo.svg" alt="Logo">
+          <img id="authLogoImg" src="assets/logo.png" onerror="this.src='assets/logo.svg'" alt="PF Chit Fund Logo">
           <div class="org-name" id="authOrgName">PF Chit Fund Club</div>
-          <div class="org-name-ta" id="authOrgNameTa">புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்</div>
+          <div class="org-name-ta" id="authOrgNameTa">புதுப்பட்டி நண்பர்கள் - சீட்டு பணடு கிளப்</div>
+          <div style="font-size:11px;color:var(--gold);font-weight:600;margin-top:4px;display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap">
+            <span>🛡️ Transparency</span><span>•</span><span>🔒 Data Privacy</span><span>•</span><span>✨ Financial Clarity</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">சிறு சேமிப்பு பெரிய வளர்ச்சி</div>
         </div>
     <!-- Language -->
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
@@ -1789,7 +1798,7 @@
 <div id="mainApp" class="hidden">
   <!-- Header -->
   <header class="app-header">
-    <img class="header-logo" id="headerLogo" src="assets/logo.svg" onerror="this.style.display='none'" alt="Logo">
+    <img class="header-logo" id="headerLogo" src="assets/logo.png" onerror="this.src='assets/logo.svg'" alt="PF Logo">
     <div class="header-title">
       <div class="org-name" id="headerOrgName">PF Chit Fund Club</div>
       <div class="member-id" id="headerMemberId">Member ID: —</div>

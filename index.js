@@ -69,6 +69,13 @@ const io = new Server(server, {
 app.set('io', io);
 
 // ============================================================
+// Real-time Self-Healing & Database Reconcile Agent
+// ============================================================
+const reconcileService = require('./server/services/reconcileService');
+app.set('reconcileService', reconcileService);
+reconcileService.init(io);
+
+// ============================================================
 // Auction Timer Manager — Server-side countdown
 // ============================================================
 const auctionTimers = {};
@@ -466,9 +473,34 @@ app.use(fileUpload({
 }));
 
 // ============================================================
+// Page Routes (Mounted before static middleware to ensure consistent routing)
+// ============================================================
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
+});
+app.get(['/admin', '/admin.html', '/admin-portal', '/admin/login'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+app.get(['/public', '/public-dashboard', '/public-fund-details', '/public-dashboard.html', '/index.public.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
+});
+app.get(['/member', '/portal', '/hub', '/member-ui.html', '/login', '/login.html', '/register'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ============================================================
 // Static Files
 // ============================================================
-app.use(express.static(path.join(__dirname, 'public'), { index: 'public-dashboard.html' }));
+app.use(express.static(path.join(__dirname, 'public'), { 
+  index: 'public-dashboard.html',
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ============================================================
@@ -509,6 +541,9 @@ app.use('/admin/members', adminMembersRoutes);
 
 app.use('/api/admin/payments', adminPaymentsNewRoutes);
 app.use('/admin/payments', adminPaymentsNewRoutes);
+
+app.use('/api/monthly-payments', monthlyPaymentsRoutes);
+app.use('/monthly-payments', monthlyPaymentsRoutes);
 
 app.use('/api/admin/audit-logs', auditLogsRoutes);
 app.use('/admin/audit-logs', auditLogsRoutes);
@@ -597,51 +632,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ============================================================
-// Routes: / serves Public Transparency Portal, /member serves Member Portal, /admin serves Admin Portal
-// ============================================================
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
-});
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-app.get('/public', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
-});
-app.get('/public-dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
-});
-app.get('/public-fund-details', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
-});
-app.get('/public-dashboard.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
-});
-app.get('/member', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/portal', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/hub', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/member-ui.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-app.get('/index.public.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'public-dashboard.html'));
-});
 // Catch-all: serve member portal for any non-API route
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path.startsWith('/assets/')) {

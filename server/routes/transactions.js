@@ -344,11 +344,41 @@ router.post('/ledger', authenticateToken, async (req, res) => {
       reference_id
     } = req.body;
 
-    if (!member_id || !transaction_type || !amount) {
+    if (!member_id || !transaction_type || amount === undefined || amount === null) {
       return res.status(400).json({ error: 'member_id, transaction_type (CREDIT/DEBIT), and amount are required' });
     }
 
     const amt = parseFloat(amount);
+    if (isNaN(amt) || amt <= 0) {
+      return res.status(400).json({ error: 'Amount must be a positive number greater than 0' });
+    }
+
+    // Resolve member by numeric id, member_id (code), SF prefix, phone, or name
+    const strippedId = String(member_id).replace(/^SF/i, '').trim();
+    const cleanPhone = String(member_id).replace(/\D/g, '');
+    const memRes = await pool.query(`
+      SELECT id, member_id, name FROM members
+      WHERE deleted_at IS NULL AND (
+        id = $1 
+        OR member_id = $2 
+        OR member_id = $3 
+        OR ('SF' || member_id) = $2
+        OR LOWER(TRIM(name)) = LOWER(TRIM($2))
+        OR (phone = $4 AND LENGTH($4) >= 10)
+      )
+    `, [
+      isNaN(parseInt(member_id, 10)) ? -1 : parseInt(member_id, 10),
+      String(member_id).trim(),
+      strippedId,
+      cleanPhone
+    ]);
+
+    if (memRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    const member = memRes.rows[0];
+
+    const tType = transaction_type.toUpperCase() === 'DEBIT' ? 'DEBIT' : 'CREDIT';
     const month = transaction_date.substring(0, 7);
 
     const result = await pool.query(`
@@ -358,18 +388,25 @@ router.post('/ledger', authenticateToken, async (req, res) => {
         reference_type, reference_id, status
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'COMPLETED')
       RETURNING *
-    `, [member_id, transaction_date, transaction_time, month, transaction_type.toUpperCase(), amt, description || null, seettu_cycle_id || null, reference_type, reference_id || null]);
+    `, [member.id, transaction_date, transaction_time, month, tType, amt, description || null, seettu_cycle_id || null, reference_type, reference_id || null]);
+
+    // Update member balance
+    if (tType === 'CREDIT') {
+      await pool.query('UPDATE members SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [amt, member.id]);
+    } else {
+      await pool.query('UPDATE members SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [amt, member.id]);
+    }
 
     // Financial Audit Log
     await pool.query(`
       INSERT INTO audit_logs (actor_type, actor_id, actor_name, action, entity_type, entity_id, details)
       VALUES ($1, $2, $3, 'CREATE_TRANSACTION', 'transaction', $4, $5)
     `, [
-      req.admin ? 'admin' : 'member',
-      req.admin ? req.admin.id : req.user ? req.user.id : 0,
-      req.admin ? 'Admin' : req.user ? req.user.name : 'System',
+      req.admin?.type === 'admin' ? 'admin' : 'member',
+      req.admin?.id || 1,
+      req.admin?.username || member.name || 'System',
       result.rows[0].id,
-      `${transaction_type.toUpperCase()} ₹${amt} for Member #${member_id}: ${description || ''}`
+      `${tType} ₹${amt} for Member #${member.member_id} (${member.name}): ${description || ''}`
     ]);
 
     res.status(201).json({ message: 'Transaction created successfully', transaction: result.rows[0] });

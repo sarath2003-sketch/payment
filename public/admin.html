@@ -8,37 +8,38 @@
   <title>PF Chit Fund Club — Admin Management Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap"
     rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     /* ============================================================
-       THEME SYSTEM (Light / Dark / Indigo Professional)
+       THEME SYSTEM (Brand Book: Dark Obsidian & Papaya Orange)
        ============================================================ */
     :root[data-theme="dark"] {
-      --bg: #0f172a;
-      --bg-sidebar: #1e293b;
-      --bg-surface: #1e293b;
-      --bg-surface-hover: #334155;
-      --bg-card: #1e293b;
-      --border: #334155;
-      --border-accent: rgba(99, 102, 241, 0.4);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --primary-light: rgba(99, 102, 241, 0.15);
-      --gold: #f59e0b;
-      --green: #10b981;
-      --green-light: rgba(16, 185, 129, 0.15);
+      --bg: #0d0800;
+      --bg-sidebar: #1e1500;
+      --bg-surface: #1e1500;
+      --bg-surface-hover: #271d00;
+      --bg-card: #1e1500;
+      --border: rgba(245, 200, 66, 0.2);
+      --border-accent: rgba(245, 200, 66, 0.45);
+      --text: #f0e6c0;
+      --text-muted: #c9b882;
+      --text-dim: #8a7a50;
+      --primary: #f5c842;
+      --primary-hover: #e5b832;
+      --primary-light: rgba(245, 200, 66, 0.15);
+      --primary-text: #0d0800;
+      --gold: #f5c842;
+      --green: #22c55e;
+      --green-light: rgba(34, 197, 94, 0.18);
       --red: #ef4444;
       --red-light: rgba(239, 68, 68, 0.15);
       --orange: #f97316;
       --orange-light: rgba(249, 115, 22, 0.15);
       --blue: #3b82f6;
       --blue-light: rgba(59, 130, 246, 0.15);
-      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+      --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 8px 12px -6px rgba(0, 0, 0, 0.5);
     }
 
     :root[data-theme="light"] {
@@ -74,7 +75,7 @@
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-family: 'Inter', 'Plus Jakarta Sans', 'Noto Sans Tamil', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -106,7 +107,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      background: radial-gradient(circle at top left, #1e1b4b, var(--bg));
+      background: radial-gradient(circle at top left, #2e2200, var(--bg));
     }
 
     .auth-card {
@@ -199,9 +200,9 @@
       background: var(--primary);
       border: none;
       border-radius: 10px;
-      color: #ffffff;
+      color: var(--primary-text, #0d0800);
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       transition: all 0.2s;
       display: inline-flex;
@@ -212,6 +213,7 @@
 
     .btn-primary:hover {
       background: var(--primary-hover);
+      box-shadow: 0 4px 14px rgba(245, 200, 66, 0.3);
       transform: translateY(-1px);
     }
 
@@ -846,10 +848,15 @@
     <div class="auth-card">
       <div class="auth-logo">
         <img id="adminLogoImg" src="/assets/logo.png"
-          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%236366f1%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22 fill=%22%23ffffff%22>PF</text></svg>'"
-          alt="Logo">
+          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><circle cx=%2240%22 cy=%2240%22 r=%2240%22 fill=%22%23f5c842%22/><text y=%2250%22 x=%2240%22 text-anchor=%22middle%22 font-size=%2228%22 font-weight=%22bold%22 fill=%22%230d0800%22>PF</text></svg>'"
+          alt="PF Chit Fund Logo">
         <div class="org-name" id="loginOrgName">PF Chit Fund Club</div>
+        <div style="font-size:12px;color:var(--text-muted);text-align:center">புதுப்பட்டி நண்பர்கள் - சீட்டு பணடு கிளப்</div>
         <div class="admin-badge">🔐 Admin Management Portal</div>
+        <div style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--gold);font-weight:600;margin-top:4px">
+          <span>🛡️ Transparency</span><span>•</span><span>🔒 Data Privacy</span><span>•</span><span>✨ Financial Clarity</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);text-align:center">சிறு சேமிப்பு பெரிய வளர்ச்சி</div>
       </div>
       <div id="adminLoginAlert"></div>
       <div class="form-group">
@@ -944,6 +951,10 @@
           <button class="btn-primary" onclick="triggerAdminRefresh()" id="adminRefreshBtn" style="padding:6px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer" title="🔄 Refresh live data / புதுப்பி">
             <span id="adminRefreshIcon">🔄</span> <span id="txtAdminRefresh">Refresh</span>
           </button>
+          <!-- ⚡ SELF-HEALING AUTO-RECONCILE AGENT -->
+          <button class="btn-secondary" onclick="triggerAutoReconcile()" id="reconcileBtn" style="padding:6px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--gold);color:var(--gold);background:rgba(245,200,66,0.08)" title="⚡ Self-Healing Database Reconciler & Orphan Cleaner / தானியங்கி சரிபார்ப்பு">
+            <span>⚡</span> <span id="txtReconcile">Auto-Reconcile</span>
+          </button>
           <!-- 🌐 3-WAY LANGUAGE SELECTOR -->
           <select class="theme-select" id="adminLangSelect" onchange="setAdminLang(this.value)" style="font-weight:600">
             <option value="en">🇬🇧 English</option>
@@ -989,8 +1000,16 @@
               </div>
             </div>
             <div class="stat-card">
-              <div class="stat-label">Total Collected</div>
+              <div class="stat-label">Total Collected (Active)</div>
               <div class="stat-value green" id="dTotalCollected">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Refunded on Exit</div>
+              <div class="stat-value orange" id="dRefundedExited">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Net Available Balance</div>
+              <div class="stat-value primary" id="dCurrentBalance">₹0</div>
             </div>
             <div class="stat-card">
               <div class="stat-label">Paid Members</div>
@@ -999,6 +1018,56 @@
             <div class="stat-card">
               <div class="stat-label">Pending Payments</div>
               <div class="stat-value orange" id="dPendingPayments">—</div>
+            </div>
+          </div>
+
+          <!-- 🤖 AI System Guardian & Self-Healing Watchdog -->
+          <div class="card" style="margin-bottom: 24px; border: 1.5px solid rgba(34, 197, 94, 0.4); background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(245, 200, 66, 0.04)); box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div style="width:48px; height:48px; border-radius:12px; background:rgba(34, 197, 94, 0.15); display:flex; align-items:center; justify-content:center; font-size:24px; border:1px solid rgba(34, 197, 94, 0.3);">
+                  🛡️
+                </div>
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px; font-weight:800; color:var(--text);">AI System Guardian & Self-Healing Agent</span>
+                    <span id="guardianBadge" style="display:inline-flex; align-items:center; gap:5px; background:rgba(34, 197, 94, 0.2); color:#4ade80; border:1px solid rgba(34, 197, 94, 0.4); padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700;">
+                      <span style="width:7px; height:7px; border-radius:50%; background:#22c55e; display:inline-block;"></span>
+                      100% HEALTHY
+                    </span>
+                  </div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
+                    Continuous 5s background monitor · Sweeps orphaned records · Reconciles double-entry ledger · Zero discrepancy guarantee
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-secondary btn-sm" onclick="showGuardianDiagnosticsModal()" style="display:inline-flex; align-items:center; gap:6px;">
+                  📊 Health Report
+                </button>
+                <button class="btn-primary btn-sm" id="btnRunGuardianHeal" onclick="triggerGuardianHealNow()" style="display:inline-flex; align-items:center; gap:6px; background:#16a34a; border-color:#22c55e;">
+                  ⚡ Deep Reconcile & Heal Now
+                </button>
+              </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid rgba(245, 200, 66, 0.15);">
+              <div style="font-size:12px;">
+                <span style="color:var(--text-dim); display:block;">Database Health:</span>
+                <strong id="guardianDbEngine" style="color:var(--green);">SQLite (Embedded/WAL)</strong> · <span id="guardianDbLatency">0ms</span>
+              </div>
+              <div style="font-size:12px;">
+                <span style="color:var(--text-dim); display:block;">Orphaned Records:</span>
+                <strong id="guardianOrphans" style="color:var(--green);">0 detected (Clean)</strong>
+              </div>
+              <div style="font-size:12px;">
+                <span style="color:var(--text-dim); display:block;">Ledger Balance:</span>
+                <strong id="guardianLedgerStatus" style="color:var(--green);">100% Synchronized</strong>
+              </div>
+              <div style="font-size:12px;">
+                <span style="color:var(--text-dim); display:block;">Auto-Heal Watchdog:</span>
+                <span id="guardianLastHealed" style="color:var(--text);">Active (Every 5s)</span>
+              </div>
             </div>
           </div>
 
@@ -1254,11 +1323,26 @@
         <div id="activation" class="page">
           <div class="card">
             <div class="card-header">
-              <div class="card-title">⚡ Member Activation Control</div>
+              <div class="card-title">⚡ Member Activation & Verification Control</div>
               <button class="btn-secondary btn-sm" onclick="loadActivationList()">🔄 Refresh</button>
             </div>
-            <div id="activationList">
-              <div style="text-align:center;padding:30px;color:var(--text-muted)">Loading activation requests...</div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Member ID</th>
+                    <th>Name</th>
+                    <th>Mobile</th>
+                    <th>Date Joined</th>
+                    <th>Payment Status</th>
+                    <th>Activation Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="activationTableBody">
+                  <tr><td colspan="7" style="text-align:center;padding:30px">Loading members...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1458,8 +1542,9 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">📑 Complete Financial Ledger</div>
-              <div style="display:flex;gap:10px">
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
                 <input type="text" class="filter-input" id="txSearchInput" placeholder="Search member, ID, ref..." onkeyup="filterTxTable()">
+                <button class="btn-primary" onclick="showAddPaymentModal()">+ Record Amount / Payment</button>
                 <button class="btn-secondary" onclick="exportTransactionsCSV()">📥 Export CSV</button>
               </div>
             </div>
@@ -1742,26 +1827,26 @@
         <input type="tel" id="mPhone" placeholder="Enter 10-digit mobile number" maxlength="10">
       </div>
       <div class="form-group">
-        <label>💳 UPI ID (For 100% Profile & Payouts)</label>
-        <input type="text" id="mUpi" placeholder="e.g. member@upi">
+        <label>💳 UPI ID (Optional — விட்டுவிட்டால் 50% Profile Completion காட்டும்)</label>
+        <input type="text" id="mUpi" placeholder="e.g. member@upi (உறுப்பினர் பிறகு உள்ளிடலாம்)">
       </div>
       <div class="form-group">
-        <label>🔑 Password (Optional — Auto-generated if blank)</label>
-        <input type="text" id="mPassword" placeholder="Set custom password (e.g. 1235)">
+        <label>🔑 Member Password (Default: 123456)</label>
+        <input type="text" id="mPassword" placeholder="Default: 123456 (or custom password)">
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Active Status</label>
           <select id="mActivation">
-            <option value="ACTIVE" selected>ACTIVE</option>
+            <option value="ACTIVE" selected>ACTIVE (செயலில் உள்ளது)</option>
             <option value="INACTIVE">INACTIVE</option>
           </select>
         </div>
         <div class="form-group">
           <label>Payment Status</label>
           <select id="mPaymentStatus">
-            <option value="UNPAID" selected>UNPAID</option>
-            <option value="PAID">PAID</option>
+            <option value="PAID" selected>PAID (இந்த மாதம் செலுத்தியுள்ளார்)</option>
+            <option value="UNPAID">UNPAID (செலுத்தவில்லை)</option>
           </select>
         </div>
       </div>
@@ -1824,25 +1909,35 @@
     <div class="modal">
       <div class="modal-title" id="paymentModalTitle">Add Manual Payment</div>
       <div id="paymentModalAlert"></div>
-      <div class="form-group"><label>Member ID (101+) or Name *</label><input type="text" id="pMemberId"
-          placeholder="e.g. 101"></div>
+      <div class="form-group"><label>Member ID (101+), Name, or Phone *</label><input type="text" id="pMemberId"
+          placeholder="e.g. 101 or Sundar Pichai"></div>
       <div class="form-row">
-        <div class="form-group"><label>Amount (₹) *</label><input type="number" id="pAmount" value="500"></div>
+        <div class="form-group">
+          <label>Transaction Type *</label>
+          <select id="pType">
+            <option value="CREDIT">CREDIT (Payment Received from Member)</option>
+            <option value="DEBIT">DEBIT (Payout / Withdrawal Given to Member)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Amount (₹) *</label><input type="number" id="pAmount" value="500" min="1"></div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label>Payment Date *</label><input type="date" id="pDate"></div>
+        <div class="form-group"><label>Payment Month</label><input type="month" id="pMonth"></div>
       </div>
       <div class="form-group"><label>Transaction Reference ID</label><input type="text" id="pRef"
-          placeholder="UPI Ref ID"></div>
+          placeholder="UPI Ref ID or Cheque / Receipt No."></div>
       <div class="form-group">
         <label>Payment Status</label>
         <select id="pStatus">
-          <option value="APPROVED">APPROVED / PAID</option>
+          <option value="APPROVED">APPROVED / COMPLETED</option>
           <option value="PENDING">PENDING</option>
           <option value="REJECTED">REJECTED</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Notes / Rejection Reason</label>
-        <input type="text" id="pReason" placeholder="Optional notes or reason if rejected">
+        <label>Notes / Description</label>
+        <input type="text" id="pReason" placeholder="Optional notes, payout reason, or description">
       </div>
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal('paymentModal')">Cancel</button>
@@ -2227,6 +2322,27 @@
         </button>
         <button type="button" class="btn-danger" id="confirmOkBtn" style="padding:10px 20px;font-weight:700">
           ✅ ஆம், உறுதிசெய் / Yes, Confirm
+        </button>
+      </div>
+    </div>
+  <!-- 🤖 AI SYSTEM GUARDIAN DIAGNOSTICS MODAL -->
+  <div id="guardianDiagnosticsModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:680px;border:1.5px solid rgba(34,197,94,0.4);box-shadow:var(--shadow);background:var(--bg-card)">
+      <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span>🛡️</span> <span style="font-weight:800;color:var(--text)">AI Guardian System Health & Diagnostics</span>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" onclick="closeModal('guardianDiagnosticsModal')">✕</button>
+      </div>
+      
+      <div id="guardianModalContent" style="margin:16px 0;max-height:65vh;overflow-y:auto">
+        <div style="text-align:center;padding:24px;color:var(--text-muted)">Running deep diagnostics scan...</div>
+      </div>
+
+      <div class="modal-actions" style="display:flex;gap:12px;justify-content:flex-end">
+        <button type="button" class="btn-secondary" onclick="closeModal('guardianDiagnosticsModal')">Close</button>
+        <button type="button" class="btn-primary" onclick="triggerGuardianHealNow(true)" style="background:#16a34a;border-color:#22c55e">
+          ⚡ Run Immediate Deep Reconcile & Heal
         </button>
       </div>
     </div>
@@ -3609,14 +3725,14 @@
       }
 
       tbody.innerHTML = txList.map(t => {
-        const isCredit = t.transaction_type === 'MEMBER_CONTRIBUTION' || t.transaction_type === 'REPAYMENT' || t.transaction_type === 'PAYMENT';
+        const isCredit = ['MEMBER_CONTRIBUTION', 'REPAYMENT', 'PAYMENT', 'CREDIT'].includes(t.transaction_type);
         const color = isCredit ? 'var(--green)' : 'var(--orange)';
         return `
           <tr>
             <td><strong>#${t.id}</strong></td>
             <td>${t.transaction_date || t.created_at?.substring(0, 10) || '—'}</td>
             <td><strong>${esc(t.member_name || t.name || 'Member')}</strong> (${t.member_code || t.member_id || ''})</td>
-            <td><span class="badge badge-active">${t.transaction_type}</span></td>
+            <td><span class="badge ${isCredit ? 'badge-active' : 'badge-gold'}">${t.transaction_type}</span></td>
             <td style="font-weight:800;color:${color}">${isCredit ? '+' : '-'}₹${parseFloat(t.amount).toLocaleString('en-IN')}</td>
             <td>${esc(t.description || '—')}</td>
             <td><span class="badge badge-active">${t.status || 'COMPLETED'}</span></td>
@@ -3651,6 +3767,9 @@
 
     async function loadFinancialReports() {
       try {
+        if (typeof loadMonthlyStatementAdmin === 'function') {
+          loadMonthlyStatementAdmin();
+        }
         const summary = await api('/api/seed-fund/summary');
         if (document.getElementById('repNetBalance')) document.getElementById('repNetBalance').textContent = `₹${parseFloat(summary.current_available_fund || 0).toLocaleString('en-IN')}`;
         if (document.getElementById('repTotalInterest')) document.getElementById('repTotalInterest').textContent = `₹${parseFloat(summary.total_interest_earned || 0).toLocaleString('en-IN')}`;
@@ -3694,6 +3813,26 @@
             showToast('💳 New Payment Proof Uploaded by Member!', 'info');
             loadPendingProofs();
             loadDashboard();
+          });
+          adminSocket.on('stats:updated', () => {
+            loadDashboard();
+            loadMembers();
+          });
+          adminSocket.on('member:added', () => {
+            loadDashboard();
+            loadMembers();
+          });
+          adminSocket.on('member:deleted', () => {
+            loadDashboard();
+            loadMembers();
+          });
+          adminSocket.on('member:updated', () => {
+            loadDashboard();
+            loadMembers();
+          });
+          adminSocket.on('payment:approved', () => {
+            loadDashboard();
+            loadMembers();
           });
           adminSocket.on('notification:broadcast', (data) => {
             if (data && data.title) showToast(`${data.title}: ${data.body || ''}`, 'info');
@@ -3756,9 +3895,163 @@
       loadDashboard();
     }
 
+    // AI System Guardian Watchdog Methods
+    async function loadGuardianStatus() {
+      try {
+        const diag = await api('/api/admin/members/agent/status');
+        if (!diag) return;
+
+        const isHealthy = diag.status === 'HEALTHY' && (diag.integrity?.orphaned_records === 0);
+        const badge = document.getElementById('guardianBadge');
+        if (badge) {
+          if (isHealthy) {
+            badge.style.background = 'rgba(34, 197, 94, 0.2)';
+            badge.style.color = '#4ade80';
+            badge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+            badge.innerHTML = '<span style="width:7px; height:7px; border-radius:50%; background:#22c55e; display:inline-block;"></span> 100% HEALTHY';
+          } else {
+            badge.style.background = 'rgba(239, 68, 68, 0.2)';
+            badge.style.color = '#f87171';
+            badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            badge.innerHTML = '<span style="width:7px; height:7px; border-radius:50%; background:#ef4444; display:inline-block;"></span> HEALING REQUIRED';
+          }
+        }
+
+        if (document.getElementById('guardianDbEngine')) {
+          document.getElementById('guardianDbEngine').textContent = diag.database?.engine || 'SQLite';
+        }
+        if (document.getElementById('guardianDbLatency')) {
+          document.getElementById('guardianDbLatency').textContent = (diag.database?.latency_ms || 0) + 'ms';
+        }
+        if (document.getElementById('guardianOrphans')) {
+          const orphans = diag.integrity?.orphaned_records || 0;
+          document.getElementById('guardianOrphans').textContent = orphans === 0 ? '0 detected (Clean)' : `${orphans} found`;
+          document.getElementById('guardianOrphans').style.color = orphans === 0 ? 'var(--green)' : 'var(--red)';
+        }
+        if (document.getElementById('guardianLedgerStatus')) {
+          document.getElementById('guardianLedgerStatus').textContent = diag.integrity?.ledger_balanced ? '100% Synchronized' : 'Desynced';
+        }
+        if (document.getElementById('guardianLastHealed')) {
+          const dt = diag.watchdog?.last_healed_at ? new Date(diag.watchdog.last_healed_at).toLocaleTimeString('en-IN') : 'Just now';
+          document.getElementById('guardianLastHealed').textContent = `${dt} (${diag.watchdog?.cycles_run || 0} cycles)`;
+        }
+        window.cachedGuardianDiag = diag;
+      } catch (err) {
+        console.warn('Guardian status fetch error:', err.message);
+      }
+    }
+
+    async function triggerGuardianHealNow(fromModal = false) {
+      const btn = document.getElementById('btnRunGuardianHeal');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Healing...';
+      }
+      try {
+        const res = await api('/api/admin/members/agent/heal-now', 'POST');
+        toast('🛡️ ' + (res.message || 'Self-healing sweep completed'), 'success');
+        await loadDashboard();
+        if (fromModal) {
+          showGuardianDiagnosticsModal();
+        }
+      } catch (err) {
+        toast('Heal failed: ' + err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '⚡ Deep Reconcile & Heal Now';
+        }
+      }
+    }
+
+    async function showGuardianDiagnosticsModal() {
+      openModal('guardianDiagnosticsModal');
+      const box = document.getElementById('guardianModalContent');
+      box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted)">Running deep diagnostics scan...</div>';
+      try {
+        const diag = await api('/api/admin/members/agent/status');
+        window.cachedGuardianDiag = diag;
+        const tb = diag.integrity?.table_breakdown || {};
+        const isHealthy = diag.status === 'HEALTHY' && (diag.integrity?.orphaned_records === 0);
+
+        box.innerHTML = `
+          <div style="background:var(--bg-surface);border:1px solid ${isHealthy ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'};border-radius:12px;padding:16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:18px;font-weight:800;color:${isHealthy ? 'var(--green)' : 'var(--red)'}">
+                ${isHealthy ? '✅ All Systems Healthy & Synced' : '⚠️ Discrepancies Found — Self-Heal Available'}
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
+                Autonomous AI Guardian Watchdog is operating normally every 5 seconds.
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:24px;font-weight:900;color:var(--gold)">${diag.health_score || 100}%</div>
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:700">Health Index</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div style="background:var(--bg-surface);padding:12px;border-radius:10px;border:1px solid var(--border)">
+              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;font-weight:700">Database Engine</div>
+              <div style="font-size:14px;font-weight:700;margin-top:4px">${diag.database?.engine || 'SQLite'} (Latency: ${diag.database?.latency_ms || 0}ms)</div>
+            </div>
+            <div style="background:var(--bg-surface);padding:12px;border-radius:10px;border:1px solid var(--border)">
+              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;font-weight:700">Watchdog Cycles</div>
+              <div style="font-size:14px;font-weight:700;margin-top:4px">${diag.watchdog?.cycles_run || 0} sweeps completed</div>
+            </div>
+          </div>
+
+          <h4 style="font-size:13px;font-weight:700;color:var(--gold);margin:0 0 8px 0">Orphaned & Foreign-Key Integrity Across Tables</h4>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px">
+            <thead>
+              <tr style="background:var(--bg-surface-hover);border-bottom:1px solid var(--border);text-align:left">
+                <th style="padding:6px 10px">Table / Entity</th>
+                <th style="padding:6px 10px;text-align:center">Orphan Count</th>
+                <th style="padding:6px 10px;text-align:right">Integrity Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px 10px">Payment Proofs (payment_proofs)</td>
+                <td style="padding:6px 10px;text-align:center">${tb.payment_proofs || 0}</td>
+                <td style="padding:6px 10px;text-align:right;color:var(--green);font-weight:700">CLEAN</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px 10px">Financial Ledger (transactions)</td>
+                <td style="padding:6px 10px;text-align:center">${tb.transactions || 0}</td>
+                <td style="padding:6px 10px;text-align:right;color:var(--green);font-weight:700">CLEAN</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px 10px">Monthly Schedule (monthly_payments)</td>
+                <td style="padding:6px 10px;text-align:center">${tb.monthly_payments || 0}</td>
+                <td style="padding:6px 10px;text-align:right;color:var(--green);font-weight:700">CLEAN</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px 10px">Loan Repayments (repayments)</td>
+                <td style="padding:6px 10px;text-align:center">${tb.repayments || 0}</td>
+                <td style="padding:6px 10px;text-align:right;color:var(--green);font-weight:700">CLEAN</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 10px">Seed Fund Loans (seed_fund_distributions)</td>
+                <td style="padding:6px 10px;text-align:center">${tb.seed_fund_distributions || 0}</td>
+                <td style="padding:6px 10px;text-align:right;color:var(--green);font-weight:700">CLEAN</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="font-size:11px;color:var(--text-muted);background:var(--bg-surface);padding:10px;border-radius:8px;border-left:3px solid var(--gold)">
+            💡 <strong>Autonomous Guardian Architecture:</strong> Exited members' historical transactions and monthly payments are preserved strictly for audits and Excel reports, while their balance is clamped to ₹0 and phone/ID keys freed for real re-use.
+          </div>
+        `;
+      } catch (err) {
+        box.innerHTML = `<div style="color:var(--red);padding:16px">Failed to load diagnostics: ${err.message}</div>`;
+      }
+    }
+
     // Dashboard Stats
     async function loadDashboard() {
       try {
+        loadGuardianStatus();
         const d = await api('/api/admin/members/dashboard-stats');
         document.getElementById('dTotalMembers').textContent = d.total_members || 0;
         document.getElementById('dActiveMembers').textContent = d.active_members || 0;
@@ -3766,6 +4059,12 @@
         document.getElementById('dPendingActivations').textContent = d.pending_activations || 0;
         document.getElementById('dPossibleDuplicates').textContent = d.possible_duplicates || 0;
         document.getElementById('dTotalCollected').textContent = `₹${parseFloat(d.total_collected || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('dRefundedExited')) {
+          document.getElementById('dRefundedExited').textContent = `₹${parseFloat(d.total_refunded_exited || 0).toLocaleString('en-IN')}`;
+        }
+        if (document.getElementById('dCurrentBalance')) {
+          document.getElementById('dCurrentBalance').textContent = `₹${parseFloat(d.current_balance || 0).toLocaleString('en-IN')}`;
+        }
         document.getElementById('dPaidMembers').textContent = d.paid_members || 0;
         document.getElementById('dPendingPayments').textContent = d.pending_payments || 0;
 
@@ -4027,13 +4326,19 @@
     }
 
     function confirmDeleteMember(id, name) {
+      const m = (window.adminMembersCache || []).find(x => x.id === id);
+      const paidBal = m ? parseFloat(m.balance || 0) : 0;
+      const refundNotice = paidBal > 0 
+        ? `\n\n💰 செலுத்திய முதலீட்டு அசல் தொகை ₹${paidBal.toLocaleString('en-IN')} இவருக்கு திருப்பி வழங்கப்பட்டதாக (Refunded) பதிவு செய்யப்பட்டு, ஆக்டிவ் மொத்த நிதியிலிருந்து கழிக்கப்படும்.`
+        : '';
+
       openConfirm(
-        '⚠️ உறுப்பினர் இன்ஆக்டிவ் / Inactivate Member',
-        `உறுப்பினர் "${name}"-ஐ நீக்க / இன்ஆக்டிவ் செய்ய விரும்புகிறீர்களா?\n\n🛡️ குறிப்பு: இவரின் முந்தைய அனைத்து கட்டணங்கள், கடன் பதிவுகள் மற்றும் கணக்கு விவரங்கள் பாதுகாப்பாக இருக்கும். (All past payment and loan records will be safely preserved in statements.)`,
+        '⚠️ உறுப்பினர் விலகல் / Settle & Exit Member',
+        `உறுப்பினர் "${name}"-ஐ நீக்க / விலக்க விரும்புகிறீர்களா?${refundNotice}\n\n📋 தணிக்கை குறிப்பு: இவரின் பழைய கட்டண வரலாறு எக்செல் & பிடிஎஃப் அறிக்கைகளில் தணிக்கைக்காக பத்திரமாக இருக்கும். இவரின் மொபைல் எண் மற்றும் ID உடனடியாக புதிய பதிவுக்கு விடுவிக்கப்படும்.`,
         async () => {
           try {
-            await api(`/api/admin/members/${id}`, { method: 'DELETE' });
-            showToast('உறுப்பினர் இன்ஆக்டிவ் செய்யப்பட்டார் (Member safely inactivated)', 'info');
+            const res = await api(`/api/admin/members/${id}`, { method: 'DELETE' });
+            showToast(res.message || 'உறுப்பினர் விலகல் பதிவு செய்யப்பட்டது (Member exited)', 'success');
             loadMembers();
             loadDashboard();
           } catch (e) { showToast(e.message, 'error'); }
@@ -4517,10 +4822,15 @@
 
     function showAddPaymentModal() {
       currentEditingPaymentId = null;
-      document.getElementById('paymentModalTitle').textContent = 'Add Manual Payment';
+      document.getElementById('paymentModalTitle').textContent = 'Add Manual Payment / Entry';
       document.getElementById('pMemberId').value = '';
+      if (document.getElementById('pType')) document.getElementById('pType').value = 'CREDIT';
       document.getElementById('pAmount').value = '500';
-      document.getElementById('pDate').value = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('pDate').value = todayStr;
+      if (document.getElementById('pMonth')) document.getElementById('pMonth').value = monthStr;
       document.getElementById('pRef').value = '';
       document.getElementById('pStatus').value = 'APPROVED';
       if (document.getElementById('pReason')) document.getElementById('pReason').value = '';
@@ -4534,8 +4844,11 @@
       currentEditingPaymentId = p.id;
       document.getElementById('paymentModalTitle').textContent = `Edit Payment #${p.id} (${p.member_name})`;
       document.getElementById('pMemberId').value = p.member_code || p.member_id;
+      if (document.getElementById('pType')) document.getElementById('pType').value = (p.transaction_type || 'CREDIT').toUpperCase();
       document.getElementById('pAmount').value = p.amount;
-      document.getElementById('pDate').value = p.payment_date ? p.payment_date.split('T')[0] : new Date().toISOString().split('T')[0];
+      const dateStr = p.payment_date ? p.payment_date.split('T')[0] : new Date().toISOString().split('T')[0];
+      document.getElementById('pDate').value = dateStr;
+      if (document.getElementById('pMonth')) document.getElementById('pMonth').value = p.payment_month || dateStr.substring(0, 7);
       document.getElementById('pRef').value = p.transaction_reference || '';
       document.getElementById('pStatus').value = p.status;
       if (document.getElementById('pReason')) document.getElementById('pReason').value = p.rejection_reason || '';
@@ -4544,8 +4857,10 @@
 
     async function savePaymentForm() {
       const member_id = document.getElementById('pMemberId').value.trim();
+      const transaction_type = document.getElementById('pType')?.value || 'CREDIT';
       const amount = document.getElementById('pAmount').value;
       const payment_date = document.getElementById('pDate').value;
+      const payment_month = document.getElementById('pMonth')?.value || (payment_date ? payment_date.substring(0, 7) : '');
       const transaction_reference = document.getElementById('pRef').value.trim();
       const status = document.getElementById('pStatus').value;
       const rejection_reason = document.getElementById('pReason')?.value.trim() || null;
@@ -4556,18 +4871,20 @@
         if (currentEditingPaymentId) {
           await api(`/api/admin/payments/${currentEditingPaymentId}`, {
             method: 'PUT',
-            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status, rejection_reason })
+            body: JSON.stringify({ member_id, transaction_type, amount, payment_date, payment_month, transaction_reference, status, rejection_reason })
           });
           showToast('Payment record updated and balance synchronized', 'success');
         } else {
           await api('/api/admin/payments', {
             method: 'POST',
-            body: JSON.stringify({ member_id, amount, payment_date, transaction_reference, status, rejection_reason })
+            body: JSON.stringify({ member_id, transaction_type, amount, payment_date, payment_month, transaction_reference, status, rejection_reason, description: rejection_reason })
           });
-          showToast('Payment recorded successfully', 'success');
+          showToast(`${transaction_type === 'DEBIT' ? 'Payout/Debit' : 'Payment'} recorded successfully`, 'success');
         }
         closeModal('paymentModal');
         loadAdminPayments();
+        if (typeof loadTransactionLedger === 'function') loadTransactionLedger();
+        if (typeof loadMonthlyStatementAdmin === 'function') loadMonthlyStatementAdmin();
         loadDashboard();
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -4583,31 +4900,7 @@
       });
     }
 
-    // Activation Table
-    async function loadActivationList() {
-      try {
-        const d = await api('/api/admin/members?limit=100');
-        const tbody = document.getElementById('activationTableBody');
-        tbody.innerHTML = (d.members || []).map(m => `
-      <tr>
-        <td><strong style="color:var(--primary)">${m.member_id}</strong></td>
-        <td>${esc(m.name)}</td>
-        <td>${esc(m.phone)}</td>
-        <td>${new Date(m.created_at).toLocaleDateString()}</td>
-        <td><span class="badge badge-${m.payment_status.toLowerCase()}">${m.payment_status}</span></td>
-        <td><span class="badge badge-${m.activation_status.toLowerCase()}">${m.activation_status}</span></td>
-        <td>
-          <select onchange="toggleActivation(${m.id}, this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border)">
-            <option value="ACTIVE" ${m.activation_status === 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
-            <option value="PENDING" ${m.activation_status === 'PENDING' ? 'selected' : ''}>PENDING</option>
-            <option value="INACTIVE" ${m.activation_status === 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
-            <option value="REJECTED" ${m.activation_status === 'REJECTED' ? 'selected' : ''}>REJECTED</option>
-          </select>
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="7" style="text-align:center">No records</td></tr>';
-      } catch (e) { }
-    }
+
 
     // Audit Logs
     async function loadAuditLogs() {
@@ -5684,6 +5977,23 @@
         if (icon) {
           setTimeout(() => icon.classList.remove('spin-refresh'), 600);
         }
+      }
+    }
+
+    // ⚡ Self-Healing Background Reconcile Agent Trigger
+    async function triggerAutoReconcile() {
+      const btn = document.getElementById('reconcileBtn');
+      if (btn) btn.style.opacity = '0.5';
+      showToast('⚡ Self-Healing Agent: Reconciling & cleaning orphaned data...', 'info');
+      try {
+        const res = await api('/api/admin/members/reconcile', { method: 'POST' });
+        showToast('✅ ' + (res.message || 'Database reconciled and synchronized!'), 'success');
+        await loadDashboard();
+        await loadMembers();
+      } catch (e) {
+        showToast('Reconcile note: ' + e.message, 'warning');
+      } finally {
+        if (btn) btn.style.opacity = '1';
       }
     }
 

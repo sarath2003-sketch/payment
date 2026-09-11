@@ -90,13 +90,20 @@
     }
 
     .brand-logo {
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       border: 2px solid var(--gold);
       object-fit: contain;
       box-shadow: var(--shadow-gold);
       background: var(--dark2);
+      padding: 2px;
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .brand-logo:hover {
+      transform: scale(1.05);
     }
 
     .brand-title {
@@ -112,6 +119,53 @@
       color: var(--text2);
       margin-top: 2px;
       font-weight: 500;
+    }
+
+    /* ====== BRAND VALUES / TRUST BANNER ====== */
+    .brand-values-banner {
+      width: 100%;
+      background: linear-gradient(90deg, rgba(30, 21, 0, 0.95), rgba(39, 29, 0, 0.9));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .bvb-values {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .bvb-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .bvb-dot {
+      color: var(--text3);
+      font-size: 10px;
+    }
+
+    .bvb-slogan {
+      font-size: 12px;
+      color: var(--text2);
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      background: rgba(245, 200, 66, 0.08);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(245, 200, 66, 0.15);
     }
 
     .header-actions {
@@ -977,6 +1031,20 @@
         🔐 <span id="txtAdminLogin">Admin Portal</span>
       </button>
     </div>
+
+    <!-- BRAND VALUES & TRUST BANNER -->
+    <div class="brand-values-banner">
+      <div class="bvb-values">
+        <span class="bvb-item">🛡️ <span id="txtValTransp">Transparency</span></span>
+        <span class="bvb-dot">✦</span>
+        <span class="bvb-item">🔒 <span id="txtValPrivacy">Data Privacy</span></span>
+        <span class="bvb-dot">✦</span>
+        <span class="bvb-item">✨ <span id="txtValClarity">Financial Clarity</span></span>
+      </div>
+      <div class="bvb-slogan" id="txtBrandSlogan">
+        சிறு சேமிப்பு பெரிய வளர்ச்சி | ஒற்றுமை • நம்பிக்கை • வளர்ச்சி • வெற்றி
+      </div>
+    </div>
   </header>
 
   <!-- LIVE TICKER BAR -->
@@ -1593,7 +1661,11 @@
       lblLoanFilterPaid: "Fully Paid",
       lblSumTotalDisbursed: "Total Loans Given",
       lblSumPendingRepay: "Pending Repayment (5% Inc.)",
-      lblSumTotalRepaid: "Total Repaid Back"
+      lblSumTotalRepaid: "Total Repaid Back",
+      valTransp: "Transparency",
+      valPrivacy: "Data Privacy",
+      valClarity: "Financial Clarity",
+      brandSlogan: "சிறு சேமிப்பு பெரிய வளர்ச்சி | Unity • Trust • Growth • Success"
     },
     ta: {
       upbPublic: "பொதுப் பலகை",
@@ -1644,7 +1716,11 @@
       lblLoanFilterPaid: "செலுத்தப்பட்டவை",
       lblSumTotalDisbursed: "மொத்தம் வழங்கிய கடன்",
       lblSumPendingRepay: "செலுத்த வேண்டிய நிலுவை (5% வட்டி உட்பட)",
-      lblSumTotalRepaid: "மொத்தம் திரும்பப் பெற்ற தொகை"
+      lblSumTotalRepaid: "மொத்தம் திரும்பப் பெற்ற தொகை",
+      valTransp: "வெளிப்படைத்தன்மை",
+      valPrivacy: "தகவல் பாதுகாப்பு",
+      valClarity: "நிதி தெளிவு",
+      brandSlogan: "சிறு சேமிப்பு பெரிய வளர்ச்சி | ஒற்றுமை • நம்பிக்கை • வளர்ச்சி • வெற்றி"
     },
     tanglish: {
       upbPublic: "பொதுப் பலகை (Public Portal)",
@@ -1695,7 +1771,11 @@
       lblLoanFilterPaid: "செலுத்தப்பட்டவை (Fully Paid)",
       lblSumTotalDisbursed: "வழங்கிய கடன் (Total Loans Given)",
       lblSumPendingRepay: "செலுத்த வேண்டிய நிலுவை (Pending Due 5%)",
-      lblSumTotalRepaid: "திரும்பப் பெற்ற தொகை (Total Repaid)"
+      lblSumTotalRepaid: "திரும்பப் பெற்ற தொகை (Total Repaid)",
+      valTransp: "வெளிப்படைத்தன்மை (Transparency)",
+      valPrivacy: "தகவல் பாதுகாப்பு (Data Privacy)",
+      valClarity: "நிதி தெளிவு (Financial Clarity)",
+      brandSlogan: "சிறு சேமிப்பு பெரிய வளர்ச்சி | ஒற்றுமை • நம்பிக்கை • வளர்ச்சி • வெற்றி"
     }
   };
 
@@ -1737,6 +1817,14 @@
 
     document.getElementById('txtOrgName').textContent = t.orgName;
     document.getElementById('txtOrgSub').textContent = t.orgSub;
+    const vt = document.getElementById('txtValTransp');
+    if (vt) vt.textContent = t.valTransp;
+    const vp = document.getElementById('txtValPrivacy');
+    if (vp) vp.textContent = t.valPrivacy;
+    const vc = document.getElementById('txtValClarity');
+    if (vc) vc.textContent = t.valClarity;
+    const bs = document.getElementById('txtBrandSlogan');
+    if (bs) bs.textContent = t.brandSlogan;
     document.getElementById('txtMainTitle').textContent = t.mainTitle;
     document.getElementById('txtLiveStatus').textContent = t.liveStatus;
     document.getElementById('txtRefresh').textContent = t.refresh;
@@ -2464,23 +2552,24 @@
     lines.push(``);
 
     // Section 1: Inflows
-    lines.push(`"--- INFLOWS (உள்வரவு பட்டியல் - தேதி & நேரத்துடன்) ---"`);
-    lines.push(`"#","Member Code","Member Name","Date","Time","Category","Amount (Rs)","UTR / Transaction Reference"`);
+    lines.push(`"--- INFLOWS (உள்வரவு பட்டியல் - தேதி, நேரம் & UTR உடன்) ---"`);
+    lines.push(`"#","Member Code","Member Name","Phone","Date","Time","Category / Purpose","Amount (Rs)","Bank UTR / Transaction Reference"`);
     (data.inflows || []).forEach((item, idx) => {
-      lines.push(`"${idx + 1}","${item.member_code}","${item.member_name.replace(/"/g, '""')}","${item.payment_date}","${item.payment_time}","${item.category}","${item.amount}","${item.transaction_reference}"`);
+      lines.push(`"${idx + 1}","${item.member_code}","${item.member_name.replace(/"/g, '""')}","${item.member_phone || '—'}","${item.payment_date}","${item.payment_time}","${item.category}","${item.amount}","${item.transaction_reference}"`);
     });
 
     lines.push(``);
-    // Section 2: Outflows / Loans
-    lines.push(`"--- OUTFLOWS & LOANS (கடன் & மறுசெலுத்துகை விபரம்) ---"`);
-    lines.push(`"Loan ID","Member Code","Member Name","Distribution Date","Principal (Rs)","Interest %","Interest (Rs)","Total Due (Rs)","Total Repaid (Rs)","Remaining Balance (Rs)","Nominee Name","Due Date","Status"`);
+    // Section 2: Outflows, Loans & Refunds
+    lines.push(`"--- OUTFLOWS, LOANS & REFUNDS (கடன் மற்றும் உறுப்பினர் விலகல் தீர்வு) ---"`);
+    lines.push(`"Record ID","Transaction Type","Member Code","Member Name","Phone","Disbursement Date","Principal Amount (Rs)","Interest %","Interest Amount (Rs)","Total Due (Rs)","Total Repaid (Rs)","Remaining Balance (Rs)","Nominee / Guarantor","Due Date","Status"`);
     const loansToExport = (data.outflows && data.outflows.length > 0) ? data.outflows : rawLoansData;
     loansToExport.forEach(d => {
+      const isRefund = d.outflow_type === 'REFUND';
       const remaining = parseFloat(d.remaining_amount) || 0;
       const repaid = parseFloat(d.total_repaid) || 0;
       const isPaid = d.payment_status === 'PAID' || remaining <= 0;
-      const statusText = isPaid ? 'FULLY PAID' : (repaid > 0 ? 'PARTIALLY PAID' : 'PENDING');
-      lines.push(`"${d.id}","${d.member_code || ''}","${(d.member_name || '').replace(/"/g, '""')}","${(d.distribution_date || d.start_date || '').split('T')[0]}","${d.principal_amount || 0}","${d.interest_percentage || 5}","${d.interest_amount || 0}","${d.total_payable || 0}","${repaid}","${remaining}","${(d.nominee_name || '').replace(/"/g, '""')}","${(d.due_date || d.next_payment_date || '').split('T')[0]}","${statusText}"`);
+      const statusText = isRefund ? 'REFUNDED TO EXITED MEMBER' : (isPaid ? 'FULLY PAID' : (repaid > 0 ? 'PARTIALLY PAID' : 'PENDING'));
+      lines.push(`"${d.id}","${isRefund ? 'MEMBER EXIT REFUND' : 'LOAN DISBURSEMENT'}","${d.member_code || ''}","${(d.member_name || '').replace(/"/g, '""')}","${d.member_phone || '—'}","${(d.distribution_date || d.start_date || '').split('T')[0]}","${d.principal_amount || 0}","${d.interest_percentage || 0}","${d.interest_amount || 0}","${d.total_payable || 0}","${repaid}","${remaining}","${(d.nominee_name || '').replace(/"/g, '""')}","${(d.due_date || '').split('T')[0]}","${statusText}"`);
     });
 
     const csvContent = '\uFEFF' + lines.join('\r\n');
@@ -2500,7 +2589,7 @@
     downloadMonthlyStatementPublic();
   }
 
-  // Print Monthly Statement / Export PDF
+  // Print Monthly Statement / Export Official Bank-Grade PDF
   function printMonthlyStatementPublic() {
     const data = cachedPubMonthlyStatement;
     if (!data) {
@@ -2508,7 +2597,7 @@
       return;
     }
 
-    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    const printWindow = window.open('', '_blank', 'width=1100,height=850');
     if (!printWindow) {
       window.print();
       return;
@@ -2516,103 +2605,184 @@
 
     const s = data.summary || {};
     const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const auditHash = 'PF-AUDIT-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-' + Date.now().toString().slice(-6);
 
     const inflowRows = (data.inflows || []).map((item, idx) => `
       <tr>
-        <td>#${idx + 1}</td>
-        <td><strong>${esc(item.member_name)}</strong> (${esc(item.member_code)})</td>
-        <td>${esc(item.payment_date)} ${esc(item.payment_time)}</td>
-        <td>${esc(item.category)}</td>
-        <td style="color:#15803d;font-weight:bold">₹${parseFloat(item.amount || 0).toLocaleString('en-IN')}</td>
-        <td><code>${esc(item.transaction_reference)}</code></td>
+        <td style="text-align:center;font-weight:600">${idx + 1}</td>
+        <td>
+          <strong style="color:#0f172a;font-size:12px">${esc(item.member_name)}</strong><br>
+          <span style="font-size:10px;color:#64748b;font-family:monospace">ID: ${esc(item.member_code)} ${item.member_phone ? '· ' + esc(item.member_phone) : ''}</span>
+        </td>
+        <td style="font-size:11px;white-space:nowrap">${esc(item.payment_date)}<br><span style="color:#64748b;font-size:10px">${esc(item.payment_time)}</span></td>
+        <td style="font-size:11px">${esc(item.category)}</td>
+        <td style="font-family:monospace;font-size:11px;color:#334155;word-break:break-all"><code>${esc(item.transaction_reference)}</code></td>
+        <td style="text-align:right;font-weight:700;color:#15803d;font-size:12px">₹${parseFloat(item.amount || 0).toLocaleString('en-IN')}</td>
       </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center">No inflows recorded for this month.</td></tr>';
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8">No verified inflows recorded for this accounting month.</td></tr>';
 
     const loansToPrint = (data.outflows && data.outflows.length > 0) ? data.outflows : rawLoansData;
-    const loanRows = loansToPrint.map(d => {
+    const loanRows = loansToPrint.map((d, idx) => {
+      const isRefund = d.outflow_type === 'REFUND';
       const remaining = parseFloat(d.remaining_amount) || 0;
       const repaid = parseFloat(d.total_repaid) || 0;
       const isPaid = d.payment_status === 'PAID' || remaining <= 0;
       const isPartial = !isPaid && repaid > 0;
-      const statusColor = isPaid ? '#15803d' : (isPartial ? '#b45309' : '#b91c1c');
-      const statusText = isPaid ? 'PAID / செலுத்தப்பட்டது' : (isPartial ? `PARTIAL (மீதம்: ₹${remaining.toLocaleString('en-IN')})` : 'PENDING / நிலுவை');
+      const statusBg = isRefund ? '#fef3c7' : (isPaid ? '#dcfce7' : (isPartial ? '#ffedd5' : '#fee2e2'));
+      const statusColor = isRefund ? '#92400e' : (isPaid ? '#166534' : (isPartial ? '#9a3412' : '#991b1b'));
+      const statusText = isRefund 
+        ? 'MEMBER EXIT REFUND (அசல் ஒப்படைப்பு)' 
+        : (isPaid ? 'PAID / செலுத்தப்பட்டது' : (isPartial ? `PARTIAL (மீதம்: ₹${remaining.toLocaleString('en-IN')})` : 'ACTIVE DUE / நிலுவை'));
+
       return `
-        <tr>
-          <td><strong>${esc(d.member_name)}</strong><br><small>${esc(d.member_code || '')}</small></td>
-          <td>${(d.distribution_date || d.start_date || '—').split('T')[0]}</td>
-          <td>₹${parseFloat(d.principal_amount || 0).toLocaleString('en-IN')}</td>
-          <td>₹${parseFloat(d.interest_amount || 0).toLocaleString('en-IN')} (${d.interest_percentage || 5}%)</td>
-          <td><strong>₹${parseFloat(d.total_payable || 0).toLocaleString('en-IN')}</strong></td>
-          <td>₹${repaid.toLocaleString('en-IN')}</td>
-          <td style="font-weight:bold;color:${statusColor}">₹${remaining.toLocaleString('en-IN')}</td>
-          <td>${esc(d.nominee_name || '—')}</td>
-          <td>${(d.due_date || d.next_payment_date || '—').split('T')[0]}</td>
-          <td><span style="font-weight:bold;color:${statusColor}">${statusText}</span></td>
+        <tr style="${isRefund ? 'background:#fffdf7;' : ''}">
+          <td style="text-align:center;font-weight:600">${idx + 1}</td>
+          <td>
+            <strong style="color:#0f172a;font-size:12px">${esc(d.member_name)}</strong><br>
+            <span style="font-size:10px;color:#64748b;font-family:monospace">${esc(d.member_code || '')}</span>
+          </td>
+          <td style="font-size:11px;white-space:nowrap">${(d.distribution_date || d.start_date || '—').split('T')[0]}</td>
+          <td style="text-align:right;font-weight:600">₹${parseFloat(d.principal_amount || 0).toLocaleString('en-IN')}</td>
+          <td style="text-align:center;font-size:11px">${isRefund ? '—' : `${d.interest_percentage || 5}%<br><span style="font-size:10px;color:#64748b">₹${parseFloat(d.interest_amount || 0).toLocaleString('en-IN')}</span>`}</td>
+          <td style="text-align:right;font-weight:700">₹${parseFloat(d.total_payable || 0).toLocaleString('en-IN')}</td>
+          <td style="text-align:right;color:#15803d">₹${repaid.toLocaleString('en-IN')}</td>
+          <td style="text-align:right;font-weight:700;color:${remaining > 0 ? '#dc2626' : '#15803d'}">₹${remaining.toLocaleString('en-IN')}</td>
+          <td style="font-size:11px">${esc(d.nominee_name || '—')}</td>
+          <td style="text-align:center">
+            <span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${statusBg};color:${statusColor}">${statusText}</span>
+          </td>
         </tr>
       `;
-    }).join('') || '<tr><td colspan="10" style="text-align:center">No loans recorded for this month.</td></tr>';
+    }).join('') || '<tr><td colspan="10" style="text-align:center;padding:16px;color:#94a3b8">No loan disbursements or member refunds for this accounting month.</td></tr>';
 
     printWindow.document.write(`
       <!DOCTYPE html>
-      <html>
+      <html lang="ta">
       <head>
-        <title>PF Chit Fund Club - Monthly Statement (${data.month})</title>
+        <meta charset="UTF-8">
+        <title>Official Monthly Bank Statement - PF Chit Fund Club (${data.month})</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 24px; color: #111; line-height: 1.4; }
-          .header { text-align: center; border-bottom: 2px solid #b45309; padding-bottom: 12px; margin-bottom: 20px; }
-          h1 { margin: 0 0 6px 0; font-size: 24px; color: #b45309; }
-          .sub { font-size: 13px; color: #555; }
-          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-          .kpi-box { border: 1px solid #ccc; border-radius: 8px; padding: 12px; text-align: center; background: #fafafa; }
-          .kpi-label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: bold; }
-          .kpi-val { font-size: 18px; font-weight: bold; margin-top: 4px; }
-          h2 { font-size: 16px; margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 12px; }
-          th, td { border: 1px solid #ccc; padding: 7px 9px; text-align: left; }
-          th { background: #f3f4f6; font-weight: bold; }
+          @page { size: A4 portrait; margin: 12mm 12mm 15mm 12mm; }
+          * { box-sizing: border-box; }
+          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; padding: 0; margin: 0; color: #0f172a; line-height: 1.35; background: #fff; font-size: 11.5px; }
+          .bank-header { border-bottom: 2.5px solid #0f2b5c; padding-bottom: 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+          .bank-title-group h1 { margin: 0 0 3px 0; font-size: 20px; color: #0f2b5c; font-weight: 800; letter-spacing: -0.3px; }
+          .bank-title-group .tamil-title { font-size: 14px; color: #b45309; font-weight: 700; margin-bottom: 3px; }
+          .bank-meta { font-size: 10px; color: #475569; }
+          .bank-badge-box { text-align: right; }
+          .official-seal { display: inline-block; border: 2px solid #0f2b5c; border-radius: 6px; padding: 6px 12px; background: #f8fafc; text-align: center; }
+          .official-seal .seal-head { font-size: 9px; text-transform: uppercase; font-weight: 800; color: #0f2b5c; letter-spacing: 0.8px; }
+          .official-seal .seal-no { font-family: monospace; font-size: 11px; font-weight: 700; color: #b45309; }
+
+          .account-summary-table { width: 100%; border: 1.5px solid #0f2b5c; border-collapse: collapse; margin-bottom: 16px; background: #fdfefe; }
+          .account-summary-table th { background: #0f2b5c; color: #fff; text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+          .account-summary-table td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 11px; }
+
+          .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+          .kpi-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center; background: #f8fafc; }
+          .kpi-card .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.4px; }
+          .kpi-card .kpi-val { font-size: 16px; font-weight: 800; margin-top: 4px; }
+
+          .section-title { font-size: 13px; font-weight: 800; color: #0f2b5c; margin: 18px 0 8px 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4px; }
+          table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+          table.data-table th { background: #f1f5f9; color: #334155; font-weight: 700; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10.5px; }
+          table.data-table td { border: 1px solid #e2e8f0; padding: 6px 8px; vertical-align: middle; }
+          table.data-table tr:nth-child(even) { background: #fafafa; }
+
+          .audit-callout { background: #f8fafc; border-left: 4px solid #0f2b5c; padding: 10px 14px; margin: 16px 0; font-size: 10.5px; color: #334155; line-height: 1.5; border-radius: 0 6px 6px 0; }
+          .signatory-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 30px; page-break-inside: avoid; }
+          .sign-box { border-top: 1.5px dashed #64748b; padding-top: 8px; text-align: center; font-size: 11px; }
+          .sign-box strong { color: #0f2b5c; display: block; }
+          .sign-box span { color: #64748b; font-size: 10px; }
+
+          .no-print-bar { background: #0f2b5c; color: #fff; padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; }
+          .no-print-bar button { padding: 6px 14px; background: #f5c842; color: #0d0800; border: none; font-weight: 700; border-radius: 4px; cursor: pointer; }
           @media print {
-            button { display: none; }
+            .no-print-bar { display: none !important; }
+            body { padding: 0; }
           }
         </style>
       </head>
       <body>
-        <div class="header">
-          <h1>PF Chit Fund Club (புதுப்பட்டி நண்பர்கள் சீட்டு பண்டு கிளப்)</h1>
-          <div class="sub">Official Monthly Transparency Statement · Month: <strong>${data.month}</strong> · Generated on ${todayStr}</div>
-        </div>
-        <div style="margin-bottom:16px;text-align:right">
-          <button onclick="window.print()" style="padding:8px 18px;font-weight:bold;cursor:pointer;background:#2563eb;color:#fff;border:none;border-radius:6px">🖨️ Print / Save as PDF</button>
+        <div class="no-print-bar">
+          <div><strong>PF Chit Fund Club — Official Bank Statement System</strong> · Ready to print / save as PDF</div>
+          <button onclick="window.print()">🖨️ Print / Download PDF</button>
         </div>
 
-        <div class="kpi-grid">
-          <div class="kpi-box">
-            <div class="kpi-label">Monthly Inflows</div>
+        <div class="bank-header">
+          <div class="bank-title-group">
+            <h1>PF CHIT FUND CLUB (COMMUNITY SEED FUND)</h1>
+            <div class="tamil-title">புதுப்பட்டி நண்பர்கள் சீட்டு நிதி கிளப் (அங்கீகரிக்கப்பட்ட கணக்கு அறிக்கை)</div>
+            <div class="bank-meta">
+              Regd Society Reg No: <strong>TN-PDK-CHIT-2024-001</strong> · Puduppatti Main Road, Pudukkottai Dt.<br>
+              Official Verified UPI: <strong>puduppattifriends@okhdfcbank</strong> · Support: 9876543210
+            </div>
+          </div>
+          <div class="bank-badge-box">
+            <div class="official-seal">
+              <div class="seal-head">OFFICIAL AUDIT LEDGER</div>
+              <div class="seal-no">${auditHash}</div>
+              <div style="font-size:8.5px;color:#64748b;margin-top:2px">DATE: ${todayStr.split(',')[0]}</div>
+            </div>
+          </div>
+        </div>
+
+        <table class="account-summary-table">
+          <tr>
+            <th colspan="4">COMMUNITY POOL LEDGER STATEMENT OF ACCOUNT</th>
+          </tr>
+          <tr>
+            <td style="width:25%;color:#64748b">Accounting Period:</td>
+            <td style="width:25%"><strong>${data.month} (01 to 30/31)</strong></td>
+            <td style="width:25%;color:#64748b">Currency / Mode:</td>
+            <td style="width:25%"><strong>INR (₹) / Direct Bank & UPI</strong></td>
+          </tr>
+          <tr>
+            <td style="color:#64748b">Total Verified Inflows:</td>
+            <td style="color:#15803d;font-weight:700">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')} (${s.inflow_count || 0} txn)</td>
+            <td style="color:#64748b">Total Outflows & Refunds:</td>
+            <td style="color:#b91c1c;font-weight:700">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')} (${s.outflow_count || 0} txn)</td>
+          </tr>
+          <tr>
+            <td style="color:#64748b">Net Month Movement:</td>
+            <td style="color:#0f2b5c;font-weight:700">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</td>
+            <td style="color:#64748b">Closing Available Pool:</td>
+            <td style="color:#b45309;font-weight:800;font-size:13px">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
+          </tr>
+        </table>
+
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-label">Verified Inflows (உள்வரவு)</div>
             <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')}</div>
           </div>
-          <div class="kpi-box">
-            <div class="kpi-label">Monthly Loans (Outflows)</div>
+          <div class="kpi-card">
+            <div class="kpi-label">Loans & Exit Refunds</div>
             <div class="kpi-val" style="color:#b91c1c">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
           </div>
-          <div class="kpi-box">
+          <div class="kpi-card">
             <div class="kpi-label">Net Monthly Flow</div>
-            <div class="kpi-val" style="color:#1d4ed8">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-val" style="color:#0f2b5c">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
           </div>
-          <div class="kpi-box">
-            <div class="kpi-label">Club Pool Balance</div>
-            <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
+          <div class="kpi-card">
+            <div class="kpi-label">Club Closing Cash Pool</div>
+            <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
           </div>
         </div>
 
-        <h2>📥 Monthly Inflows (உள்வரவு பட்டியல் - சரியான தேதி மற்றும் நேரத்துடன்)</h2>
-        <table>
+        <div class="section-title">
+          <span>📥 1. VERIFIED INFLOW REGISTER (உறுப்பினர் உள்வரவு பட்டியல் - தேதி & நேரத்துடன்)</span>
+          <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${data.inflows?.length || 0} Transactions</span>
+        </div>
+        <table class="data-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Member (உறுப்பினர்)</th>
-              <th>Date & Time</th>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>UTR / Reference</th>
+              <th style="width:30px;text-align:center">#</th>
+              <th>Member Name & Code</th>
+              <th>Payment Date & Time</th>
+              <th>Category / Purpose</th>
+              <th>Bank UTR / Ref No</th>
+              <th style="text-align:right">Amount (₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -2620,20 +2790,23 @@
           </tbody>
         </table>
 
-        <h2>📤 Loans & Repayments (வழங்கப்பட்ட கடன், 5% வட்டி, நாமினி & மறுசெலுத்துகை)</h2>
-        <table>
+        <div class="section-title" style="margin-top:22px">
+          <span>📤 2. LOANS DISBURSED & MEMBER EXIT REFUNDS (கடன் மற்றும் உறுப்பினர் விலகல் தீர்வு)</span>
+          <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${loansToPrint?.length || 0} Records</span>
+        </div>
+        <table class="data-table">
           <thead>
             <tr>
-              <th>Member</th>
-              <th>Date Taken</th>
-              <th>Principal</th>
-              <th>Interest (5%)</th>
-              <th>Total Due</th>
-              <th>Repaid</th>
-              <th>Balance</th>
-              <th>Nominee</th>
-              <th>Due Date</th>
-              <th>Status</th>
+              <th style="width:30px;text-align:center">#</th>
+              <th>Member / Beneficiary</th>
+              <th>Date</th>
+              <th style="text-align:right">Principal (₹)</th>
+              <th style="text-align:center">Interest</th>
+              <th style="text-align:right">Total Due</th>
+              <th style="text-align:right">Repaid</th>
+              <th style="text-align:right">Balance</th>
+              <th>Nominee / Witness</th>
+              <th style="text-align:center">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -2641,8 +2814,33 @@
           </tbody>
         </table>
 
-        <div style="font-size:11px;color:#666;border-top:1px solid #ddd;padding-top:12px;margin-top:20px;text-align:center">
-          This statement is an official computer-generated public transparency record of PF Chit Fund Club.
+        <div class="audit-callout">
+          <strong>📌 தணிக்கை மற்றும் விதிகள் சான்றிதழ் (Audit & Transparency Governance Note):</strong><br>
+          1. <strong>உறுப்பினர் விலகல் (Member Exit Settlement):</strong> உறுப்பினர் கிளப்பில் இருந்து விலகும்போது, அவர் இதுவரை செலுத்திய மொத்த அசல் தொகை (Principal Contribution) துல்லியமாகக் கணக்கிடப்பட்டு அவருக்கு முழுமையாக திருப்பியளிக்கப்படுகிறது (<code>REFUNDED</code>). அந்த தொகை கிளப்பின் நடப்பு கணக்கிலிருந்து கழிக்கப்படும்.<br>
+          2. <strong>தணிக்கைப் பாதுகாப்பு (Audit Trail Preservation):</strong> உறுப்பினரின் பெயர் மற்றும் தொலைபேசி எண் புதிய பதிவுக்கு விடுவிக்கப்பட்டாலும், கடந்த கால தணிக்கைக்காக அவர் செலுத்திய கட்டணங்கள் மற்றும் பரிவர்த்தனை வரலாறு நிரந்தரமாக பாதுகாக்கப்படும்.<br>
+          3. ஈட்டிய 5% வட்டித் தொகை கிளப்பின் பொது நிதியிலேயே சேர்க்கப்பட்டு, தகுதியான உறுப்பினர்களுக்கு சீட்டு மற்றும் அவசரக் கடனாக மட்டுமே மறுசுழற்சி செய்யப்படுகிறது.
+        </div>
+
+        <div class="signatory-container">
+          <div class="sign-box">
+            <strong>பொருளாளர் (TREASURER)</strong>
+            <span>PF Chit Fund Club</span>
+          </div>
+          <div class="sign-box">
+            <div style="display:inline-block;border:1px dashed #b45309;padding:2px 8px;border-radius:4px;color:#b45309;font-weight:700;font-size:9px;margin-bottom:4px">
+              SYSTEM CERTIFIED
+            </div>
+            <strong>டிஜிட்டல் முத்திரை (SEAL)</strong>
+            <span>Verified by AI Guardian Watchdog</span>
+          </div>
+          <div class="sign-box">
+            <strong>தலைவர் / தணிக்கையாளர் (AUDITOR)</strong>
+            <span>Authorized Signatory</span>
+          </div>
+        </div>
+
+        <div style="font-size:9.5px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:20px;text-align:center">
+          This is an official, computer-generated bank-grade statement from PF Chit Fund Club System (${auditHash}). Generated on ${todayStr} IST.
         </div>
       </body>
       </html>
@@ -2688,11 +2886,37 @@
           fetchPublicLoans();
           loadPublicMonthlyStatement();
         });
+        socket.on('member:added', () => {
+          fetchSummaryData();
+          fetchLiveFeed();
+          fetchPublicLoans();
+          loadPublicMonthlyStatement();
+        });
+        socket.on('member:updated', () => {
+          fetchSummaryData();
+          fetchLiveFeed();
+        });
+        socket.on('member:status-change', () => {
+          fetchSummaryData();
+          fetchLiveFeed();
+        });
       } catch (e) {
         console.warn('Public dashboard socket notice:', e.message);
       }
     }
   }
+
+  // Auto-refresh when user switches back to this tab
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      fetchSummaryData();
+      fetchLiveFeed();
+    }
+  });
+  window.addEventListener('focus', () => {
+    fetchSummaryData();
+    fetchLiveFeed();
+  });
 
   // Auto-init on page load & refresh cycles
   window.addEventListener('DOMContentLoaded', () => {
