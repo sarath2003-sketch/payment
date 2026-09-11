@@ -417,6 +417,19 @@ function seedInitialDataIfEmpty(db) {
         db.run(`INSERT OR IGNORE INTO admin_users (username, password_hash, email, status) VALUES (?, ?, ?, ?)`, [a.username, a.password_hash, a.email, a.status]);
       });
     }
+    if (data.monthly_payments && data.monthly_payments.length > 0) {
+      db.get("SELECT count(*) as cnt FROM monthly_payments", (err, row) => {
+        if (!err && (!row || row.cnt === 0)) {
+          data.monthly_payments.forEach(p => {
+            db.run(
+              `INSERT OR IGNORE INTO monthly_payments (id, member_id, year, month, amount_due, amount_paid, status, due_date) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [p.id, p.member_id, p.year, p.month, p.amount_due, p.amount_paid, p.status, p.due_date]
+            );
+          });
+        }
+      });
+    }
   } catch (e) {
     console.warn('[DB Auto-Seed Error]', e.message);
   }
