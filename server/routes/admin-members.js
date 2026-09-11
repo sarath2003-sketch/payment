@@ -4,6 +4,7 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const aiAgentService = require('../services/aiAgentService');
 
 function saveBase64Image(dataStr, prefix = 'profile') {
   if (!dataStr || typeof dataStr !== 'string' || !dataStr.startsWith('data:image/')) return dataStr;
@@ -118,175 +119,43 @@ router.post('/agent/heal-now', async (req, res) => {
 
 /**
  * POST /api/admin/members/ai-copilot
- * Intelligent Voice & Text Assistant for Admin with full action permissions
+ * Intelligent 2-way Voice & Text Assistant for Admin with full action permissions
  */
 router.post('/ai-copilot', async (req, res) => {
   try {
-    const { query = '', language = 'ta' } = req.body;
-    const cleanQuery = String(query).trim().toLowerCase();
-    const reconciler = req.app.get('reconcileService');
+    const { query = '', sessionId = 'admin-main', language = 'ta' } = req.body;
     const io = req.app.get('io');
+    const adminUser = req.admin || { username: 'admin' };
 
-    let response = {
-      action: 'INFO',
-      query: query,
-      replyText: '',
-      speechText: '',
-      executed: false,
-      data: null
-    };
+    const result = await aiAgentService.processQuery({
+      query,
+      sessionId,
+      adminUser,
+      io
+    });
 
-    if (!cleanQuery) {
-      response.replyText = 'நான் உங்கள் தமிழ் AI உதவியாளர். நீங்கள் வாய்ஸ் அல்லது டெக்ஸ்ட் மூலம் என்னிடம் கட்டளையிடலாம் (எ.கா: "எரர் செக் பண்ணு", "டார்க் தீம் மாத்து", "கலெக்ஷன் எவ்ளோ").';
-      response.speechText = 'வணக்கம்! நான் உங்கள் தமிழ் ஏஐ அசிஸ்டென்ட். எரர் செக் பண்ண, தீம் மாற்ற அல்லது கணக்கு பார்க்க என்னிடம் சொல்லுங்கள்.';
-      return res.json(response);
-    }
-
-    // 1. Error Check & Auto-Healing / Bug Fixes
-    if (
-      cleanQuery.includes('எரர்') || cleanQuery.includes('error') || 
-      cleanQuery.includes('சரி') || cleanQuery.includes('fix') || 
-      cleanQuery.includes('பக்') || cleanQuery.includes('bug') || 
-      cleanQuery.includes('ஹீல்') || cleanQuery.includes('heal') ||
-      cleanQuery.includes('செக்') || cleanQuery.includes('check') ||
-      cleanQuery.includes('ஸ்கேன்') || cleanQuery.includes('scan') ||
-      cleanQuery.includes('டேட்டாபேஸ்') || cleanQuery.includes('database') ||
-      cleanQuery.includes('வெரிஃபை') || cleanQuery.includes('verify')
-    ) {
-      const healResult = reconciler ? await reconciler.reconcileNow(io, true) : null;
-      const diag = reconciler ? await reconciler.getDiagnostics() : null;
-
-      const orphans = diag?.integrity?.orphaned_records || 0;
-      const latency = diag?.database?.latency_ms || 0;
-      const healthScore = diag?.health_score || 100;
-
-      response.action = 'EXECUTE_HEAL';
-      response.executed = true;
-      response.data = { healResult, diag };
-      response.replyText = `🛡️ **சிஸ்டம் ஆய்வு & தன்னாட்சி குணப்படுத்தல் (Self-Healing) முடிந்தது!**\n\n• சிஸ்டம் ஆரோக்கியம்: **${healthScore}% (Health Index)**\n• டேட்டாபேஸ் லேட்டன்சி: **${latency}ms**\n• அனாதை பதிவுகள் (Orphans): **${orphans} கண்டறியப்பட்டது (Clean)**\n• லெட்ஜர் இருப்பு: **100% சமன் செய்யப்பட்டது (Balanced)**\n• முடிவு: சிஸ்டம் 100% ஆரோக்கியமாக இயங்குகிறது!`;
-      response.speechText = `சிஸ்டம் முழுமையாக ஸ்கேன் செய்யப்பட்டு பிழைகள் சரிசெய்யப்பட்டன. டேட்டாபேஸ் ஆரோக்கியம் நூறு சதவீதம். அனாதை பதிவுகள் ஏதுமில்லை.`;
-      return res.json(response);
-    }
-
-    // 2. Theme Switching
-    if (
-      cleanQuery.includes('தீம்') || cleanQuery.includes('theme') || 
-      cleanQuery.includes('கலர்') || cleanQuery.includes('color') || 
-      cleanQuery.includes('டார்க்') || cleanQuery.includes('லைட்') || 
-      cleanQuery.includes('கோல்ட்') || cleanQuery.includes('gold') ||
-      cleanQuery.includes('எமரால்ட்') || cleanQuery.includes('emerald') ||
-      cleanQuery.includes('ப்ளூ') || cleanQuery.includes('blue')
-    ) {
-      let targetTheme = 'dark';
-      let themeTamilName = 'டார்க் தீம் (Obsidian Dark)';
-
-      if (cleanQuery.includes('லைட்') || cleanQuery.includes('light') || cleanQuery.includes('வெள்ளை')) {
-        targetTheme = 'light';
-        themeTamilName = 'லைட் தீம் (Clean Pearl White)';
-      } else if (cleanQuery.includes('கோல்ட்') || cleanQuery.includes('gold') || cleanQuery.includes('தங்கம்')) {
-        targetTheme = 'gold';
-        themeTamilName = 'ராயல் கோல்ட் தீம் (Imperial Gold)';
-      } else if (cleanQuery.includes('எமரால்ட்') || cleanQuery.includes('emerald') || cleanQuery.includes('பச்சை') || cleanQuery.includes('green')) {
-        targetTheme = 'emerald';
-        themeTamilName = 'எமரால்ட் கிரீன் தீம் (Emerald Forest)';
-      } else if (cleanQuery.includes('சபையர்') || cleanQuery.includes('sapphire') || cleanQuery.includes('ப்ளூ') || cleanQuery.includes('blue') || cleanQuery.includes('நீலம்')) {
-        targetTheme = 'sapphire';
-        themeTamilName = 'சபையர் ப்ளூ தீம் (Deep Sapphire)';
-      } else if (cleanQuery.includes('மிட்நைட்') || cleanQuery.includes('midnight') || cleanQuery.includes('கருப்பு')) {
-        targetTheme = 'midnight';
-        themeTamilName = 'மிட்நைட் பிளாக் தீம் (Midnight OLED)';
-      }
-
-      response.action = 'CHANGE_THEME';
-      response.executed = true;
-      response.data = { theme: targetTheme, themeName: themeTamilName };
-      response.replyText = `🎨 **தீம் மாற்றப்பட்டது!**\n\nஅட்மின் போர்ட்டலின் காட்சி அமைப்பு **${themeTamilName}** ஆக மாற்றப்பட்டது.`;
-      response.speechText = `அட்மின் போர்ட்டல் தீம் ${themeTamilName} ஆக மாற்றப்பட்டது.`;
-      return res.json(response);
-    }
-
-    // 3. Financial & Collection Stats
-    if (
-      cleanQuery.includes('கலெக்ஷன்') || cleanQuery.includes('collection') ||
-      cleanQuery.includes('பேலன்ஸ்') || cleanQuery.includes('balance') ||
-      cleanQuery.includes('பணம்') || cleanQuery.includes('தொகை') ||
-      cleanQuery.includes('கணக்கு') || cleanQuery.includes('நிதி') ||
-      cleanQuery.includes('fund') || cleanQuery.includes('money')
-    ) {
-      const statsRes = await pool.query(`
-        SELECT 
-          COUNT(CASE WHEN deleted_at IS NULL AND status = 'ACTIVE' THEN 1 END) AS active_members,
-          COALESCE((SELECT SUM(amount) FROM payment_proofs WHERE status = 'APPROVED'), 0) AS total_collected,
-          COALESCE((SELECT SUM(amount) FROM withdrawals WHERE reason = 'MEMBER_EXIT_REFUND'), 0) AS total_refunded_exited,
-          COALESCE((SELECT SUM(principal_amount) FROM seed_fund_distributions), 0) AS total_loans_given,
-          COALESCE((SELECT SUM(interest_amount) FROM seed_fund_distributions), 0) AS total_interest_earned,
-          COALESCE((SELECT SUM(payment_amount) FROM repayments WHERE status = 'COMPLETED'), 0) AS total_repaid
-        FROM members
-      `);
-      const row = statsRes.rows[0] || {};
-      const coll = parseFloat(row.total_collected || 0);
-      const refunded = parseFloat(row.total_refunded_exited || 0);
-      const loans = parseFloat(row.total_loans_given || 0);
-      const repaid = parseFloat(row.total_repaid || 0);
-      const interest = parseFloat(row.total_interest_earned || 0);
-      const currentBalance = Math.max(0, Math.round((coll + repaid - loans - refunded) * 100) / 100);
-
-      response.action = 'SHOW_FINANCE';
-      response.executed = true;
-      response.data = { totalCollected: coll, currentBalance, activeMembers: row.active_members || 0, totalRefunded: refunded };
-      response.replyText = `💰 **கிளப் நிதி நிலவரம் (Live Club Financials):**\n\n• மொத்த வசூல் (Approved Inflow): **₹${coll.toLocaleString('en-IN')}**\n• கையிருப்பு நிதி (Available Balance): **₹${currentBalance.toLocaleString('en-IN')}**\n• ஆக்டிவ் உறுப்பினர்கள்: **${row.active_members || 0} பேர்**\n• விலகிய உறுப்பினர்களுக்கு திருப்பியளித்த அசல்: **₹${refunded.toLocaleString('en-IN')}**\n• வழங்கப்பட்ட கடன்: **₹${loans.toLocaleString('en-IN')}** (ஈட்டிய வட்டி: ₹${interest.toLocaleString('en-IN')})`;
-      response.speechText = `கிளப்பின் மொத்த வசூல் ரூபாய் ${coll}. கையிருப்பு நிதி ரூபாய் ${currentBalance}. ஆக்டிவ் உறுப்பினர்கள் எண்ணிக்கை ${row.active_members} பேர்.`;
-      return res.json(response);
-    }
-
-    // 4. PDF Statement Request
-    if (
-      cleanQuery.includes('பிடிஎஃப்') || cleanQuery.includes('pdf') ||
-      cleanQuery.includes('ஸ்டேட்மென்ட்') || cleanQuery.includes('statement') ||
-      cleanQuery.includes('பிரிண்ட்') || cleanQuery.includes('print') ||
-      cleanQuery.includes('அறிக்கை') || cleanQuery.includes('பாஸ்புக்')
-    ) {
-      response.action = 'TRIGGER_PDF';
-      response.executed = true;
-      response.replyText = `📄 **வங்கி பாணி அதிகாரப்பூர்வ கணக்கு அறிக்கை (Bank-Grade PDF Statement):**\n\nசங்க பதிவு எண், UTR குறிப்பு எண், டிஜிட்டல் முத்திரை மற்றும் தணிக்கையாளர் கையொப்பத்துடன் அறிக்கை தயாராக உள்ளது. பிரிண்ட் விண்டோ திறக்கப்படுகிறது!`;
-      response.speechText = `அதிகாரப்பூர்வ வங்கி கணக்கு அறிக்கை பிடிஎஃப் தயாராக உள்ளது. இப்போது அச்சிடலாம்.`;
-      return res.json(response);
-    }
-
-    // 5. Navigation Commands (Members, Payments, Loans, Settings)
-    if (cleanQuery.includes('உறுப்பினர்') || cleanQuery.includes('member') || cleanQuery.includes('பதிவு')) {
-      response.action = 'NAVIGATE';
-      response.data = { page: 'members' };
-      response.replyText = `👥 **உறுப்பினர்கள் மேலாண்மை பக்கத்திற்கு செல்கிறீர்கள்...**`;
-      response.speechText = `உறுப்பினர்கள் பக்கம் திறக்கப்படுகிறது.`;
-      return res.json(response);
-    }
-
-    if (cleanQuery.includes('பேமெண்ட்') || cleanQuery.includes('payment') || cleanQuery.includes('பெண்டிங்') || cleanQuery.includes('அப்ரூவ்')) {
-      response.action = 'NAVIGATE';
-      response.data = { page: 'payments' };
-      response.replyText = `💳 **பேமெண்ட்கள் சரிபார்ப்பு பக்கத்திற்கு செல்கிறீர்கள்...**`;
-      response.speechText = `பேமெண்ட் சரிபார்ப்பு பக்கம் திறக்கப்படுகிறது.`;
-      return res.json(response);
-    }
-
-    if (cleanQuery.includes('செட்டிங்ஸ்') || cleanQuery.includes('settings') || cleanQuery.includes('upi') || cleanQuery.includes('கியூஆர்') || cleanQuery.includes('qr')) {
-      response.action = 'NAVIGATE';
-      response.data = { page: 'settings' };
-      response.replyText = `⚙️ **கிளப் மற்றும் UPI செட்டிங்ஸ் பக்கத்திற்கு செல்கிறீர்கள்...**`;
-      response.speechText = `செட்டிங்ஸ் பக்கம் திறக்கப்படுகிறது.`;
-      return res.json(response);
-    }
-
-    // Default Fallback
-    response.action = 'HELP';
-    response.replyText = `🤖 **வணக்கம்! நான் உங்கள் தமிழ் AI நிர்வாக உதவியாளர்.**\n\nநீங்கள் என்னிடம் கேட்கக்கூடிய சில கட்டளைகள்:\n1. *"எரர் செக் பண்ணி பக்ஸ் பிக்ஸ் பண்ணு"* (சுய-குணப்படுத்தும் ஸ்கேன்)\n2. *"டார்க் தீம் மாத்து"* அல்லது *"கோல்ட் தீம் போடு"* (தீம் மாற்றம்)\n3. *"கலெக்ஷன் எவ்ளோ, பேலன்ஸ் என்ன?"* (நிதி விவரம்)\n4. *"பேங்க் PDF ஸ்டேட்மென்ட் எடு"* (அதிகாரப்பூர்வ அறிக்கை)\n5. *"உறுப்பினர்கள் லிஸ்ட் காட்டு"* (நேவிகேஷன்)`;
-    response.speechText = `வணக்கம்! எரர் செக் செய்ய, தீம் மாற்ற அல்லது வங்கி கணக்கு அறிக்கை எடுக்க என்னிடம் சொல்லுங்கள்.`;
-    return res.json(response);
-
+    res.json(result);
   } catch (err) {
     console.error('AI Copilot Error:', err);
     res.status(500).json({ error: 'AI Copilot processing error: ' + err.message });
+  }
+});
+
+/**
+ * POST /api/admin/members/ai-copilot/set-api-key
+ * Store or update Google Gemini API key
+ */
+router.post('/ai-copilot/set-api-key', async (req, res) => {
+  try {
+    const { apiKey = '' } = req.body;
+    await pool.query(`
+      INSERT INTO app_settings (key, value, updated_at) VALUES ('gemini_api_key', $1, CURRENT_TIMESTAMP)
+      ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP
+    `, [apiKey.trim()]);
+
+    res.json({ success: true, message: 'Gemini API Key updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update Gemini API Key: ' + err.message });
   }
 });
 

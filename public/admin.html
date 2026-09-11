@@ -622,6 +622,38 @@
       gap: 8px;
     }
 
+    /* AI LIVING AVATAR & SOUND WAVES */
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    @keyframes thinkingSpin {
+      0% { transform: rotate(0deg); box-shadow: 0 0 15px #38bdf8; }
+      50% { transform: rotate(180deg); box-shadow: 0 0 30px #f59e0b; }
+      100% { transform: rotate(360deg); box-shadow: 0 0 15px #38bdf8; }
+    }
+    @keyframes speakingPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px #10b981; }
+      50% { transform: scale(1.08); box-shadow: 0 0 35px #34d399; }
+    }
+    @keyframes soundBarWave {
+      0%, 100% { height: 4px; }
+      50% { height: 18px; }
+    }
+    .avatar-listening {
+      animation: pulseRing 1.5s infinite !important;
+      border: 3px solid #34d399 !important;
+    }
+    .avatar-thinking {
+      animation: thinkingSpin 2s linear infinite !important;
+      border: 3px solid #38bdf8 !important;
+    }
+    .avatar-speaking {
+      animation: speakingPulse 1s ease-in-out infinite !important;
+      border: 3px solid #f59e0b !important;
+    }
+
     /* TABLES */
     .table-wrapper {
       overflow-x: auto;
@@ -2436,101 +2468,114 @@
     </div>
   </div>
 
-  <!-- 🎙️ TAMIL AI VOICE COPILOT MODAL -->
+  <!-- 🎙️ TAMIL AI VOICE COPILOT & AUTONOMOUS AGENT MODAL -->
   <div id="aiCopilotModal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:640px;width:95%;border:2px solid rgba(16,185,129,0.4);box-shadow:0 20px 50px rgba(0,0,0,0.7);background:var(--bg-card);border-radius:20px;overflow:hidden">
+    <div class="modal" style="max-width:720px;width:96%;height:90vh;max-height:850px;border:2px solid rgba(16,185,129,0.45);box-shadow:0 25px 60px rgba(0,0,0,0.8);background:var(--bg-card);border-radius:24px;overflow:hidden;display:flex;flex-direction:column">
       
-      <!-- Copilot Header -->
-      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(245,200,66,0.08));padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <!-- Copilot Top Header -->
+      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(245,200,66,0.1));padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 15px rgba(16,185,129,0.4)">
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 15px rgba(16,185,129,0.5)">
             🤖
           </div>
           <div>
             <div style="font-size:16px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
-              <span>தமிழ் AI நிர்வாக உதவியாளர்</span>
-              <span style="font-size:10px;background:rgba(16,185,129,0.2);color:#34d399;padding:2px 8px;border-radius:12px;font-weight:700">VOICE ACTIVE</span>
+              <span>தமிழ் Voice AI நிர்வாகி</span>
+              <span id="aiLiveModeBadge" style="font-size:10px;background:rgba(16,185,129,0.2);color:#34d399;padding:2px 8px;border-radius:12px;font-weight:700">READY</span>
             </div>
-            <div style="font-size:11px;color:var(--text-muted)">Autonomous Admin Voice & Command Agent</div>
+            <div style="font-size:11px;color:var(--text-muted)">Live Conversational Co-Pilot & Autonomous System Agent</div>
           </div>
         </div>
-        <button type="button" class="btn-secondary btn-sm" onclick="closeModal('aiCopilotModal')" style="padding:4px 10px;border-radius:50%;width:32px;height:32px">✕</button>
+
+        <div style="display:flex;align-items:center;gap:10px">
+          <!-- Live Walkie-Talkie Toggle -->
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;background:rgba(239,68,68,0.12);padding:4px 10px;border-radius:20px;border:1px solid rgba(239,68,68,0.3);font-size:11px;font-weight:700;color:#f87171" title="நேரலை தொடர் உரையாடல்: நீங்கள் பேசப்பேச தொடர்ந்து கேட்டு பதில் பேசும்">
+            <input type="checkbox" id="copilotLiveModeToggle" onchange="toggleCopilotLiveMode()" style="accent-color:#ef4444">
+            <span>🔴 நேரலை உரையாடல் (Live Call)</span>
+          </label>
+          <button type="button" class="btn-secondary btn-sm" onclick="clearCopilotChat()" title="அரட்டையை அழி / Clear History" style="padding:4px 8px;font-size:12px;border-radius:8px">🗑️</button>
+          <button type="button" class="btn-secondary btn-sm" onclick="toggleCopilotSettingsDrawer()" title="Gemini API Key அமைப்புகள்" style="padding:4px 8px;font-size:12px;border-radius:8px">⚙️</button>
+          <button type="button" class="btn-secondary btn-sm" onclick="closeAiCopilotModal()" style="padding:4px 10px;border-radius:50%;width:30px;height:30px">✕</button>
+        </div>
       </div>
 
-      <!-- Voice Interaction Stage -->
-      <div style="padding:22px;text-align:center">
-        
-        <!-- Big Pulse Mic Button -->
-        <div style="display:flex;justify-content:center;align-items:center;margin-bottom:16px;position:relative">
-          <div id="micPulseWave" class="hidden" style="position:absolute;width:96px;height:96px;border-radius:50%;border:2px solid #10b981;"></div>
-          <button id="copilotMicBtn" type="button" onclick="toggleVoiceRecognition()" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);border:3px solid #34d399;color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 25px rgba(16,185,129,0.4);transition:all 0.25s">
-            🎤
-          </button>
+      <!-- Optional Settings Drawer for Gemini API Key -->
+      <div id="copilotSettingsDrawer" class="hidden" style="background:var(--bg-surface);border-bottom:1px solid var(--border);padding:12px 20px;font-size:12px;flex-shrink:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <strong>⚡ Google Gemini LLM Engine Key (Optional):</strong>
+          <span style="color:var(--text-muted);font-size:11px">இயற்கையான தமிழ் உரையாடலுக்கு</span>
         </div>
-
-        <div id="copilotStatusText" style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px">
-          மைக் பட்டனை அழுத்தி தமிழில் பேசவும் (Click Mic & Speak in Tamil)
+        <div style="display:flex;gap:8px">
+          <input type="password" id="geminiApiKeyInput" placeholder="Enter Gemini API Key (AIzaSy...)" style="flex:1;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+          <button type="button" class="btn-primary btn-sm" onclick="saveGeminiApiKey()">சேமி / Save</button>
         </div>
+        <div id="geminiKeyStatus" style="font-size:11px;color:var(--text-dim);margin-top:4px">Key இல்லையெனில், அதிவேக உள்ளமைந்த தமிழ் NLP தானியங்கி இன்ஜின் இயங்கும்.</div>
+      </div>
 
-        <!-- Transcript & Response Display -->
-        <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;min-height:110px;max-height:220px;overflow-y:auto;margin-bottom:16px;font-size:13px;line-height:1.6">
-          <div id="copilotUserSpeech" style="color:var(--text-dim);font-style:italic;margin-bottom:8px">
-            🗣️ நீங்கள் பேசியது: <span id="copilotTranscript" style="color:var(--text);font-style:normal;font-weight:600">...</span>
+      <!-- Living AI Avatar & Dynamic Status Card -->
+      <div style="background:var(--bg-surface);padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-shrink:0">
+        <div id="aiLivingAvatar" style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 0 15px rgba(16,185,129,0.4);position:relative;flex-shrink:0;transition:all 0.3s">
+          <span id="avatarIcon">🤖</span>
+          <div id="avatarSoundBars" class="hidden" style="position:absolute;bottom:-6px;display:flex;gap:3px;align-items:flex-end;height:18px">
+            <span style="width:3px;height:12px;background:#34d399;border-radius:2px;animation:soundBarWave 0.5s infinite"></span>
+            <span style="width:3px;height:18px;background:#34d399;border-radius:2px;animation:soundBarWave 0.7s infinite 0.2s"></span>
+            <span style="width:3px;height:8px;background:#34d399;border-radius:2px;animation:soundBarWave 0.4s infinite 0.1s"></span>
           </div>
-          <div id="copilotAiReplyBox" style="color:var(--text);border-top:1px dashed var(--border);padding-top:10px;margin-top:8px">
-            🤖 <strong>AI பதில்:</strong> <span id="copilotReplyText" style="color:var(--text)">வணக்கம்! என்ன செய்ய வேண்டும் என்று தமிழில் சொல்லுங்கள். எரர் செக் செய்ய, தீம் மாற்ற அல்லது பேங்க் PDF அறிக்கை பெற நான் தயார்.</span>
+        </div>
+        <div style="flex:1">
+          <div id="copilotStatusText" style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:3px">
+            👋 வணக்கம்! நான் உங்கள் தமிழ் AI நிர்வாக உதவியாளர்.
+          </div>
+          <div id="copilotLiveSubtitle" style="font-size:11px;color:var(--text-muted)">
+            மைக் பட்டனை அழுத்திப் பேசலாம் அல்லது நேரலை சுவிட்சை ஆன் செய்து பேசலாம்.
           </div>
         </div>
+        <button id="copilotMicBtn" type="button" onclick="toggleVoiceRecognition()" style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);border:2px solid #34d399;color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(16,185,129,0.4);transition:all 0.2s" title="மைக் (பேசுங்கள்)">
+          🎤
+        </button>
+      </div>
 
-        <!-- Text Input Bar (Alternative to Mic) -->
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-          <input type="text" id="copilotTextInput" placeholder="அல்லது தமிழில் தட்டச்சு செய்யவும்... (எ.கா: எரர் செக் பண்ணு)" style="flex:1;padding:10px 14px;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px" onkeypress="if(event.key==='Enter')sendCopilotText()">
-          <button class="btn-primary btn-sm" type="button" onclick="sendCopilotText()" style="padding:10px 16px;background:#10b981;border-color:#059669">
+      <!-- Conversational Chat Stream -->
+      <div id="copilotChatStream" style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;background:var(--bg-card)">
+        <!-- Initial Welcome Message from Assistant -->
+        <div class="chat-msg-bot" style="display:flex;gap:10px;max-width:85%;align-self:flex-start">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+          <div style="background:var(--bg-surface);border:1px solid var(--border);padding:12px 16px;border-radius:16px 16px 16px 4px;font-size:13px;line-height:1.6;color:var(--text)">
+            வணக்கம்! நான் உங்கள் தமிழ் AI நிர்வாக உதவியாளர். உங்கள் கிளப்பின் கணக்குகள், அமைப்புகள் மற்றும் பிழைகளை நான் நிர்வகிக்கிறேன்.<br><br>
+            நீங்கள் என்னிடம்:<br>
+            • <em>"எரர் செக் பண்ணி பக்ஸ் பிக்ஸ் பண்ணு"</em><br>
+            • <em>"டார்க் தீம் அல்லது கோல்ட் தீம் மாத்து"</em><br>
+            • <em>"கலெக்ஷன் எவ்ளோ, பேலன்ஸ் என்ன?"</em><br>
+            • <em>"வங்கி PDF அறிக்கை எடு"</em><br>
+            என்று கேட்கலாம் அல்லது தொடர்ந்து பேச **'🔴 நேரலை தொடர் குரல்'** சுவிட்சை ஆன் செய்யலாம்!
+            
+            <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+              <button type="button" class="badge" onclick="runCopilotPrompt('எரர் செக் பண்ணி சரி பண்ணு')" style="cursor:pointer;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:4px 10px;border-radius:8px">🛡️ எரர் செக் & பிக்ஸ்</button>
+              <button type="button" class="badge" onclick="runCopilotPrompt('கோல்ட் தீம் போடு')" style="cursor:pointer;background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:4px 10px;border-radius:8px">👑 கோல்ட் தீம்</button>
+              <button type="button" class="badge" onclick="runCopilotPrompt('கலெக்ஷன் எவ்ளோ பேலன்ஸ் என்ன')" style="cursor:pointer;background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);padding:4px 10px;border-radius:8px">💰 நிதி நிலை</button>
+              <button type="button" class="badge" onclick="runCopilotPrompt('பேங்க் PDF ஸ்டேட்மென்ட் எடு')" style="cursor:pointer;background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:4px 10px;border-radius:8px">📄 வங்கி அறிக்கை</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text Input & Control Bar -->
+      <div style="background:var(--bg-surface);padding:12px 18px;border-top:1px solid var(--border);flex-shrink:0">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="copilotTextInput" placeholder="தமிழில் தட்டச்சு செய்யவும்... (எ.கா: எரர் செக் பண்ணு)" style="flex:1;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px" onkeypress="if(event.key==='Enter')sendCopilotText()">
+          <button class="btn-primary btn-sm" type="button" onclick="sendCopilotText()" style="padding:10px 18px;background:#10b981;border-color:#059669;border-radius:10px;font-weight:700">
             அனுப்பு
           </button>
         </div>
-
-        <!-- Quick One-Tap Action Chips -->
-        <div style="text-align:left">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px">
-            ⚡ Quick Commands / விரைவு கட்டளைகள்:
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--text-muted)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+              <input type="checkbox" id="copilotTtsToggle" checked> 🔊 ஆடியோ பதில் (TTS)
+            </label>
+            <span>• மைக் தமிழ் குரல்: <strong>ta-IN (தமிழ்)</strong></span>
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            <button type="button" class="badge" onclick="runCopilotPrompt('எரர் செக் பண்ணி சரி பண்ணு')" style="cursor:pointer;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:6px 12px;border-radius:8px">
-              🛡️ எரர் செக் & பக்ஸ் பிக்ஸ்
-            </button>
-            <button type="button" class="badge" onclick="runCopilotPrompt('டார்க் தீம் மாத்து')" style="cursor:pointer;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid rgba(245,200,66,0.3);padding:6px 12px;border-radius:8px">
-              🌙 டார்க் தீம்
-            </button>
-            <button type="button" class="badge" onclick="runCopilotPrompt('கோல்ட் தீம் போடு')" style="cursor:pointer;background:rgba(251,191,36,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.4);padding:6px 12px;border-radius:8px">
-              👑 கோல்ட் தீம்
-            </button>
-            <button type="button" class="badge" onclick="runCopilotPrompt('எமரால்ட் தீம் மாத்து')" style="cursor:pointer;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4);padding:6px 12px;border-radius:8px">
-              🌲 எமரால்ட் தீம்
-            </button>
-            <button type="button" class="badge" onclick="runCopilotPrompt('வங்கி PDF அறிக்கை தயார் பண்ணு')" style="cursor:pointer;background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:6px 12px;border-radius:8px">
-              📄 பேங்க் PDF அறிக்கை
-            </button>
-            <button type="button" class="badge" onclick="runCopilotPrompt('கிளப் பேலன்ஸ் மற்றும் கலெக்ஷன் எவ்ளோ')" style="cursor:pointer;background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);padding:6px 12px;border-radius:8px">
-              💰 கலெக்ஷன் & நிதி நிலை
-            </button>
-            <button type="button" class="badge" onclick="runCopilotPrompt('உறுப்பினர்கள் பக்கம் போ')" style="cursor:pointer;background:rgba(249,115,22,0.15);color:#fb923c;border:1px solid rgba(249,115,22,0.3);padding:6px 12px;border-radius:8px">
-              👥 உறுப்பினர்கள் பட்டியல்
-            </button>
-          </div>
+          <span id="copilotWordCount" style="color:var(--text-dim)">AI தயார் நிலையில் உள்ளது</span>
         </div>
-
-      </div>
-
-      <!-- Action Footer -->
-      <div style="background:var(--bg-surface);padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted)">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span>🔊 ஆடியோ பதில்:</span>
-          <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px">
-            <input type="checkbox" id="copilotTtsToggle" checked> பேசு (TTS Speech)
-          </label>
-        </div>
-        <button type="button" class="btn-secondary btn-sm" onclick="closeModal('aiCopilotModal')">மூடு / Close</button>
       </div>
 
     </div>
@@ -4219,10 +4264,77 @@
     }
 
     // ============================================================
-    // 🎙️ TAMIL AI VOICE COPILOT & AUTONOMOUS AGENT
+    // 🎙️ TAMIL AI VOICE COPILOT & AUTONOMOUS AGENT (2-WAY LIVE MODE)
     // ============================================================
     let copilotRecognition = null;
     let isCopilotListening = false;
+    let isCopilotLiveMode = false;
+    let isCopilotSpeaking = false;
+    let copilotSessionId = 'admin-live-session-' + Date.now();
+
+    function setAvatarState(state) {
+      const av = document.getElementById('aiLivingAvatar');
+      const icon = document.getElementById('avatarIcon');
+      const bars = document.getElementById('avatarSoundBars');
+      const status = document.getElementById('copilotStatusText');
+      const subtitle = document.getElementById('copilotLiveSubtitle');
+      if (!av) return;
+
+      av.classList.remove('avatar-listening', 'avatar-thinking', 'avatar-speaking');
+      if (bars) bars.classList.add('hidden');
+
+      if (state === 'listening') {
+        av.classList.add('avatar-listening');
+        if (icon) icon.textContent = '🎙️';
+        if (status) status.textContent = '🎙️ நீங்கள் பேசுவதை கவனிக்கிறேன்... (Listening in Tamil...)';
+        if (subtitle) subtitle.textContent = isCopilotLiveMode ? 'நேரலை உரையாடல்: பேசி முடித்ததும் தானாகச் செயல்படும்.' : 'தமிழில் பேசவும். பேசி முடித்ததும் AI செயல்படும்.';
+      } else if (state === 'thinking') {
+        av.classList.add('avatar-thinking');
+        if (icon) icon.textContent = '🧠';
+        if (status) status.textContent = '⚙️ சிந்திக்கிறது & செயலாக்குகிறது... (Thinking...)';
+        if (subtitle) subtitle.textContent = 'கட்டளையை ஆராய்ந்து கணினி மாற்றங்களை செய்கிறது...';
+      } else if (state === 'speaking') {
+        av.classList.add('avatar-speaking');
+        if (bars) bars.classList.remove('hidden');
+        if (icon) icon.textContent = '🗣️';
+        if (status) status.textContent = '🔊 AI பதிலளிக்கிறது... (Speaking...)';
+        if (subtitle) subtitle.textContent = isCopilotLiveMode ? 'பதில் முடிந்ததும் தானாக மீண்டும் மைக் ஆன் ஆகும்.' : 'பேச்சை நிறுத்த மைக் பட்டனை அழுத்தலாம்.';
+      } else {
+        // idle
+        if (icon) icon.textContent = '🤖';
+        if (status) status.textContent = '👋 தயார் நிலையில் உள்ளது. (AI Ready)';
+        if (subtitle) subtitle.textContent = isCopilotLiveMode ? 'நேரலை முறை தயார். தொடர்ந்து பேசலாம்.' : 'மைக் அழுத்திப் பேசலாம் அல்லது தட்டச்சு செய்யலாம்.';
+      }
+    }
+
+    function toggleCopilotLiveMode() {
+      const chk = document.getElementById('copilotLiveModeToggle');
+      isCopilotLiveMode = !!(chk && chk.checked);
+      const badge = document.getElementById('aiLiveModeBadge');
+      
+      if (isCopilotLiveMode) {
+        if (badge) {
+          badge.textContent = '🔴 LIVE CALL';
+          badge.style.background = 'rgba(239, 68, 68, 0.2)';
+          badge.style.color = '#f87171';
+        }
+        showToast('🔴 நேரலை தொடர் குரல் உரையாடல் தொடங்கப்பட்டது!', 'success');
+        speakCopilotText('நேரலை உரையாடல் தொடங்கியது. என்னிடம் பேசுங்கள்.', () => {
+          startVoiceListening();
+        });
+      } else {
+        if (badge) {
+          badge.textContent = 'READY';
+          badge.style.background = 'rgba(16, 185, 129, 0.2)';
+          badge.style.color = '#34d399';
+        }
+        if (copilotRecognition && isCopilotListening) {
+          try { copilotRecognition.stop(); } catch(e) {}
+        }
+        setAvatarState('idle');
+        showToast('நேரலை முறை நிறுத்தப்பட்டது.', 'info');
+      }
+    }
 
     function initSpeechRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -4238,44 +4350,74 @@
 
         r.onstart = () => {
           isCopilotListening = true;
-          const wave = document.getElementById('micPulseWave');
-          if (wave) wave.classList.remove('hidden');
-          const st = document.getElementById('copilotStatusText');
-          if (st) st.textContent = '🎙️ நீங்கள் பேசுவதை கவனிக்கிறேன்... (Listening in Tamil...)';
+          setAvatarState('listening');
         };
 
         r.onresult = (event) => {
-          let transcript = '';
+          let interimTranscript = '';
+          let finalTranscript = '';
           for (let i = event.resultIndex; i < event.results.length; ++i) {
-            transcript += event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
           }
-          const tBox = document.getElementById('copilotTranscript');
-          if (tBox) tBox.textContent = transcript;
 
-          if (event.results[0].isFinal) {
-            handleCopilotQuery(transcript);
+          const activeText = finalTranscript || interimTranscript;
+          if (activeText) {
+            const sub = document.getElementById('copilotLiveSubtitle');
+            if (sub) sub.textContent = '🗣️ "' + activeText + '"';
+          }
+
+          if (finalTranscript && finalTranscript.trim()) {
+            handleCopilotQuery(finalTranscript.trim());
           }
         };
 
         r.onerror = (event) => {
           console.warn('Speech recognition warning:', event.error);
           isCopilotListening = false;
-          const wave = document.getElementById('micPulseWave');
-          if (wave) wave.classList.add('hidden');
-          const st = document.getElementById('copilotStatusText');
-          if (st) st.textContent = 'மைக் அனுமதி அல்லது பிழை. கீழே உள்ள பெட்டியில் தட்டச்சு செய்யலாம்.';
+          setAvatarState('idle');
+          if (isCopilotLiveMode && event.error !== 'not-allowed') {
+            setTimeout(() => {
+              if (isCopilotLiveMode && !isCopilotSpeaking) startVoiceListening();
+            }, 1000);
+          }
         };
 
         r.onend = () => {
           isCopilotListening = false;
-          const wave = document.getElementById('micPulseWave');
-          if (wave) wave.classList.add('hidden');
+          if (!isCopilotSpeaking && !isCopilotLiveMode) {
+            setAvatarState('idle');
+          }
         };
 
         return r;
       } catch (e) {
         console.warn('Speech recognition init error:', e.message);
         return null;
+      }
+    }
+
+    function startVoiceListening() {
+      if (!copilotRecognition) {
+        copilotRecognition = initSpeechRecognition();
+      }
+      if (!copilotRecognition) return;
+      if (isCopilotSpeaking) {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        isCopilotSpeaking = false;
+      }
+      try {
+        copilotRecognition.start();
+      } catch (e) {
+        try {
+          copilotRecognition.stop();
+          setTimeout(() => {
+            try { copilotRecognition.start(); } catch(err) {}
+          }, 200);
+        } catch (err) {}
       }
     }
 
@@ -4287,53 +4429,145 @@
         showToast('Browser speech recognition not available. Please type below.', 'warning');
         return;
       }
+
+      // Barge-in: if AI is speaking, cancel speech and listen immediately
+      if (isCopilotSpeaking) {
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        isCopilotSpeaking = false;
+        startVoiceListening();
+        return;
+      }
+
       if (isCopilotListening) {
-        copilotRecognition.stop();
+        try { copilotRecognition.stop(); } catch(e) {}
+        setAvatarState('idle');
       } else {
-        try {
-          copilotRecognition.start();
-        } catch (e) {
-          copilotRecognition.stop();
-          setTimeout(() => {
-            try { copilotRecognition.start(); } catch(err) {}
-          }, 300);
-        }
+        startVoiceListening();
       }
     }
 
-    function speakCopilotText(text) {
-      if (!('speechSynthesis' in window)) return;
+    function speakCopilotText(text, onEndCallback = null) {
+      if (!('speechSynthesis' in window)) {
+        if (onEndCallback) onEndCallback();
+        return;
+      }
       const toggle = document.getElementById('copilotTtsToggle');
-      if (toggle && !toggle.checked) return;
+      if (toggle && !toggle.checked) {
+        if (onEndCallback) onEndCallback();
+        return;
+      }
 
       try {
         window.speechSynthesis.cancel();
-        const clean = text.replace(/[*#•]/g, '').trim();
+        const clean = text.replace(/[*#•_`~[\]()]/g, '').trim();
         const utterance = new SpeechSynthesisUtterance(clean);
         utterance.lang = 'ta-IN';
         utterance.rate = 1.0;
+
+        utterance.onstart = () => {
+          isCopilotSpeaking = true;
+          setAvatarState('speaking');
+        };
+
+        utterance.onend = () => {
+          isCopilotSpeaking = false;
+          if (onEndCallback) onEndCallback();
+        };
+
+        utterance.onerror = (e) => {
+          console.warn('TTS error:', e.error);
+          isCopilotSpeaking = false;
+          if (onEndCallback) onEndCallback();
+        };
+
         window.speechSynthesis.speak(utterance);
       } catch (e) {
         console.warn('TTS Speech error:', e.message);
+        isCopilotSpeaking = false;
+        if (onEndCallback) onEndCallback();
       }
+    }
+
+    function appendCopilotMessage(role, text, meta = {}) {
+      const stream = document.getElementById('copilotChatStream');
+      if (!stream) return;
+
+      const msgDiv = document.createElement('div');
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (role === 'user') {
+        msgDiv.className = 'chat-msg-user';
+        msgDiv.style.cssText = 'display:flex;gap:10px;max-width:85%;align-self:flex-end;flex-direction:row-reverse';
+        msgDiv.innerHTML = `
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0">👤</div>
+          <div style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(37,99,235,0.08));border:1px solid rgba(59,130,246,0.3);padding:10px 14px;border-radius:16px 16px 4px 16px;font-size:13px;line-height:1.5;color:var(--text)">
+            <div>${escapeHtml(text)}</div>
+            <div style="font-size:9.5px;color:var(--text-dim);text-align:right;margin-top:4px">${timeStr}</div>
+          </div>
+        `;
+      } else {
+        msgDiv.className = 'chat-msg-bot';
+        msgDiv.style.cssText = 'display:flex;gap:10px;max-width:88%;align-self:flex-start';
+
+        let formattedHtml = (text || '')
+          .replace(/\n/g, '<br>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/•\s*(.*?)(?=<br>|$)/g, '• <span>$1</span>');
+
+        let suggestionsHtml = '';
+        if (meta.suggestions && Array.isArray(meta.suggestions) && meta.suggestions.length > 0) {
+          suggestionsHtml = `
+            <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);display:flex;flex-wrap:wrap;gap:6px">
+              ${meta.suggestions.map(s => `
+                <button type="button" class="badge" onclick="runCopilotPrompt('${escapeHtml(s.prompt || s.label)}')" style="cursor:pointer;background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.3);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600">
+                  ${s.icon ? s.icon + ' ' : ''}${escapeHtml(s.label)}
+                </button>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        let badgeHtml = meta.action && meta.action !== 'GENERAL_REPLY' && meta.action !== 'HELP' 
+          ? `<span style="font-size:9.5px;font-weight:700;background:rgba(245,200,66,0.15);color:var(--gold);padding:2px 6px;border-radius:4px;border:1px solid rgba(245,200,66,0.3);margin-bottom:6px;display:inline-block">⚡ ${meta.action}</span><br>`
+          : '';
+
+        msgDiv.innerHTML = `
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+          <div style="background:var(--bg-surface);border:1px solid var(--border);padding:12px 16px;border-radius:16px 16px 16px 4px;font-size:13px;line-height:1.6;color:var(--text)">
+            ${badgeHtml}
+            <div>${formattedHtml}</div>
+            ${suggestionsHtml}
+            <div style="font-size:9.5px;color:var(--text-dim);margin-top:6px">${timeStr}</div>
+          </div>
+        `;
+      }
+
+      stream.appendChild(msgDiv);
+      stream.scrollTop = stream.scrollHeight;
     }
 
     async function handleCopilotQuery(query) {
       if (!query || !query.trim()) return;
-      const tBox = document.getElementById('copilotTranscript');
-      if (tBox) tBox.textContent = query;
+      const cleanQ = query.trim();
 
-      const st = document.getElementById('copilotStatusText');
-      if (st) st.textContent = '⚙️ செயலாக்குகிறது... (Processing your command...)';
+      // Cancel ongoing speech if user barged in
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      isCopilotSpeaking = false;
+
+      appendCopilotMessage('user', cleanQ);
+      setAvatarState('thinking');
 
       try {
-        const res = await api('/api/admin/members/ai-copilot', 'POST', { query: query, language: 'ta' });
-        const replyBox = document.getElementById('copilotReplyText');
-        if (replyBox) {
-          replyBox.innerHTML = (res.replyText || '').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        }
+        const res = await api('/api/admin/members/ai-copilot', 'POST', {
+          query: cleanQ,
+          sessionId: copilotSessionId,
+          language: 'ta'
+        });
 
-        if (st) st.textContent = '✅ கட்டளை நிறைவேற்றப்பட்டது! (Command Executed)';
+        appendCopilotMessage('assistant', res.replyText, {
+          action: res.action,
+          suggestions: res.suggestions
+        });
 
         // Autonomous Execution of Admin Actions
         if (res.action === 'CHANGE_THEME' && res.data?.theme) {
@@ -4343,21 +4577,45 @@
           showToast(`🎨 தீம் ${res.data.themeName || res.data.theme} ஆக மாற்றப்பட்டது!`, 'success');
         } else if (res.action === 'EXECUTE_HEAL') {
           await loadDashboard();
+          loadGuardianStatus();
           showToast('🛡️ சிஸ்டம் 100% சரிசெய்யப்பட்டது!', 'success');
         } else if (res.action === 'TRIGGER_PDF') {
           printMonthlyStatementAdmin();
           showToast('📄 அதிகாரப்பூர்வ வங்கி PDF அறிக்கை தயாராக உள்ளது!', 'success');
         } else if (res.action === 'NAVIGATE' && res.data?.page) {
           showPage(res.data.page);
+        } else if (res.action === 'UPDATE_SETTINGS') {
+          showToast('⚙️ அமைப்புகள் மாற்றப்பட்டது!', 'success');
+          loadDashboard();
+        } else if (res.action === 'GENERATE_DUES') {
+          showToast('📅 புதிய மாத தவணைகள் உருவாக்கப்பட்டன!', 'success');
+          loadDashboard();
         }
 
         // Voice speech feedback
         if (res.speechText) {
-          speakCopilotText(res.speechText);
+          speakCopilotText(res.speechText, () => {
+            if (isCopilotLiveMode) {
+              startVoiceListening();
+            } else {
+              setAvatarState('idle');
+            }
+          });
+        } else {
+          if (isCopilotLiveMode) {
+            startVoiceListening();
+          } else {
+            setAvatarState('idle');
+          }
         }
+
       } catch (err) {
-        if (st) st.textContent = '❌ பிழை: ' + err.message;
+        appendCopilotMessage('assistant', '❌ மன்னிக்கவும், பிழை ஏற்பட்டது: ' + err.message);
+        setAvatarState('idle');
         showToast('AI Copilot error: ' + err.message, 'error');
+        if (isCopilotLiveMode) {
+          setTimeout(() => startVoiceListening(), 1500);
+        }
       }
     }
 
@@ -4375,11 +4633,59 @@
       handleCopilotQuery(promptText);
     }
 
+    function clearCopilotChat() {
+      const stream = document.getElementById('copilotChatStream');
+      copilotSessionId = 'admin-live-session-' + Date.now();
+      if (stream) {
+        stream.innerHTML = `
+          <div class="chat-msg-bot" style="display:flex;gap:10px;max-width:85%;align-self:flex-start">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+            <div style="background:var(--bg-surface);border:1px solid var(--border);padding:12px 16px;border-radius:16px 16px 16px 4px;font-size:13px;line-height:1.6;color:var(--text)">
+              அரட்டை வரலாறு அழிக்கப்பட்டது. புதிய உரையாடலைத் தொடங்கலாம்!
+            </div>
+          </div>
+        `;
+      }
+      showToast('அரட்டை வரலாறு அழிக்கப்பட்டது.', 'info');
+    }
+
+    function toggleCopilotSettingsDrawer() {
+      const drawer = document.getElementById('copilotSettingsDrawer');
+      if (drawer) drawer.classList.toggle('hidden');
+    }
+
+    async function saveGeminiApiKey() {
+      const inp = document.getElementById('geminiApiKeyInput');
+      if (!inp) return;
+      const key = inp.value.trim();
+      try {
+        await api('/api/admin/members/ai-copilot/set-api-key', 'POST', { apiKey: key });
+        const st = document.getElementById('geminiKeyStatus');
+        if (st) st.textContent = '✅ Gemini API Key வெற்றிகரமாகச் சேமிக்கப்பட்டது!';
+        showToast('Gemini API Key சேமிக்கப்பட்டது!', 'success');
+      } catch (e) {
+        showToast('Key சேமிப்பதில் பிழை: ' + e.message, 'error');
+      }
+    }
+
     function openAiCopilotModal() {
       openModal('aiCopilotModal');
       if (!copilotRecognition) {
         copilotRecognition = initSpeechRecognition();
       }
+      setAvatarState('idle');
+    }
+
+    function closeAiCopilotModal() {
+      if (copilotRecognition && isCopilotListening) {
+        try { copilotRecognition.stop(); } catch(e) {}
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      isCopilotSpeaking = false;
+      isCopilotListening = false;
+      closeModal('aiCopilotModal');
     }
 
     // AI System Guardian Watchdog Methods
