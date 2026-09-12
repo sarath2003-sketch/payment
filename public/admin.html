@@ -1314,6 +1314,20 @@
         gap: 10px;
       }
     }
+
+    @media (max-width: 480px) {
+      body { overflow-x: hidden; }
+      .main-content { padding: 0; width: 100% !important; overflow-x: hidden; }
+      .page-content { padding: 10px 6px; width: 100%; overflow-x: hidden; }
+      .stats-grid { grid-template-columns: 1fr !important; gap: 10px; }
+      .card { padding: 12px; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
+      .form-row, .form-group-row, .filter-row { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
+      input, select, textarea { width: 100% !important; box-sizing: border-box !important; }
+      .modal-content { width: 95vw !important; max-width: 95vw !important; padding: 14px !important; margin: 10px auto !important; }
+      .table-wrapper { width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; display: block; }
+      table { min-width: 600px; }
+      .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-success { font-size: 13px; padding: 8px 12px; }
+    }
   </style>
 </head>
 

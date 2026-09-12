@@ -102,9 +102,13 @@ router.get(['/summary', '/'], async (req, res) => {
     // 5. Total Amount Given to Members
     const totalGivenToMembers = Math.round(totalDistributed * 100) / 100;
 
+    // Requirement 5 Financial Flow Variables
+    const availableAmount = Math.round((initialFundPool + totalReceivedFromMembers) * 100) / 100;
+    const amountAfterExpenses = Math.round((availableAmount - totalExpenses) * 100) / 100;
+
     // 6. Current Fund Balance / Available Cash Balance
     // Current Balance = Initial Pool + Total Received - Total Distributed - Total Withdrawn - Total Expenses
-    const currentBalance = Math.max(0, Math.round((initialFundPool + totalReceivedFromMembers - totalGivenToMembers - totalWithdrawn - totalExpenses) * 100) / 100);
+    const currentBalance = Math.max(0, Math.round((availableAmount - totalExpenses - totalGivenToMembers - totalWithdrawn) * 100) / 100);
 
     // 7. Total Fund Amount (Total Pool Value: Available Balance + Outstanding Funds Outside)
     const totalFundAmount = Math.round((currentBalance + amountOutsideFund) * 100) / 100;
@@ -144,14 +148,18 @@ router.get(['/summary', '/'], async (req, res) => {
         qr_path_versioned: qrPathVersioned
       },
       metrics: {
-        // Core Requested Figures
+        // Core Requested Figures (Requirement 5)
         initial_fund_pool: initialFundPool,
         total_fund_amount: totalFundAmount,
         total_collected: totalReceivedFromMembers,
         total_member_contributions: totalMemberContributions,
-        total_distributed: totalGivenToMembers,
-        total_refunded_to_exited: totalRefundedToExited,
+        available_amount: availableAmount,
         total_expenses: totalExpenses,
+        amount_after_expenses: amountAfterExpenses,
+        distributed_amount: totalGivenToMembers,
+        total_distributed: totalGivenToMembers,
+        remaining_balance: currentBalance,
+        total_refunded_to_exited: totalRefundedToExited,
         total_available: currentBalance,
         current_balance: currentBalance,
         total_members: totalMembers,

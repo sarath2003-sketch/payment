@@ -8,7 +8,7 @@ const router = express.Router();
  * GET ALL GROUPS
  * GET /api/groups
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get(['/', '/public'], async (req, res) => {
   try {
     const groupsRes = await pool.query(`
       SELECT g.*, 

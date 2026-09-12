@@ -5,7 +5,7 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Get all transactions with filters
-router.get('/', authenticateToken, async (req, res) => {
+router.get(['/', '/public'], async (req, res) => {
   try {
     const { month, member_id, transaction_type, startDate, endDate } = req.query;
     let query = `
@@ -21,7 +21,7 @@ router.get('/', authenticateToken, async (req, res) => {
         t.description,
         t.balance_after
       FROM transactions t
-      JOIN members m ON t.member_id = m.id
+      LEFT JOIN members m ON t.member_id = m.id
       WHERE 1=1
     `;
     const params = [];

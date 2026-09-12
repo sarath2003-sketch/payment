@@ -8,8 +8,18 @@ const router = express.Router();
  * GET ALL REPAYMENTS
  * GET /api/repayments
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get(['/', '/public'], async (req, res) => {
   try {
+    let user = null;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this-in-production');
+      } catch(e) {}
+    }
+
     let sql = `
       SELECT r.*, m.name as member_name, m.member_id as member_code, d.principal_amount, d.total_payable
       FROM repayments r
@@ -18,9 +28,9 @@ router.get('/', authenticateToken, async (req, res) => {
     `;
     let params = [];
 
-    if (req.admin && req.admin.type === 'member') {
+    if (user && user.type === 'member') {
       sql += ` WHERE r.member_id = $1`;
-      params.push(req.admin.id);
+      params.push(user.id);
     }
 
     sql += ` ORDER BY r.id DESC`;

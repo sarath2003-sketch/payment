@@ -959,17 +959,38 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-    /* ====== RESPONSIVE MEDIA QUERIES ====== */
+    /* ====== FULL RESPONSIVE MEDIA QUERIES (320px - 768px) ====== */
     @media (max-width: 768px) {
-      .dashboard-container { padding: 16px 12px 40px; }
+      body { overflow-x: hidden; }
+      .dashboard-container { padding: 12px 8px 40px; width: 100%; max-width: 100vw; overflow-x: hidden; }
       .universal-portal-bar { flex-direction: column; align-items: stretch; gap: 10px; }
-      .upb-tabs { justify-content: center; }
-      header { padding: 16px; flex-direction: column; align-items: flex-start; }
-      .brand-title { font-size: 19px; }
-      .card-value { font-size: 26px; }
-      .svg-chart-container { height: 180px; gap: 12px; }
+      .upb-tabs { justify-content: center; flex-wrap: wrap; gap: 6px; }
+      .upb-tab { font-size: 12px; padding: 6px 10px; }
+      header { padding: 14px; flex-direction: column; align-items: stretch; gap: 12px; }
+      .brand-group { flex-direction: row; align-items: center; }
+      .brand-title { font-size: 18px; }
+      .brand-subtitle { font-size: 12px; }
+      .header-actions { flex-direction: row; flex-wrap: wrap; width: 100%; justify-content: space-between; gap: 8px; }
+      .summary-grid { grid-template-columns: 1fr !important; gap: 10px; }
+      .stat-card { padding: 14px; width: 100%; box-sizing: border-box; }
+      .card-value { font-size: 24px; }
+      .svg-chart-container { height: 180px; gap: 8px; }
       .progress-card-grid { grid-template-columns: 1fr; }
-      .feed-header-row { flex-direction: column; align-items: flex-start; }
+      .feed-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .feed-filters { width: 100%; overflow-x: auto; display: flex; gap: 6px; padding-bottom: 4px; }
+      .filter-chip { font-size: 12px; padding: 6px 10px; flex-shrink: 0; }
+      .table-responsive, .feed-table-card { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: block; }
+      table { width: 100%; min-width: 600px; }
+      .stats-table { min-width: 100%; }
+      .bvb-values { font-size: 11px; flex-wrap: wrap; }
+      .modal-content { max-width: 95vw; padding: 16px; margin: 10px; }
+    }
+
+    @media (max-width: 414px) {
+      .dashboard-container { padding: 8px 6px 30px; }
+      .brand-title { font-size: 16px; }
+      .card-value { font-size: 22px; }
+      .nav-link-btn, .btn { width: 100%; justify-content: center; font-size: 13px; text-align: center; }
     }
   </style>
 </head>
@@ -1079,31 +1100,19 @@
       </div>
     </div>
 
-    <!-- 2. Total Collected / Received From Members -->
+    <!-- 2. Available Amount -->
     <div class="stat-card card-emerald">
       <div class="card-top">
-        <span class="card-label" id="lblTotalCollected">Total Amount Received</span>
+        <span class="card-label" id="lblTotalCollected">Available Amount (வரவு தொகை)</span>
         <div class="card-icon">📥</div>
       </div>
       <div class="card-value emerald" id="valTotalCollected">₹0</div>
       <div class="card-subtext">
-        <span>✅ Total member payments & repayments</span>
+        <span>✅ Total collections & repayments</span>
       </div>
     </div>
 
-    <!-- 3. Total Distributed / Given to Members -->
-    <div class="stat-card card-blue">
-      <div class="card-top">
-        <span class="card-label" id="lblTotalDistributed">Total Amount Distributed</span>
-        <div class="card-icon">📤</div>
-      </div>
-      <div class="card-value blue" id="valTotalDistributed">₹0</div>
-      <div class="card-subtext">
-        <span>🤝 Total given to members as seed funds</span>
-      </div>
-    </div>
-
-    <!-- 3b. Total Expenses (செலவு கணக்கு) -->
+    <!-- 3. Total Expenses (செலவு கணக்கு) -->
     <div class="stat-card" style="border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.05)">
       <div class="card-top">
         <span class="card-label" id="lblTotalExpenses" style="color:#ef4444;font-weight:700">Total Expenses (செலவு கணக்கு)</span>
@@ -1115,10 +1124,34 @@
       </div>
     </div>
 
-    <!-- 4. Current Available Fund Balance -->
+    <!-- 3c. Amount After Expenses -->
+    <div class="stat-card" style="border-color:rgba(245,200,66,0.35);background:rgba(245,200,66,0.05)">
+      <div class="card-top">
+        <span class="card-label" style="color:var(--gold);font-weight:700">Amount After Expenses</span>
+        <div class="card-icon">🧮</div>
+      </div>
+      <div class="card-value" id="valAmountAfterExpenses" style="color:var(--gold);font-weight:800">₹0</div>
+      <div class="card-subtext">
+        <span style="color:var(--text2)">Available Amount - Total Expenses</span>
+      </div>
+    </div>
+
+    <!-- 4. Distributed Amount -->
+    <div class="stat-card card-blue">
+      <div class="card-top">
+        <span class="card-label" id="lblTotalDistributed">Distributed Amount (வழங்கியது)</span>
+        <div class="card-icon">📤</div>
+      </div>
+      <div class="card-value blue" id="valTotalDistributed">₹0</div>
+      <div class="card-subtext">
+        <span>🤝 Total given to members as seed funds</span>
+      </div>
+    </div>
+
+    <!-- 5. Remaining Balance / கையிருப்பு தொகை -->
     <div class="stat-card card-purple">
       <div class="card-top">
-        <span class="card-label" id="lblCurrentBalance">Current Fund Balance</span>
+        <span class="card-label" id="lblCurrentBalance">Remaining Balance / கையிருப்பு தொகை</span>
         <div class="card-icon">🏦</div>
       </div>
       <div class="card-value purple" id="valCurrentBalance">₹0</div>
@@ -2179,12 +2212,15 @@
   function renderDashboard(m) {
     // 1. Core Summary Cards
     document.getElementById('valTotalFund').textContent = formatINR(m.total_fund_amount);
-    document.getElementById('valTotalCollected').textContent = formatINR(m.total_collected);
-    document.getElementById('valTotalDistributed').textContent = formatINR(m.total_distributed);
+    document.getElementById('valTotalCollected').textContent = formatINR(m.available_amount || m.total_collected);
+    document.getElementById('valTotalDistributed').textContent = formatINR(m.distributed_amount || m.total_distributed);
     if (document.getElementById('valTotalExpenses')) {
       document.getElementById('valTotalExpenses').textContent = `-₹${parseFloat(m.total_expenses || 0).toLocaleString('en-IN')}`;
     }
-    document.getElementById('valCurrentBalance').textContent = formatINR(m.current_balance);
+    if (document.getElementById('valAmountAfterExpenses')) {
+      document.getElementById('valAmountAfterExpenses').textContent = formatINR(m.amount_after_expenses || ((m.available_amount || m.total_collected) - (m.total_expenses || 0)));
+    }
+    document.getElementById('valCurrentBalance').textContent = formatINR(m.remaining_balance || m.current_balance);
 
     // 2. Member Statistics Cards
     document.getElementById('valTotalMembers').textContent = m.total_members;

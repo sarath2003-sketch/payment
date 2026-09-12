@@ -6,11 +6,11 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all members
-router.get('/', authenticateToken, async (req, res) => {
+// Get all members (Public view-only listing supported)
+router.get(['/', '/public'], async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, member_id, name, email, phone, status, activation_status, payment_status, is_online, last_active_at, created_at, updated_at FROM members WHERE deleted_at IS NULL ORDER BY name'
+      'SELECT id, member_id, name, status, activation_status, payment_status, group_category, is_online, last_active_at, created_at, updated_at FROM members WHERE deleted_at IS NULL ORDER BY CAST(member_id AS INTEGER) ASC, id ASC'
     );
     res.json(result.rows);
   } catch (error) {

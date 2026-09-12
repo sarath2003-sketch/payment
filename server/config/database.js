@@ -1165,29 +1165,34 @@ function execSQLiteQuery(sqlText, params = []) {
 
           if (tableName) {
             let targetId = lastID;
-            if (!targetId && /UPDATE/i.test(sql)) {
-              // Check if query has WHERE id = ?
-              if (/WHERE\s+id\s*=\s*\?/i.test(sql) && cleanParams.length > 0) {
+            if (/UPDATE/i.test(sql)) {
+              if (/WHERE\s+(?:[a-zA-Z0-9_.]+\.)?id\s*=\s*\?/i.test(sql) && cleanParams.length > 0) {
                 targetId = cleanParams[cleanParams.length - 1];
               }
             }
 
-            const fetchSql = targetId 
-              ? `SELECT * FROM ${tableName} WHERE id = ?` 
-              : `SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 1`;
-            const fetchParams = targetId ? [targetId] : [];
-
-            db.get(fetchSql, fetchParams, (err2, row) => {
-              if (!err2 && row) {
-                return resolve({ rows: [row], rowCount: 1 });
-              }
+            if (targetId !== null && targetId !== undefined) {
+              const numericId = parseInt(targetId, 10);
+              const searchId = !isNaN(numericId) ? numericId : targetId;
+              db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [searchId], (err2, row) => {
+                if (!err2 && row) {
+                  return resolve({ rows: [row], rowCount: changes || 1 });
+                }
+                db.get(`SELECT * FROM ${tableName} WHERE id = ?`, [String(targetId)], (err3, rowStr) => {
+                  if (!err3 && rowStr) {
+                    return resolve({ rows: [rowStr], rowCount: changes || 1 });
+                  }
+                  resolve({ rows: [], rowCount: changes });
+                });
+              });
+            } else {
               db.get(`SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 1`, [], (err3, row3) => {
                 if (!err3 && row3) {
-                  return resolve({ rows: [row3], rowCount: 1 });
+                  return resolve({ rows: [row3], rowCount: changes || 1 });
                 }
-                resolve({ rows: [{ id: lastID || 1 }], rowCount: changes });
+                resolve({ rows: [], rowCount: changes });
               });
-            });
+            }
             return;
           }
         }

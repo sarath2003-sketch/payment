@@ -8,20 +8,30 @@ const router = express.Router();
  * GET MEMBER-TARGETED NOTICES
  * GET /api/notices
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get(['/', '/public'], async (req, res) => {
   try {
-    let memberId = req.admin ? req.admin.id : null;
+    // Optional auth token check
+    let user = null;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this-in-production');
+      } catch(e) {}
+    }
+
     let params = [];
     let sql = `
       SELECT n.*, m.name as member_name, m.member_id as member_code
       FROM notice_board n
       LEFT JOIN members m ON n.target_id = m.id AND n.target_type = 'MEMBER'
-      WHERE n.status != 'CANCELLED'
+      WHERE n.status = 'PUBLISHED'
     `;
 
-    if (req.admin && req.admin.type === 'member') {
+    if (user && user.type === 'member') {
       sql += ` AND (n.target_type = 'ALL' OR (n.target_type = 'MEMBER' AND n.target_id = $1))`;
-      params.push(memberId);
+      params.push(user.id);
     }
 
     sql += ` ORDER BY n.id DESC`;
