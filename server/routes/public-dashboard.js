@@ -624,15 +624,31 @@ router.get('/monthly-statement', async (req, res) => {
     const poolDisbursed = parseFloat(overallLoans.rows[0]?.total || 0) + parseFloat(overallWithdrawals.rows[0]?.total || 0) + poolExpenses;
     const currentPoolBalance = Math.max(0, Math.round((poolCollection - poolDisbursed) * 100) / 100);
 
-    // 4. Generate list of available months (last 12 months including target)
+    // 4. Generate list of available months (including all months with database records)
     const availableMonths = [];
     const dateCursor = new Date();
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 6; i++) {
       const mStr = dateCursor.toISOString().substring(0, 7);
       if (!availableMonths.includes(mStr)) availableMonths.push(mStr);
       dateCursor.setMonth(dateCursor.getMonth() - 1);
     }
     if (!availableMonths.includes(targetMonth)) availableMonths.unshift(targetMonth);
+
+    try {
+      const dbMonthsRes = await pool.query(`
+        SELECT DISTINCT substr(payment_date, 1, 7) as m FROM payment_proofs WHERE payment_date IS NOT NULL
+        UNION
+        SELECT DISTINCT substr(distribution_date, 1, 7) as m FROM seed_fund_distributions WHERE distribution_date IS NOT NULL
+        UNION
+        SELECT DISTINCT expense_month as m FROM expenses WHERE expense_month IS NOT NULL
+      `);
+      for (const row of dbMonthsRes.rows || []) {
+        if (row.m && /^\d{4}-\d{2}$/.test(row.m) && !availableMonths.includes(row.m)) {
+          availableMonths.push(row.m);
+        }
+      }
+      availableMonths.sort((a, b) => b.localeCompare(a));
+    } catch (e) {}
 
     res.json({
       success: true,

@@ -387,7 +387,7 @@ function createJsonStore(storeFilePath) {
   return db;
 }
 
-// Auto-seed function when tables are empty or missing members
+// Auto-seed function when tables are empty or need initial sync
 function seedInitialDataIfEmpty(db) {
   const initPath = path.join(__dirname, '..', 'database', 'initial_data.json');
   if (!fs.existsSync(initPath)) return;
@@ -397,15 +397,26 @@ function seedInitialDataIfEmpty(db) {
       console.log('[DB Auto-Seed] Ensuring initial members are seeded into database...');
       data.members.forEach(m => {
         db.run(
-          `INSERT OR IGNORE INTO members (id, member_id, name, email, phone, password_hash, balance, status, activation_status, payment_status, group_category, upi_id, profile_photo, is_duplicate, duplicate_reviewed, created_at, updated_at) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`,
-          [m.id, m.member_id, m.name, m.email, m.phone, m.password_hash, m.balance || 0, m.status || 'ACTIVE', m.activation_status || 'ACTIVE', m.payment_status || 'UNPAID', m.group_category || 'General', m.upi_id || null, m.profile_photo || null, m.created_at || '2026-09-11 10:00:00', m.updated_at || '2026-09-11 10:00:00']
+          `INSERT INTO members (id, member_id, name, email, phone, password_hash, balance, status, activation_status, payment_status, group_category, upi_id, profile_photo, is_duplicate, duplicate_reviewed, created_at, updated_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             member_id = excluded.member_id,
+             name = excluded.name,
+             email = excluded.email,
+             phone = excluded.phone,
+             password_hash = excluded.password_hash,
+             activation_status = excluded.activation_status,
+             payment_status = excluded.payment_status,
+             status = excluded.status,
+             group_category = excluded.group_category,
+             updated_at = excluded.updated_at`,
+          [m.id, m.member_id, m.name, m.email, m.phone, m.password_hash, m.balance || 0, m.status || 'ACTIVE', m.activation_status || 'ACTIVE', m.payment_status || 'PAID', m.group_category || 'General', m.upi_id || null, m.profile_photo || null, m.created_at || '2026-06-01 10:00:00', m.updated_at || '2026-09-12 10:00:00']
         );
       });
     }
     if (data.app_settings && data.app_settings.length > 0) {
       data.app_settings.forEach(s => {
-        db.run(`INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)`, [s.key, s.value]);
+        db.run(`INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`, [s.key, s.value]);
       });
     }
     if (data.admin_users && data.admin_users.length > 0) {
@@ -413,21 +424,68 @@ function seedInitialDataIfEmpty(db) {
         db.run(`INSERT OR IGNORE INTO admin_users (username, password_hash, email, status) VALUES (?, ?, ?, ?)`, [a.username, a.password_hash, a.email, a.status]);
       });
     }
-    if (data.monthly_payments && data.monthly_payments.length > 0) {
-      data.monthly_payments.forEach(p => {
+    if (data.seed_fund_distributions && data.seed_fund_distributions.length > 0) {
+      data.seed_fund_distributions.forEach(d => {
         db.run(
-          `INSERT OR IGNORE INTO monthly_payments (id, member_id, year, month, amount_due, amount_paid, status, due_date) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [p.id, p.member_id, p.year, p.month, p.amount_due, p.amount_paid, p.status, p.due_date]
+          `INSERT OR REPLACE INTO seed_fund_distributions (
+            id, member_id, principal_amount, interest_percentage, interest_amount, total_payable, total_repaid, remaining_amount, distribution_date, due_date, nominee_name, payment_status, notes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [d.id, d.member_id, d.principal_amount, d.interest_percentage, d.interest_amount, d.total_payable, d.total_repaid || 0, d.remaining_amount, d.distribution_date, d.due_date, d.nominee_name, d.payment_status || 'PENDING', d.notes]
         );
       });
     }
+    if (data.monthly_payments && data.monthly_payments.length > 0) {
+      data.monthly_payments.forEach(p => {
+        db.run(
+          `INSERT OR REPLACE INTO monthly_payments (id, member_id, year, month, amount_due, amount_paid, status, due_date, payment_date, payment_proof_id, notes) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [p.id, p.member_id, p.year, p.month, p.amount_due, p.amount_paid, p.status, p.due_date, p.payment_date, p.payment_proof_id, p.notes]
+        );
+      });
+    }
+    if (data.payment_proofs && data.payment_proofs.length > 0) {
+      data.payment_proofs.forEach(p => {
+        db.run(
+          `INSERT OR REPLACE INTO payment_proofs (id, member_id, amount, transaction_reference, payment_month, payment_date, proof_file_path, proof_file_name, status, verified_by, verified_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [p.id, p.member_id, p.amount, p.transaction_reference, p.payment_month, p.payment_date, p.proof_file_path, p.proof_file_name, p.status, p.verified_by, p.verified_at]
+        );
+      });
+    }
+    if (data.repayments && data.repayments.length > 0) {
+      data.repayments.forEach(r => {
+        db.run(
+          `INSERT OR REPLACE INTO repayments (id, distribution_id, member_id, payment_amount, payment_date, payment_method, transaction_ref, remaining_amount, status, notes) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [r.id, r.distribution_id, r.member_id, r.payment_amount, r.payment_date, r.payment_method || 'CASH', r.transaction_ref, r.remaining_amount, r.status || 'COMPLETED', r.notes]
+        );
+      });
+    }
+    if (data.expenses && data.expenses.length > 0) {
+      data.expenses.forEach(e => {
+        db.run(
+          `INSERT OR REPLACE INTO expenses (id, title, category, amount, expense_date, expense_month, remarks, created_by, created_by_name) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [e.id, e.title, e.category || 'General', e.amount, e.expense_date, e.expense_month, e.remarks, e.created_by || 1, e.created_by_name || 'Admin']
+        );
+      });
+    }
+    if (data.withdrawals && data.withdrawals.length > 0) {
+      data.withdrawals.forEach(w => {
+        db.run(
+          `INSERT OR REPLACE INTO withdrawals (id, member_id, month, withdrawal_date, amount, reason, notes) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [w.id, w.member_id, w.month, w.withdrawal_date, w.amount, w.reason, w.notes]
+        );
+      });
+    }
+    console.log('[DB Auto-Seed] Database successfully synchronized with initial_data.json');
   } catch (e) {
     console.warn('[DB Auto-Seed Error]', e.message);
   }
 }
 
-// Persist active members and settings back to initial_data.json file
+// Persist active members and all financial records back to initial_data.json file
 async function syncDatabaseToJson() {
   try {
     const initPath = path.join(__dirname, '..', 'database', 'initial_data.json');
@@ -452,8 +510,23 @@ async function syncDatabaseToJson() {
     // Fetch app_settings
     const settingsRes = await query(`SELECT key, value, updated_at FROM app_settings`);
 
+    // Fetch distributions
+    const distsRes = await query(`SELECT * FROM seed_fund_distributions ORDER BY id ASC`);
+
     // Fetch monthly_payments
-    const paymentsRes = await query(`SELECT * FROM monthly_payments WHERE member_id IN (SELECT id FROM members WHERE deleted_at IS NULL)`);
+    const paymentsRes = await query(`SELECT * FROM monthly_payments WHERE member_id IN (SELECT id FROM members WHERE deleted_at IS NULL) ORDER BY id ASC`);
+
+    // Fetch payment_proofs
+    const proofsRes = await query(`SELECT * FROM payment_proofs ORDER BY id ASC`);
+
+    // Fetch repayments
+    const repayRes = await query(`SELECT * FROM repayments ORDER BY id ASC`);
+
+    // Fetch expenses
+    const expRes = await query(`SELECT * FROM expenses ORDER BY id ASC`);
+
+    // Fetch withdrawals
+    const withRes = await query(`SELECT * FROM withdrawals ORDER BY id ASC`);
 
     if (membersRes.rows && membersRes.rows.length > 0) {
       currentData.members = membersRes.rows;
@@ -461,13 +534,28 @@ async function syncDatabaseToJson() {
     if (settingsRes.rows && settingsRes.rows.length > 0) {
       currentData.app_settings = settingsRes.rows;
     }
+    if (distsRes.rows && distsRes.rows.length > 0) {
+      currentData.seed_fund_distributions = distsRes.rows;
+    }
     if (paymentsRes.rows && paymentsRes.rows.length > 0) {
       currentData.monthly_payments = paymentsRes.rows;
     }
+    if (proofsRes.rows && proofsRes.rows.length > 0) {
+      currentData.payment_proofs = proofsRes.rows;
+    }
+    if (repayRes.rows && repayRes.rows.length > 0) {
+      currentData.repayments = repayRes.rows;
+    }
+    if (expRes.rows && expRes.rows.length > 0) {
+      currentData.expenses = expRes.rows;
+    }
+    if (withRes.rows && withRes.rows.length > 0) {
+      currentData.withdrawals = withRes.rows;
+    }
 
     fs.writeFileSync(initPath, JSON.stringify(currentData, null, 2), 'utf8');
-    console.log(`[DB Auto-Sync] Persisted ${currentData.members.length} members to initial_data.json`);
-    return { success: true, count: currentData.members.length };
+    console.log(`[DB Auto-Sync] Persisted ${currentData.members?.length || 0} members & financial ledgers to initial_data.json`);
+    return { success: true, count: currentData.members?.length || 0 };
   } catch (err) {
     console.warn('[DB Auto-Sync Warning]', err.message);
     return { success: false, error: err.message };

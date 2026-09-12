@@ -78,6 +78,7 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
       member_id,
       principal_amount,
       interest_percentage = 5.0,
+      interest_amount: input_interest_amount,
       monthly_amount,
       number_of_months = 12,
       distribution_date,
@@ -88,19 +89,24 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
     } = req.body || {};
 
     principal_amount = parseFloat(principal_amount);
-    interest_percentage = parseFloat(interest_percentage);
     number_of_months = parseInt(number_of_months, 10) || 12;
 
     if (!member_id || isNaN(principal_amount) || principal_amount <= 0) {
       return res.status(400).json({ error: 'Valid member and positive principal amount are required.' });
     }
 
-    if (isNaN(interest_percentage) || interest_percentage < 0) {
-      return res.status(400).json({ error: 'Valid non-negative interest percentage is required.' });
+    let interest_amount = 0;
+    if (input_interest_amount !== undefined && input_interest_amount !== null && !isNaN(parseFloat(input_interest_amount))) {
+      interest_amount = Math.round(parseFloat(input_interest_amount) * 100) / 100;
+      interest_percentage = principal_amount > 0 ? Math.round((interest_amount / principal_amount) * 10000) / 100 : 0;
+    } else {
+      interest_percentage = parseFloat(interest_percentage);
+      if (isNaN(interest_percentage) || interest_percentage < 0) {
+        return res.status(400).json({ error: 'Valid non-negative interest percentage is required.' });
+      }
+      interest_amount = Math.round((principal_amount * (interest_percentage / 100)) * 100) / 100;
     }
 
-    // Calculations: Interest = Principal * (Interest % / 100)
-    const interest_amount = Math.round((principal_amount * (interest_percentage / 100)) * 100) / 100;
     const total_payable = Math.round((principal_amount + interest_amount) * 100) / 100;
     const remaining_amount = total_payable;
 
@@ -215,6 +221,10 @@ router.post('/distributions', authenticateToken, requireAdmin, async (req, res) 
     if (io) {
       io.emit('seed_fund:updated', { distributionId: distribution.id });
       io.emit('stats:updated');
+    }
+
+    if (typeof pool.syncDatabaseToJson === 'function') {
+      pool.syncDatabaseToJson().catch(e => console.warn('[Auto-Sync Warning]', e.message));
     }
 
     res.status(201).json({

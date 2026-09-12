@@ -569,6 +569,7 @@ router.post('/', async (req, res) => {
     );
 
     await client.query('COMMIT');
+    const newMember = insertRes.rows[0];
     await logAudit(req, 'ADD_MEMBER', 'MEMBER', newMember.id, { member_id: newMember.member_id, name: newMember.name, phone });
 
     const io = req.app.get('io');
@@ -600,7 +601,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    let { name, email, phone, upi_id, profile_photo, activation_status, payment_status, group_category, status } = req.body || {};
+    let { member_id, name, email, phone, upi_id, profile_photo, activation_status, payment_status, group_category, status } = req.body || {};
 
     const existingRes = await pool.query('SELECT * FROM members WHERE id = $1', [id]);
     if (existingRes.rows.length === 0) {
@@ -608,14 +609,15 @@ router.put('/:id', async (req, res) => {
     }
     const existing = existingRes.rows[0];
 
+    member_id = (member_id !== undefined && member_id.trim()) ? member_id.trim() : existing.member_id;
     name = (name !== undefined) ? name.trim() : existing.name;
     phone = (phone !== undefined) ? phone.trim().replace(/\D/g, '') : existing.phone;
     if (phone.length > 10) phone = phone.slice(-10);
-    email = (email !== undefined) ? email.trim().toLowerCase() : existing.email;
+    email = (email !== undefined) ? email.trim().toLowerCase() : (phone ? `member_${phone}@pfchitfund.com` : existing.email);
     upi_id = (upi_id !== undefined) ? upi_id.trim() : existing.upi_id;
     profile_photo = (profile_photo !== undefined) ? saveBase64Image(profile_photo.trim()) : existing.profile_photo;
     activation_status = activation_status || existing.activation_status || 'ACTIVE';
-    payment_status = payment_status || existing.payment_status || 'UNPAID';
+    payment_status = payment_status || existing.payment_status || 'PAID';
     group_category = group_category || existing.group_category || 'General';
     status = status || existing.status || 'ACTIVE';
 
@@ -626,13 +628,17 @@ router.put('/:id', async (req, res) => {
 
     const updateRes = await pool.query(
       `UPDATE members 
-       SET name = $1, email = $2, phone = $3, upi_id = $4, profile_photo = $5, activation_status = $6, payment_status = $7, group_category = $8, status = $9, password_hash = $10, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $11
+       SET member_id = $1, name = $2, email = $3, phone = $4, upi_id = $5, profile_photo = $6, activation_status = $7, payment_status = $8, group_category = $9, status = $10, password_hash = $11, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $12
        RETURNING id, member_id, name, email, phone, upi_id, profile_photo, activation_status, payment_status, group_category, status`,
-      [name, email, phone, upi_id || null, profile_photo || null, activation_status, payment_status, group_category, status, passwordHash, id]
+      [member_id, name, email, phone, upi_id || null, profile_photo || null, activation_status, payment_status, group_category, status, passwordHash, id]
     );
 
     await logAudit(req, 'EDIT_MEMBER', 'MEMBER', id, { old: existing, updated: updateRes.rows[0] });
+
+    if (typeof pool.syncDatabaseToJson === 'function') {
+      await pool.syncDatabaseToJson();
+    }
 
     const io = req.app.get('io');
     if (io) {
@@ -643,6 +649,37 @@ router.put('/:id', async (req, res) => {
   } catch (err) {
     console.error('Error updating member:', err);
     res.status(500).json({ error: 'Failed to update member' });
+  }
+});
+
+/**
+ * POST /api/admin/members/reset-all-passwords
+ * Reset all active members' passwords to 123456
+ */
+router.post('/reset-all-passwords', async (req, res) => {
+  try {
+    const defaultHash = await bcrypt.hash('123456', 10);
+    const result = await pool.query(
+      `UPDATE members 
+       SET password_hash = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE deleted_at IS NULL`,
+      [defaultHash]
+    );
+
+    if (typeof pool.syncDatabaseToJson === 'function') {
+      await pool.syncDatabaseToJson();
+    }
+
+    await logAudit(req, 'RESET_ALL_PASSWORDS', 'MEMBER', null, { count: result.rowCount, default_password: '123456' });
+
+    res.json({
+      success: true,
+      message: `Successfully reset password to '123456' for all members!`,
+      count: result.rowCount
+    });
+  } catch (err) {
+    console.error('Error resetting member passwords:', err);
+    res.status(500).json({ error: 'Failed to reset passwords: ' + err.message });
   }
 });
 

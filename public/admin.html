@@ -1585,9 +1585,12 @@
         <!-- ================= MEMBERS MANAGEMENT ================= -->
         <div id="members" class="page">
           <div class="card">
-            <div class="card-header">
-              <div class="card-title">👥 All Members</div>
-              <button class="btn-primary" onclick="showAddMemberModal()">+ Add New Member</button>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+              <div class="card-title">👥 All Members (20 Members)</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button class="btn-secondary" onclick="confirmResetAllPasswords()" style="border-color:var(--gold);color:var(--gold);font-weight:700">🔑 Reset All Passwords to 123456</button>
+                <button class="btn-primary" onclick="showAddMemberModal()">+ Add New Member</button>
+              </div>
             </div>
             <div class="filter-bar">
               <input type="text" class="filter-input" id="memberSearch"
@@ -2465,9 +2468,15 @@
     <div class="modal" style="max-width:440px">
       <div class="modal-title" id="memberModalTitle">Add New Member</div>
       <div id="memberModalAlert"></div>
-      <div class="form-group">
-        <label>Member Name *</label>
-        <input type="text" id="mName" placeholder="Enter member full name">
+      <div class="form-row">
+        <div class="form-group" style="flex:0 0 120px">
+          <label>Member ID</label>
+          <input type="text" id="mMemberId" placeholder="e.g. 101">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label>Member Name *</label>
+          <input type="text" id="mName" placeholder="Enter member full name">
+        </div>
       </div>
       <div class="form-group">
         <label>Mobile Number (10-digit) *</label>
@@ -2736,11 +2745,22 @@
           <input type="number" id="distPrincipal" value="5000" oninput="recalcDistInterest()">
         </div>
         <div class="form-group">
-          <label>Interest Percentage (%) *</label>
-          <input type="number" id="distInterestPct" value="5.0" step="0.5" oninput="recalcDistInterest()">
+          <label>Interest Mode (வட்டி வகை) *</label>
+          <select id="distInterestType" onchange="toggleDistInterestType()">
+            <option value="PERCENT" selected>Fixed 5% (குச்சி வட்டி)</option>
+            <option value="AMOUNT">Auction Interest Flat ₹ (ஏல வட்டி)</option>
+          </select>
         </div>
       </div>
       <div class="form-row">
+        <div class="form-group" id="distPctGroup">
+          <label>Interest Percentage (%) *</label>
+          <input type="number" id="distInterestPct" value="5.0" step="0.5" oninput="recalcDistInterest()">
+        </div>
+        <div class="form-group hidden" id="distAmtGroup">
+          <label>Auction Interest Flat Amount (₹) *</label>
+          <input type="number" id="distInterestFlatAmt" placeholder="எ.கா: 850, 1100, 700" oninput="recalcDistInterest()">
+        </div>
         <div class="form-group">
           <label>Loan Duration (கடன் தவணை) *</label>
           <select id="distMonths" onchange="recalcDistInterest()">
@@ -2754,10 +2774,6 @@
             <option value="24">24 Months</option>
             <option value="custom">Custom Months</option>
           </select>
-        </div>
-        <div class="form-group hidden" id="customMonthsGroup">
-          <label>Custom Months *</label>
-          <input type="number" id="distCustomMonths" value="1" min="1" oninput="recalcDistInterest()">
         </div>
       </div>
 
@@ -3437,21 +3453,34 @@
     let cachedMembersList = [];
     let cachedGroupsList = [];
 
+    function toggleDistInterestType() {
+      const type = document.getElementById('distInterestType').value;
+      const pctGroup = document.getElementById('distPctGroup');
+      const amtGroup = document.getElementById('distAmtGroup');
+      if (type === 'AMOUNT') {
+        if (pctGroup) pctGroup.classList.add('hidden');
+        if (amtGroup) amtGroup.classList.remove('hidden');
+      } else {
+        if (pctGroup) pctGroup.classList.remove('hidden');
+        if (amtGroup) amtGroup.classList.add('hidden');
+      }
+      recalcDistInterest();
+    }
+
     function recalcDistInterest() {
       const principal = parseFloat(document.getElementById('distPrincipal').value) || 0;
-      const pct = parseFloat(document.getElementById('distInterestPct').value) || 0;
+      const type = document.getElementById('distInterestType') ? document.getElementById('distInterestType').value : 'PERCENT';
       const monthsSel = document.getElementById('distMonths').value;
-      
-      const customGroup = document.getElementById('customMonthsGroup');
-      if (monthsSel === 'custom') {
-        if (customGroup) customGroup.classList.remove('hidden');
-      } else {
-        if (customGroup) customGroup.classList.add('hidden');
-      }
+      const numMonths = parseInt(monthsSel, 10) || 1;
 
-      const numMonths = monthsSel === 'custom' ? (parseInt(document.getElementById('distCustomMonths').value, 10) || 12) : parseInt(monthsSel, 10);
+      let interest = 0;
+      if (type === 'AMOUNT') {
+        interest = parseFloat(document.getElementById('distInterestFlatAmt').value) || 0;
+      } else {
+        const pct = parseFloat(document.getElementById('distInterestPct').value) || 0;
+        interest = Math.round((principal * (pct / 100)) * 100) / 100;
+      }
       
-      const interest = Math.round((principal * (pct / 100)) * 100) / 100;
       const total = Math.round((principal + interest) * 100) / 100;
       const monthly = Math.round((total / numMonths) * 100) / 100;
 
@@ -4151,10 +4180,12 @@
       const member_id = document.getElementById('distMemberSelect').value;
       const group_id = document.getElementById('distGroupSelect').value;
       const principal_amount = document.getElementById('distPrincipal').value;
+      const interest_type = document.getElementById('distInterestType')?.value || 'PERCENT';
       const interest_percentage = document.getElementById('distInterestPct').value;
+      const interest_amount = interest_type === 'AMOUNT' ? document.getElementById('distInterestFlatAmt').value : undefined;
       
       const monthsSel = document.getElementById('distMonths').value;
-      const number_of_months = monthsSel === 'custom' ? (document.getElementById('distCustomMonths').value || 12) : monthsSel;
+      const number_of_months = parseInt(monthsSel, 10) || 1;
       
       const start_date = document.getElementById('distStartDate').value;
       const due_date = document.getElementById('distNextPayDate').value;
@@ -4166,11 +4197,18 @@
         return;
       }
 
+      if (interest_type === 'AMOUNT' && (!interest_amount || parseFloat(interest_amount) < 0)) {
+        showToast('Please enter a valid auction interest amount.', 'error');
+        return;
+      }
+
       try {
         await api('/api/seed-fund/distributions', {
           method: 'POST',
           body: JSON.stringify({
-            member_id, group_id: group_id || null, principal_amount, interest_percentage,
+            member_id, group_id: group_id || null, principal_amount, 
+            interest_percentage: interest_type === 'PERCENT' ? interest_percentage : undefined,
+            interest_amount: interest_type === 'AMOUNT' ? interest_amount : undefined,
             number_of_months, start_date, due_date, nominee_name, notes
           })
         });
@@ -5769,12 +5807,14 @@
     function showAddMemberModal() {
       currentEditingMemberId = null;
       document.getElementById('memberModalTitle').textContent = 'Add New Member';
+      const mIdEl = document.getElementById('mMemberId');
+      if (mIdEl) mIdEl.value = '';
       document.getElementById('mName').value = '';
       document.getElementById('mPhone').value = '';
       document.getElementById('mUpi').value = '';
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = 'ACTIVE';
-      document.getElementById('mPaymentStatus').value = 'UNPAID';
+      document.getElementById('mPaymentStatus').value = 'PAID';
       clearAdminMemberPhoto();
       document.getElementById('memberModal').classList.remove('hidden');
     }
@@ -5782,12 +5822,14 @@
     function showEditMemberModal(m) {
       currentEditingMemberId = m.id;
       document.getElementById('memberModalTitle').textContent = `Edit Member — ${m.member_id}`;
+      const mIdEl = document.getElementById('mMemberId');
+      if (mIdEl) mIdEl.value = m.member_id || '';
       document.getElementById('mName').value = m.name || '';
       document.getElementById('mPhone').value = m.phone || '';
       document.getElementById('mUpi').value = m.upi_id || '';
       document.getElementById('mPassword').value = '';
       document.getElementById('mActivation').value = m.activation_status || 'ACTIVE';
-      document.getElementById('mPaymentStatus').value = m.payment_status || 'UNPAID';
+      document.getElementById('mPaymentStatus').value = m.payment_status || 'PAID';
       document.getElementById('mProfilePhoto').value = m.profile_photo || '';
       const f = document.getElementById('mPhotoFile');
       if (f) f.value = '';
@@ -5799,6 +5841,8 @@
     }
 
     async function saveMemberForm() {
+      const mIdEl = document.getElementById('mMemberId');
+      const member_id = mIdEl ? mIdEl.value.trim() : '';
       const name = document.getElementById('mName').value.trim();
       const phone = document.getElementById('mPhone').value.trim();
       const upi_id = document.getElementById('mUpi').value.trim();
@@ -5821,28 +5865,30 @@
         if (currentEditingMemberId) {
           await api(`/api/admin/members/${currentEditingMemberId}`, {
             method: 'PUT',
-            body: JSON.stringify({ name, phone, upi_id, password, activation_status, payment_status, profile_photo })
+            body: JSON.stringify({ member_id, name, phone, upi_id, password, activation_status, payment_status, profile_photo })
           });
           showToast('Member details updated successfully!', 'success');
           closeModal('memberModal');
+          await loadMembers();
         } else {
           const res = await api('/api/admin/members', {
             method: 'POST',
-            body: JSON.stringify({ name, phone, upi_id, password, activation_status, payment_status, profile_photo })
+            body: JSON.stringify({ member_id, name, phone, upi_id, password, activation_status, payment_status, profile_photo })
           });
 
           closeModal('memberModal');
+          await loadMembers();
 
           if (res && res.member) {
             const m = res.member;
-            const pwd = res.raw_password || password || '1235';
+            const pwd = res.raw_password || password || '123456';
 
             document.getElementById('succName').textContent = m.name;
             document.getElementById('succMemberId').textContent = m.member_id;
             document.getElementById('succPassword').textContent = pwd;
             document.getElementById('succPhone').textContent = m.phone;
             document.getElementById('succActivation').textContent = m.activation_status || 'ACTIVE';
-            document.getElementById('succPayment').textContent = m.payment_status || 'UNPAID';
+            document.getElementById('succPayment').textContent = m.payment_status || 'PAID';
 
             currentCreatedCredentialsText = `Member Name: ${m.name}\nMember ID: ${m.member_id}\nPassword: ${pwd}\nMobile: ${m.phone}`;
 
@@ -5851,7 +5897,7 @@
             showToast('Member Created Successfully!', 'success');
           }
         }
-        loadMembers();
+        await loadMembers();
         loadDashboard();
       } catch (e) { showToast(e.message, 'error'); }
     }
@@ -5863,6 +5909,16 @@
       }).catch(() => {
         showToast('Failed to copy. Please manually select text.', 'info');
       });
+    }
+
+    async function confirmResetAllPasswords() {
+      if (!confirm('Are you sure you want to reset passwords for ALL 20 members to 123456?\n\nஅனைத்து 20 உறுப்பினர்களின் பாஸ்வேர்டையும் 123456 என மாற்ற விரும்புகிறீர்களா?')) return;
+      try {
+        const res = await api('/api/admin/members/reset-all-passwords', { method: 'POST' });
+        showToast(res.message || 'All passwords reset to 123456 successfully!', 'success');
+      } catch (e) {
+        showToast(e.message || 'Failed to reset passwords', 'error');
+      }
     }
 
     async function toggleActivation(id, newStatus) {
