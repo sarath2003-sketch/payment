@@ -4506,7 +4506,7 @@
         if (!tbody) return;
 
         if (repayments.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">No repayments recorded yet.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted)">No repayments recorded yet. Click "+ Record Repayment" to add the amounts paid by members for their loans.</td></tr>';
           return;
         }
 
@@ -7820,14 +7820,7 @@
     // ============================================================
 
     // Hidden file input for admin proof upload
-    (function() {
-      const inp = document.createElement('input');
-      inp.type = 'file';
-      inp.id = 'adminProofFileInput';
-      inp.accept = 'image/jpeg,image/png,image/webp,application/pdf';
-      inp.style.display = 'none';
-      document.body.appendChild(inp);
-    })();
+    
 
     let _adminProofTargetId = null;
 
