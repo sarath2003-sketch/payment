@@ -2221,6 +2221,11 @@
                   ➕ Add Expense (செலவு சேர்க்க)
                 </button>
               </div>
+              <!-- Recent Months Quick Filter -->
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px" id="expenseQuickMonthBtns">
+                <label style="font-size:11px;color:var(--text-dim);font-weight:700">Quick:</label>
+                <!-- buttons injected by initExpenseQuickMonthBtns() at load -->
+              </div>
             </div>
 
             <!-- Expense Summary Cards -->
@@ -4974,6 +4979,8 @@
       changeTheme(savedTheme);
       initAdminSocket();
       loadDashboard();
+      // Render quick month filter buttons for expenses
+      setTimeout(() => initExpenseQuickMonthBtns(), 100);
     }
 
     // ============================================================
@@ -6339,10 +6346,13 @@
               <td><strong style="color:var(--green)">₹${parseFloat(p.amount).toLocaleString('en-IN')}</strong></td>
               <td><code>${esc(p.transaction_reference || '—')}</code></td>
               <td>${new Date(p.payment_date).toLocaleDateString()}</td>
-              <td>
-                ${hasProof 
-                  ? `<button class="btn-secondary btn-sm" onclick="showProofPreview(${p.id})">👁️ Proof</button>` 
-                  : `<span style="color:var(--text-muted);font-size:12px">None</span>`}
+              <td style="white-space:nowrap">
+                <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+                  ${hasProof 
+                    ? `<button class="btn-secondary btn-sm" style="padding:3px 7px;font-size:11px" onclick="showProofPreview(${p.id})" title="View Proof">👁️</button>
+                       <button class="btn-danger btn-sm" style="padding:3px 7px;font-size:11px" onclick="adminDeleteProof(${p.id})" title="Remove Proof Image">🗑️ Remove</button>` 
+                    : `<button class="btn-primary btn-sm" style="padding:3px 8px;font-size:11px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none" onclick="adminUploadProof(${p.id})" title="Upload Proof">📎 Upload</button>`}
+                </div>
               </td>
               <td><span class="badge ${badgeClass}">${p.status}</span></td>
               <td style="display:flex;gap:6px;flex-wrap:wrap">
@@ -6434,16 +6444,21 @@
 
       const actions = document.getElementById('proofPreviewActions');
       if (actions) {
+        const proofBtns = p.proof_file_path
+          ? `<button class="btn-danger btn-sm" style="font-size:13px" onclick="adminDeleteProof(${p.id}); closeModal('proofPreviewModal')">🗑️ Remove Proof</button>`
+          : `<button class="btn-primary btn-sm" style="font-size:13px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none" onclick="adminUploadProof(${p.id}); closeModal('proofPreviewModal')">📎 Upload Proof</button>`;
         if (p.status === 'PENDING') {
           actions.innerHTML = `
             <button class="btn-success" onclick="autoVerifySinglePayment(${p.id})">⚡ Auto-Verify</button>
             <button class="btn-primary" onclick="quickApprovePayment(${p.id}, '${esc(p.member_name)}'); closeModal('proofPreviewModal')">✓ Approve ₹500</button>
+            ${proofBtns}
             <button class="btn-secondary" onclick="closeModal('proofPreviewModal')">Close</button>
           `;
         } else {
-          actions.innerHTML = `<button class="btn-secondary" onclick="closeModal('proofPreviewModal')">Close</button>`;
+          actions.innerHTML = `${proofBtns}<button class="btn-secondary" onclick="closeModal('proofPreviewModal')">Close</button>`;
         }
       }
+
 
       document.getElementById('proofPreviewModal').classList.remove('hidden');
     }
@@ -7805,6 +7820,101 @@
           }
         }
       );
+    }
+
+    // ============================================================
+    // ADMIN PROOF UPLOAD / DELETE HANDLERS
+    // ============================================================
+
+    // Hidden file input for admin proof upload
+    (function() {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.id = 'adminProofFileInput';
+      inp.accept = 'image/jpeg,image/png,image/webp,application/pdf';
+      inp.style.display = 'none';
+      document.body.appendChild(inp);
+    })();
+
+    let _adminProofTargetId = null;
+
+    function adminUploadProof(paymentId) {
+      _adminProofTargetId = paymentId;
+      const inp = document.getElementById('adminProofFileInput');
+      if (!inp) return;
+      inp.value = '';
+      inp.onchange = async function() {
+        const file = inp.files[0];
+        if (!file) return;
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) { showToast('File too large (max 5MB)', 'error'); return; }
+        const formData = new FormData();
+        formData.append('proof', file);
+        try {
+          showToast('📎 Uploading proof...', 'info');
+          const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken') || '';
+          const res = await fetch(`/api/admin/payments/${_adminProofTargetId}/upload-proof`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Upload failed');
+          showToast('✅ Payment proof uploaded successfully!', 'success');
+          loadAdminPayments();
+        } catch(e) {
+          showToast('Proof upload failed: ' + e.message, 'error');
+        }
+      };
+      inp.click();
+    }
+
+    async function adminDeleteProof(paymentId) {
+      openConfirm(
+        '🗑️ Remove Proof Image',
+        'இந்த பேமெண்ட் ப்ரூஃப் இமேஜை நீக்க விரும்புகிறீர்களா?\n(The payment record will remain, only the proof image is removed.)',
+        async () => {
+          try {
+            await api(`/api/admin/payments/${paymentId}/proof`, { method: 'DELETE' });
+            showToast('✅ Payment proof removed.', 'info');
+            loadAdminPayments();
+          } catch(e) {
+            showToast('Failed to remove proof: ' + e.message, 'error');
+          }
+        }
+      );
+    }
+
+    // ============================================================
+    // EXPENSE QUICK MONTH FILTER
+    // ============================================================
+    function initExpenseQuickMonthBtns() {
+      const container = document.getElementById('expenseQuickMonthBtns');
+      if (!container) return;
+      // Remove old buttons (keep the label)
+      const label = container.querySelector('label');
+      container.innerHTML = '';
+      if (label) container.appendChild(label);
+      const now = new Date();
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const val = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const lbl = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+        const btn = document.createElement('button');
+        btn.className = 'btn-secondary btn-sm';
+        btn.style.cssText = 'padding:3px 10px;font-size:11px;border-radius:20px';
+        btn.textContent = lbl;
+        btn.onclick = () => setExpenseMonthQuick(val);
+        container.appendChild(btn);
+      }
+    }
+
+    function setExpenseMonthQuick(monthStr) {
+      const inp = document.getElementById('expenseFilterMonth');
+      if (inp) {
+        inp.value = monthStr;
+        loadAdminExpenses();
+      }
     }
 
     // 3-Way Language System for Admin Portal

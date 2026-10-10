@@ -649,4 +649,110 @@ router.post('/auto-verify-all', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/admin/payments/:id/upload-proof
+ * Admin uploads / replaces payment proof image for a payment record
+ */
+router.post('/:id/upload-proof', async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (!req.files || !req.files.proof) {
+      return res.status(400).json({ error: 'No proof file uploaded' });
+    }
+
+    const proofFile = req.files.proof;
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedMimes.includes(proofFile.mimetype)) {
+      return res.status(400).json({ error: 'Only image files (JPEG, PNG, WebP) and PDF are allowed' });
+    }
+    if (proofFile.size > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: 'File size must be less than 5MB' });
+    }
+
+    const existingRes = await pool.query('SELECT * FROM payment_proofs WHERE id = $1', [id]);
+    if (existingRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment record not found' });
+    }
+    const existing = existingRes.rows[0];
+
+    const fs = require('fs');
+    const path = require('path');
+    const uploadDir = process.env.UPLOAD_DIR || './uploads';
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+    // Delete old proof file if exists
+    if (existing.proof_file_path) {
+      try {
+        const oldFile = path.join(process.cwd(), existing.proof_file_path);
+        if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+      } catch (e) {}
+    }
+
+    const timestamp = Date.now();
+    const fileName = `proof_${existing.member_id}_${timestamp}_${path.basename(proofFile.name)}`;
+    const filePath = path.join(uploadDir, fileName);
+    const webPath = `/uploads/${fileName}`;
+
+    await proofFile.mv(filePath);
+
+    await pool.query(
+      'UPDATE payment_proofs SET proof_file_path = $1, proof_file_name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [webPath, fileName, id]
+    );
+
+    await logAudit(req, 'UPLOAD_PROOF', 'PAYMENT', id, { file: fileName, member_id: existing.member_id });
+
+    const io = req.app.get('io');
+    if (io) io.emit('payment:proof-updated', { id, proof_file_path: webPath });
+
+    res.json({ success: true, message: 'Payment proof uploaded successfully', proof_file_path: webPath });
+  } catch (err) {
+    console.error('Error uploading admin proof:', err);
+    res.status(500).json({ error: 'Failed to upload proof: ' + err.message });
+  }
+});
+
+/**
+ * DELETE /api/admin/payments/:id/proof
+ * Admin removes proof image from a payment record (without deleting the payment)
+ */
+router.delete('/:id/proof', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const existingRes = await pool.query('SELECT * FROM payment_proofs WHERE id = $1', [id]);
+    if (existingRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Payment record not found' });
+    }
+    const existing = existingRes.rows[0];
+
+    if (!existing.proof_file_path) {
+      return res.status(400).json({ error: 'No proof file attached to this payment' });
+    }
+
+    // Delete file from disk
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const oldFile = path.join(process.cwd(), existing.proof_file_path);
+      if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+    } catch (e) {}
+
+    await pool.query(
+      'UPDATE payment_proofs SET proof_file_path = NULL, proof_file_name = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [id]
+    );
+
+    await logAudit(req, 'DELETE_PROOF', 'PAYMENT', id, { member_id: existing.member_id });
+
+    const io = req.app.get('io');
+    if (io) io.emit('payment:proof-updated', { id, proof_file_path: null });
+
+    res.json({ success: true, message: 'Payment proof removed successfully' });
+  } catch (err) {
+    console.error('Error deleting admin proof:', err);
+    res.status(500).json({ error: 'Failed to delete proof: ' + err.message });
+  }
+});
+
 module.exports = router;
+
