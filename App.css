@@ -1,25 +1,24 @@
-/* App.css overriding old CSS with new standard */
+/* FinTrack App.css overrides */
 @import url('./style.css');
 
-/* Keep any specific classes that are functionally needed but restyle them */
 .modal-content {
   background-color: var(--surface);
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
 }
 
 .alert-success {
-  background-color: #d1fae5;
-  color: #065f46;
-  border-left: 4px solid #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #34D399;
+  border-left: 4px solid #10B981;
   border-radius: var(--radius-sm);
 }
 
 .alert-danger {
-  background-color: #fee2e2;
-  color: #7f1d1d;
-  border-left: 4px solid #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #F87171;
+  border-left: 4px solid #EF4444;
   border-radius: var(--radius-sm);
 }
 

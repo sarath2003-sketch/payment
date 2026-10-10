@@ -13,44 +13,44 @@
   <link rel="stylesheet" href="/css/gemini-assistant.css">
   <style>
     
+    
     :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --primary-light: #eff6ff;
-      --gold: #2563eb; /* Overriding old gold with blue */
-      --gold-light: #eff6ff;
-      --gold-dark: #1e40af;
+      /* FinTrack AI Theme - Premium Dark */
+      --bg: #0B0F19;           /* Deep dark background */
+      --surface: #151C2C;      /* Slightly lighter for cards */
+      --surface2: #1E293B;     /* Hover states / secondary cards */
       
-      --bg: #f8fafc;
-      --dark: #f8fafc;
-      --dark2: #f1f5f9;
-      --dark3: #e2e8f0;
-      --dark4: #cbd5e1;
+      --primary: #6366F1;      /* Indigo / AI Purple-Blue */
+      --primary-hover: #818CF8;
+      --primary-light: rgba(99, 102, 241, 0.15);
       
-      --surface: #ffffff;
-      --surface2: #f8fafc;
+      --gold: #3B82F6;         /* Repurposed gold to bright blue */
+      --gold-light: #60A5FA;
+      --gold-dark: #2563EB;
       
-      --border: #e2e8f0;
-      --border2: #cbd5e1;
+      --text: #F8FAFC;         /* Crisp white text */
+      --text2: #CBD5E1;        /* Light slate for secondary text */
+      --text3: #94A3B8;        /* Slate for muted text */
+      --white: #FFFFFF;
       
-      --text: #0f172a;
-      --text2: #334155;
-      --text3: #64748b;
+      --border: #1E293B;       /* Dark borders */
+      --border2: #334155;      
       
-      --white: #ffffff;
-      --green: #10b981;
-      --red: #ef4444;
-      --blue: #3b82f6;
-      --orange: #f59e0b;
+      --green: #10B981;        /* Finance Green */
+      --green-light: #34D399;
+      --red: #EF4444;          /* Finance Red */
+      --blue: #3B82F6;
+      --orange: #F59E0B;
       
-      --radius: 8px;
-      --radius-sm: 4px;
-      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      --shadow-gold: 0 4px 12px rgba(37, 99, 235, 0.1);
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      --shadow-gold: 0 4px 20px rgba(99, 102, 241, 0.3); /* Glowing AI shadow */
       
       --font-ta: 'Inter', sans-serif;
-      --transition: all 0.2s ease;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
 
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { font-family: 'Inter', var(--font-ta), sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
@@ -425,7 +425,7 @@
       flex-direction: column;
       align-items: center;
       padding: 20px;
-      background: white;
+      background: var(--surface);
       border-radius: var(--radius);
       margin-bottom: 16px;
     }
@@ -640,7 +640,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
     }
-    .bid-history-item.winning { border-color: var(--gold); background: rgba(245,200,66,0.05); }
+    .bid-history-item.winning { border-color: var(--gold); background: var(--primary-light); }
     .bhi-left .bhi-name { font-size: 13px; font-weight: 600; color: var(--text); }
     .bhi-left .bhi-id { font-size: 11px; color: var(--text3); }
     .bhi-right .bhi-amount { font-size: 15px; font-weight: 700; color: var(--gold); }
@@ -751,7 +751,7 @@
       left: 2px;
       width: 18px;
       height: 18px;
-      background: white;
+      background: var(--surface);
       border-radius: 50%;
       transition: var(--transition);
     }
@@ -1156,7 +1156,7 @@
       transition: var(--transition);
     }
     .pc-action-btn:hover {
-      background: var(--gold);
+      background: linear-gradient(135deg, var(--primary), #3B82F6);
       color: var(--dark);
     }
     .pc-checklist {
@@ -1277,7 +1277,7 @@
       transition: var(--transition);
     }
     .uhb-lang-btn.active {
-      background: var(--gold);
+      background: linear-gradient(135deg, var(--primary), #3B82F6);
       color: var(--dark);
     }
 
@@ -1423,7 +1423,7 @@
       cursor: pointer;
       transition: var(--transition);
     }
-    .hfp-btn.active { background: var(--gold); color: var(--dark); font-weight: 700; border-color: var(--gold); }
+    .hfp-btn.active { background: linear-gradient(135deg, var(--primary), #3B82F6); color: var(--dark); font-weight: 700; border-color: var(--gold); }
   </style>
 </head>
 <body>
