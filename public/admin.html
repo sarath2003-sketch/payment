@@ -6148,7 +6148,7 @@
       div.innerHTML = `
         <input type="text" placeholder="Member ID" class="dist-mid" value="${defaultMemberId}" oninput="autoLookupMemberName(${rowIndex}, this.value)">
         <input type="text" placeholder="Member Name" class="dist-mname" readonly style="background:var(--bg);color:var(--text-muted)">
-        <input type="number" placeholder="Amount (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)" class="dist-mamt" value="${defaultAmount}" oninput="calculateDistTotals()">
+        <input type="number" placeholder="Amount ()" class="dist-mamt" value="${defaultAmount}" oninput="calculateDistTotals()">
         <button class="btn-danger btn-sm" onclick="this.parentElement.remove();calculateDistTotals()" style="padding:4px 8px">✕</button>
       `;
       container.appendChild(div);
