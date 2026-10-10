@@ -2633,7 +2633,7 @@ function setLang(lang) {
   const hqh = document.getElementById('txtHubQrHeader');
   if (hqh) hqh.textContent = lang === 'ta' ? 'அதிகாரப்பூர்வ QR & UPI கட்டணம்' : 'Club Official QR & UPI Payment';
   const hqs = document.getElementById('txtHubQrSub');
-  if (hqs) hqs.textContent = lang === 'ta' ? 'ரூ.500 மாதாந்திர சீட்டு தவணை அல்லது கடன் தொகையை செலுத்த ஸ்கேன் செய்யவும்' : 'Scan to pay monthly <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500 chit installment or loan repayment';
+  if (hqs) hqs.innerHTML = lang === 'ta' ? 'ரூ.500 மாதாந்திர சீட்டு தவணை அல்லது கடன் தொகையை செலுத்த ஸ்கேன் செய்யவும்' : 'Scan to pay monthly <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500 chit installment or loan repayment';
   const hlp = document.getElementById('txtHubLoginPrompt');
   if (hlp) hlp.textContent = lang === 'ta' ? 'UTR ஆதாரத்தை சமர்ப்பிக்க உறுப்பினர் உள்நுழையவும்' : 'Login as Member to Submit UTR Proof';
 
@@ -2703,13 +2703,13 @@ async function loadHubPublicData() {
       if (sData && sData.metrics) {
         const m = sData.metrics;
         const vFund = document.getElementById('hubValTotalFund');
-        if (vFund) vFund.textContent = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.total_fund_amount) || 0).toLocaleString('en-IN');
+        if (vFund) vFund.innerHTML = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.total_fund_amount) || 0).toLocaleString('en-IN');
         const vColl = document.getElementById('hubValTotalCollected');
-        if (vColl) vColl.textContent = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.total_collected) || 0).toLocaleString('en-IN');
+        if (vColl) vColl.innerHTML = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.total_collected) || 0).toLocaleString('en-IN');
         const vDist = document.getElementById('hubValTotalDistributed');
-        if (vDist) vDist.textContent = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.total_distributed) || 0).toLocaleString('en-IN');
+        if (vDist) vDist.innerHTML = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.total_distributed) || 0).toLocaleString('en-IN');
         const vBal = document.getElementById('hubValCurrentBalance');
-        if (vBal) vBal.textContent = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.current_balance) || 0).toLocaleString('en-IN');
+        if (vBal) vBal.innerHTML = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (parseFloat(m.current_balance) || 0).toLocaleString('en-IN');
       }
     }
 
@@ -2835,7 +2835,7 @@ function openPublicMemberModal(item) {
     if (modal) {
       document.getElementById('pubModalName').textContent = item.member_name || 'Member';
       document.getElementById('pubModalCode').textContent = `Member ID: ${item.member_code}`;
-      document.getElementById('pubModalCredit').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(item.amount || 500).toLocaleString('en-IN')}`;
+      document.getElementById('pubModalCredit').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(item.amount || 500).toLocaleString('en-IN')}`;
       document.getElementById('pubModalDebit').textContent = '—';
       document.getElementById('pubModalBalance').textContent = '—';
       document.getElementById('pubModalHistoryBody').innerHTML = `
@@ -2956,7 +2956,7 @@ async function loadSettings() {
     // Payment amount
     if (appSettings.default_payment_amount) {
       const pa = document.getElementById('paymentAmount');
-      if (pa) pa.textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
+      if (pa) pa.innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
     }
     // Payment instructions
     const instr = currentLang === 'ta' ? appSettings.payment_instructions_ta : appSettings.payment_instructions_en;
@@ -3329,11 +3329,11 @@ function renderProfileCompletion() {
   if (upiItem) {
     if (comp.isComplete) {
       upiItem.className = 'pc-item done';
-      if (upiIcon) upiIcon.textContent = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>';
+      if (upiIcon) upiIcon.innerHTML = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>';
       if (upiText) upiText.textContent = `UPI ID: ${currentUser.upi_id || ''} (Active & Verified)`;
     } else {
       upiItem.className = 'pc-item pending';
-      if (upiIcon) upiIcon.textContent = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>';
+      if (upiIcon) upiIcon.innerHTML = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>';
       if (upiText) upiText.textContent = 'UPI ID: Not Added (Add in Edit Profile for 100%)';
     }
   }
@@ -3344,7 +3344,7 @@ function renderProfileCompletion() {
     setMsg.style.color = comp.isComplete ? '#4ade80' : 'var(--gold-light)';
   }
   if (setBtn) {
-    setBtn.textContent = comp.isComplete ? '<i data-lucide="pencil" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Edit Profile' : '<i data-lucide="pencil" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Add UPI ID (Complete 100%)';
+    setBtn.innerHTML = comp.isComplete ? '<i data-lucide="pencil" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Edit Profile' : '<i data-lucide="pencil" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Add UPI ID (Complete 100%)';
   }
 }
 
@@ -3352,33 +3352,33 @@ function updateDashboard(profile) {
   if (!profile) return;
   const balance = parseFloat(profile.balance || 0);
   const dashBalance = document.getElementById('dashBalance');
-  if (dashBalance) dashBalance.textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${balance.toLocaleString('en-IN')}`;
+  if (dashBalance) dashBalance.innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${balance.toLocaleString('en-IN')}`;
   const dashTotalPaid = document.getElementById('dashTotalPaid');
-  if (dashTotalPaid) dashTotalPaid.textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(profile.total_paid || 0).toLocaleString('en-IN')}`;
+  if (dashTotalPaid) dashTotalPaid.innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(profile.total_paid || 0).toLocaleString('en-IN')}`;
   const dashPending = document.getElementById('dashPending');
   if (dashPending) dashPending.textContent = profile.pending_count || 0;
   const thisMonth = profile.current_month_payment_status;
   const el = document.getElementById('dashThisMonth');
   if (el) {
-    if (thisMonth === 'APPROVED') { el.textContent = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Paid'; el.style.color = 'var(--green)'; }
-    else if (thisMonth === 'PENDING') { el.textContent = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Pending'; el.style.color = 'var(--orange)'; }
-    else { el.textContent = '<i data-lucide="x-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Unpaid'; el.style.color = 'var(--red)'; }
+    if (thisMonth === 'APPROVED') { el.innerHTML = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Paid'; el.style.color = 'var(--green)'; }
+    else if (thisMonth === 'PENDING') { el.innerHTML = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Pending'; el.style.color = 'var(--orange)'; }
+    else { el.innerHTML = '<i data-lucide="x-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Unpaid'; el.style.color = 'var(--red)'; }
   }
 
   // Update profile section stats
   const ppEl = document.getElementById('profileTotalPaid');
   const pbEl = document.getElementById('profileBalance');
   const ppnEl = document.getElementById('profilePending');
-  if (ppEl)  ppEl.textContent  = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(profile.total_paid || 0).toLocaleString('en-IN')}`;
-  if (pbEl)  pbEl.textContent  = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${balance.toLocaleString('en-IN')}`;
+  if (ppEl)  ppEl.innerHTML  = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(profile.total_paid || 0).toLocaleString('en-IN')}`;
+  if (pbEl)  pbEl.innerHTML  = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${balance.toLocaleString('en-IN')}`;
   if (ppnEl) ppnEl.textContent = profile.pending_count || 0;
 
   // Month status badge
   const msEl = document.getElementById('profileMonthStatus');
   if (msEl) {
-    if (thisMonth === 'APPROVED') { msEl.textContent = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Paid'; msEl.className = 'badge badge-active'; }
-    else if (thisMonth === 'PENDING') { msEl.textContent = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Pending'; msEl.className = 'badge badge-pending'; }
-    else { msEl.textContent = '<i data-lucide="x-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Unpaid'; msEl.className = 'badge badge-rejected'; }
+    if (thisMonth === 'APPROVED') { msEl.innerHTML = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Paid'; msEl.className = 'badge badge-active'; }
+    else if (thisMonth === 'PENDING') { msEl.innerHTML = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Pending'; msEl.className = 'badge badge-pending'; }
+    else { msEl.innerHTML = '<i data-lucide="x-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Unpaid'; msEl.className = 'badge badge-rejected'; }
   }
 }
 
@@ -3420,8 +3420,8 @@ async function loadMemberSeedFund() {
       totalRemaining += parseFloat(d.remaining_amount || 0);
     });
 
-    if (document.getElementById('memTotalBorrowed')) document.getElementById('memTotalBorrowed').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${totalBorrowed.toLocaleString('en-IN')}`;
-    if (document.getElementById('memRemainingDue')) document.getElementById('memRemainingDue').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${totalRemaining.toLocaleString('en-IN')}`;
+    if (document.getElementById('memTotalBorrowed')) document.getElementById('memTotalBorrowed').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${totalBorrowed.toLocaleString('en-IN')}`;
+    if (document.getElementById('memRemainingDue')) document.getElementById('memRemainingDue').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${totalRemaining.toLocaleString('en-IN')}`;
 
     if (!container) return;
     if (distributions.length === 0) {
@@ -3482,12 +3482,12 @@ async function saveMemberNominee() {
 async function loadMemberDashboardMetrics() {
   try {
     const summary = await api('/api/dashboard/summary');
-    if (document.getElementById('memSumTotalAmount')) document.getElementById('memSumTotalAmount').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_collected || 0).toLocaleString('en-IN')}`;
+    if (document.getElementById('memSumTotalAmount')) document.getElementById('memSumTotalAmount').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_collected || 0).toLocaleString('en-IN')}`;
     if (document.getElementById('memSumTotalMembers')) document.getElementById('memSumTotalMembers').textContent = summary.total_members || 0;
     if (document.getElementById('memSumActiveMembers')) document.getElementById('memSumActiveMembers').textContent = summary.active_members || 0;
     if (document.getElementById('memSumPaidMonth')) document.getElementById('memSumPaidMonth').textContent = summary.paid_this_month || 0;
     if (document.getElementById('memSumPending')) document.getElementById('memSumPending').textContent = summary.pending_members || 0;
-    if (document.getElementById('memSumAvailable')) document.getElementById('memSumAvailable').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.available_balance || 0).toLocaleString('en-IN')}`;
+    if (document.getElementById('memSumAvailable')) document.getElementById('memSumAvailable').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.available_balance || 0).toLocaleString('en-IN')}`;
   } catch (e) { console.warn('Dashboard summary error:', e.message); }
 }
 
@@ -3639,7 +3639,7 @@ let selectedScheduleProofBase64 = null;
 
 function openScheduleProofModal(schedId, schedNum, amount, due) {
   document.getElementById('spSchedId').value = schedId;
-  document.getElementById('spSchedTitle').textContent = `#${schedNum} — Due Amount: <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(amount).toLocaleString('en-IN')} (Due: ${due})`;
+  document.getElementById('spSchedTitle').innerHTML = `#${schedNum} — Due Amount: <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(amount).toLocaleString('en-IN')} (Due: ${due})`;
   document.getElementById('spMemberCode').textContent = currentUser ? currentUser.member_id : '—';
   document.getElementById('spTxRef').value = '';
   document.getElementById('spFile').value = '';
@@ -3747,7 +3747,7 @@ async function loadSettings() {
 
     if (appSettings.default_payment_amount) {
       const el = document.getElementById('paymentAmount');
-      if (el) el.textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
+      if (el) el.innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(appSettings.default_payment_amount).toLocaleString('en-IN')}`;
     }
 
     const upiEl = document.getElementById('paymentUpiDisplay');
@@ -4229,7 +4229,7 @@ function updateAuctionBidUI(newBid, bidderName, bidderCode) {
   const bidDisplay = document.getElementById('currentBidDisplay');
   const bidderEl = document.getElementById('currentBidder');
   if (bidDisplay) {
-    bidDisplay.textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${bid.toLocaleString('en-IN')}`;
+    bidDisplay.innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${bid.toLocaleString('en-IN')}`;
     bidDisplay.style.transition = 'transform 0.2s, color 0.3s';
     bidDisplay.style.transform = 'scale(1.12)';
     bidDisplay.style.color = 'var(--green)';
@@ -4330,9 +4330,9 @@ async function openPublicProfile(memberId) {
       : `<div style="width:42px;height:42px;border-radius:50%;background:rgba(245,200,66,0.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">${(p.name || '?').charAt(0).toUpperCase()}</div>`;
     document.getElementById('pubModalAvatar').innerHTML = avatarHtml;
 
-    document.getElementById('pubModalCredit').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_credit || 0).toLocaleString('en-IN')}`;
-    document.getElementById('pubModalDebit').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_debit || 0).toLocaleString('en-IN')}`;
-    document.getElementById('pubModalBalance').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.balance || 0).toLocaleString('en-IN')}`;
+    document.getElementById('pubModalCredit').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_credit || 0).toLocaleString('en-IN')}`;
+    document.getElementById('pubModalDebit').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_debit || 0).toLocaleString('en-IN')}`;
+    document.getElementById('pubModalBalance').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.balance || 0).toLocaleString('en-IN')}`;
 
     if (!d.public_history || !d.public_history.length) {
       document.getElementById('pubModalHistoryBody').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3)">No financial transactions recorded.</td></tr>';

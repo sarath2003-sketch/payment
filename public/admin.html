@@ -3494,9 +3494,9 @@
       const total = Math.round((principal + interest) * 100) / 100;
       const monthly = Math.round((total / numMonths) * 100) / 100;
 
-      if (document.getElementById('distCalcInterest')) document.getElementById('distCalcInterest').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${interest.toLocaleString('en-IN')}`;
-      if (document.getElementById('distCalcTotal')) document.getElementById('distCalcTotal').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${total.toLocaleString('en-IN')}`;
-      if (document.getElementById('distCalcMonthly')) document.getElementById('distCalcMonthly').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${monthly.toLocaleString('en-IN')}`;
+      if (document.getElementById('distCalcInterest')) document.getElementById('distCalcInterest').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${interest.toLocaleString('en-IN')}`;
+      if (document.getElementById('distCalcTotal')) document.getElementById('distCalcTotal').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${total.toLocaleString('en-IN')}`;
+      if (document.getElementById('distCalcMonthly')) document.getElementById('distCalcMonthly').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${monthly.toLocaleString('en-IN')}`;
     }
 
     function updateNextPaymentDate() {
@@ -3599,18 +3599,18 @@
 
         // Summary KPI
         const s = data.summary || {};
-        if (document.getElementById('admStmtInflow')) document.getElementById('admStmtInflow').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_inflow || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('admStmtInflow')) document.getElementById('admStmtInflow').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_inflow || 0).toLocaleString('en-IN')}`;
         if (document.getElementById('admStmtInflowCount')) document.getElementById('admStmtInflowCount').textContent = `${s.inflow_count || 0} payments received`;
-        if (document.getElementById('admStmtOutflow')) document.getElementById('admStmtOutflow').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_outflow || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('admStmtOutflow')) document.getElementById('admStmtOutflow').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_outflow || 0).toLocaleString('en-IN')}`;
         if (document.getElementById('admStmtOutflowCount')) document.getElementById('admStmtOutflowCount').textContent = `${s.outflow_count || 0} loans disbursed`;
-        if (document.getElementById('admStmtExpenses')) document.getElementById('admStmtExpenses').textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_expenses || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('admStmtExpenses')) document.getElementById('admStmtExpenses').innerHTML = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.total_expenses || 0).toLocaleString('en-IN')}`;
         if (document.getElementById('admStmtExpensesCount')) document.getElementById('admStmtExpensesCount').textContent = `${s.expense_count || 0} expenses recorded`;
         if (document.getElementById('admStmtNetFlow')) {
           const net = s.net_monthly_flow || 0;
-          document.getElementById('admStmtNetFlow').textContent = `${net >= 0 ? '+' : ''}<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${net.toLocaleString('en-IN')}`;
+          document.getElementById('admStmtNetFlow').innerHTML = `${net >= 0 ? '+' : ''}<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${net.toLocaleString('en-IN')}`;
           document.getElementById('admStmtNetFlow').style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
         }
-        if (document.getElementById('admStmtClosingBalance')) document.getElementById('admStmtClosingBalance').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.current_pool_balance || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('admStmtClosingBalance')) document.getElementById('admStmtClosingBalance').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${(s.current_pool_balance || 0).toLocaleString('en-IN')}`;
 
         // Inflows Table
         const inTbody = document.getElementById('admStmtInflowsTableBody');
@@ -4034,12 +4034,12 @@
       loadAdminLoanRequests();
       try {
         const summary = await api('/api/seed-fund/summary');
-        if (document.getElementById('sfTotalCollection')) document.getElementById('sfTotalCollection').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_collection || 0).toLocaleString('en-IN')}`;
-        if (document.getElementById('sfTotalDistributed')) document.getElementById('sfTotalDistributed').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_distributed || 0).toLocaleString('en-IN')}`;
-        if (document.getElementById('sfTotalInterest')) document.getElementById('sfTotalInterest').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_interest_earned || 0).toLocaleString('en-IN')}`;
-        if (document.getElementById('sfTotalRepaid')) document.getElementById('sfTotalRepaid').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_repaid || 0).toLocaleString('en-IN')}`;
-        if (document.getElementById('sfPendingDue')) document.getElementById('sfPendingDue').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_pending_due || 0).toLocaleString('en-IN')}`;
-        if (document.getElementById('sfAvailableFund')) document.getElementById('sfAvailableFund').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.current_available_fund || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfTotalCollection')) document.getElementById('sfTotalCollection').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_collection || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfTotalDistributed')) document.getElementById('sfTotalDistributed').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_distributed || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfTotalInterest')) document.getElementById('sfTotalInterest').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_interest_earned || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfTotalRepaid')) document.getElementById('sfTotalRepaid').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_repaid || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfPendingDue')) document.getElementById('sfPendingDue').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_pending_due || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('sfAvailableFund')) document.getElementById('sfAvailableFund').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.current_available_fund || 0).toLocaleString('en-IN')}`;
 
         const data = await api('/api/seed-fund/distributions');
         cachedDistributions = data.distributions || [];
@@ -4563,14 +4563,14 @@
       const distId = select.value;
       if (!distId) {
         document.getElementById('repayLoanInfo').textContent = 'None selected';
-        document.getElementById('repayRemainingPayable').textContent = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0';
+        document.getElementById('repayRemainingPayable').innerHTML = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0';
         return;
       }
 
       const dist = cachedDistributions.find(d => String(d.id) === String(distId));
       if (dist) {
-        document.getElementById('repayLoanInfo').textContent = `#${dist.id} - ${dist.member_name} (Total Payable: <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dist.total_payable).toLocaleString('en-IN')})`;
-        document.getElementById('repayRemainingPayable').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dist.remaining_amount).toLocaleString('en-IN')}`;
+        document.getElementById('repayLoanInfo').innerHTML = `#${dist.id} - ${dist.member_name} (Total Payable: <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dist.total_payable).toLocaleString('en-IN')})`;
+        document.getElementById('repayRemainingPayable').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dist.remaining_amount).toLocaleString('en-IN')}`;
         document.getElementById('repayAmount').value = parseFloat(dist.remaining_amount);
       }
     }
@@ -4850,8 +4850,8 @@
           loadMonthlyStatementAdmin();
         }
         const summary = await api('/api/seed-fund/summary');
-        if (document.getElementById('repNetBalance')) document.getElementById('repNetBalance').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.current_available_fund || 0).toLocaleString('en-IN')}`;
-        if (document.getElementById('repTotalInterest')) document.getElementById('repTotalInterest').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_interest_earned || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('repNetBalance')) document.getElementById('repNetBalance').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.current_available_fund || 0).toLocaleString('en-IN')}`;
+        if (document.getElementById('repTotalInterest')) document.getElementById('repTotalInterest').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(summary.total_interest_earned || 0).toLocaleString('en-IN')}`;
 
         const container = document.getElementById('reportsContainer');
         if (container) {
@@ -5004,7 +5004,7 @@
       } else if (state === 'thinking') {
         if (orbIcon) orbIcon.textContent = '🧠';
         if (waves) waves.classList.add('hidden');
-        if (liveSub) liveSub.textContent = '<i data-lucide="settings" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> சிந்திக்கிறது & சரிசெய்கிறது... (Analyzing & Executing)';
+        if (liveSub) liveSub.innerHTML = '<i data-lucide="settings" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> சிந்திக்கிறது & சரிசெய்கிறது... (Analyzing & Executing)';
         if (micBtn) {
           micBtn.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
           micBtn.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)';
@@ -5457,7 +5457,7 @@
       try {
         await api('/api/admin/members/ai-copilot/set-api-key', 'POST', { apiKey: key });
         const st = document.getElementById('geminiKeyStatus');
-        if (st) st.textContent = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Gemini API Key வெற்றிகரமாகச் சேமிக்கப்பட்டது!';
+        if (st) st.innerHTML = '<i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Gemini API Key வெற்றிகரமாகச் சேமிக்கப்பட்டது!';
         showToast('Gemini API Key சேமிக்கப்பட்டது!', 'success');
       } catch (e) {
         showToast('Key சேமிப்பதில் பிழை: ' + e.message, 'error');
@@ -5552,7 +5552,7 @@
       const btn = document.getElementById('btnRunGuardianHeal');
       if (btn) {
         btn.disabled = true;
-        btn.textContent = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Healing...';
+        btn.innerHTML = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Healing...';
       }
       try {
         const res = await api('/api/admin/members/agent/heal-now', 'POST');
@@ -5665,15 +5665,15 @@
         document.getElementById('dInactiveMembers').textContent = d.inactive_members || 0;
         document.getElementById('dPendingActivations').textContent = d.pending_activations || 0;
         document.getElementById('dPossibleDuplicates').textContent = d.possible_duplicates || 0;
-        document.getElementById('dTotalCollected').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.total_collected || 0).toLocaleString('en-IN')}`;
+        document.getElementById('dTotalCollected').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.total_collected || 0).toLocaleString('en-IN')}`;
         if (document.getElementById('dTotalExpenses')) {
-          document.getElementById('dTotalExpenses').textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.total_expenses || 0).toLocaleString('en-IN')}`;
+          document.getElementById('dTotalExpenses').innerHTML = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.total_expenses || 0).toLocaleString('en-IN')}`;
         }
         if (document.getElementById('dRefundedExited')) {
-          document.getElementById('dRefundedExited').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.total_refunded_exited || 0).toLocaleString('en-IN')}`;
+          document.getElementById('dRefundedExited').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.total_refunded_exited || 0).toLocaleString('en-IN')}`;
         }
         if (document.getElementById('dCurrentBalance')) {
-          document.getElementById('dCurrentBalance').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.current_balance || 0).toLocaleString('en-IN')}`;
+          document.getElementById('dCurrentBalance').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.current_balance || 0).toLocaleString('en-IN')}`;
         }
         document.getElementById('dPaidMembers').textContent = d.paid_members || 0;
         document.getElementById('dPendingPayments').textContent = d.pending_payments || 0;
@@ -6123,8 +6123,8 @@
       const c = allSeettuCycles.find(item => item.id === cycleId);
       if (!c) return;
       currentDistCycle = c;
-      document.getElementById('distCycleInfo').textContent = `${c.title} (${c.cycle_month}) — ${c.total_members} Members × <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${c.monthly_contribution}`;
-      document.getElementById('distCollectionAmount').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${c.total_collection.toLocaleString('en-IN')}`;
+      document.getElementById('distCycleInfo').innerHTML = `${c.title} (${c.cycle_month}) — ${c.total_members} Members × <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${c.monthly_contribution}`;
+      document.getElementById('distCollectionAmount').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${c.total_collection.toLocaleString('en-IN')}`;
       document.getElementById('distAlert').innerHTML = '';
 
       const container = document.getElementById('distRowsContainer');
@@ -6191,8 +6191,8 @@
       }
 
       const remaining = totalCollection - sum;
-      document.getElementById('distTotalDistributed').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${sum.toLocaleString('en-IN')}`;
-      document.getElementById('distRemainingBalance').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${remaining.toLocaleString('en-IN')}`;
+      document.getElementById('distTotalDistributed').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${sum.toLocaleString('en-IN')}`;
+      document.getElementById('distRemainingBalance').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${remaining.toLocaleString('en-IN')}`;
 
       const alertEl = document.getElementById('distAlert');
       const saveBtn = document.getElementById('saveDistBtn');
@@ -6313,7 +6313,7 @@
 
         // Update Auto-Verification Metrics
         if (d.stats) {
-          if (document.getElementById('payMetricTotal')) document.getElementById('payMetricTotal').textContent = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (d.stats.total_collected || 0).toLocaleString('en-IN');
+          if (document.getElementById('payMetricTotal')) document.getElementById('payMetricTotal').innerHTML = '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + (d.stats.total_collected || 0).toLocaleString('en-IN');
           if (document.getElementById('payMetricApproved')) document.getElementById('payMetricApproved').textContent = d.stats.approved_count || 0;
           if (document.getElementById('payMetricPending')) document.getElementById('payMetricPending').textContent = d.stats.pending_count || 0;
           if (document.getElementById('payMetricRejected')) document.getElementById('payMetricRejected').textContent = d.stats.rejected_count || 0;
@@ -6386,7 +6386,7 @@
 
     async function runBatchAutoVerify() {
       const btn = document.getElementById('batchAutoVerifyBtn');
-      if (btn) { btn.disabled = true; btn.textContent = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Verifying...'; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Verifying...'; }
       try {
         const res = await api('/api/admin/payments/auto-verify-all', { method: 'POST' });
         showToast(res.message || `Batch complete: ${res.verified_count} auto-approved`, 'success');
@@ -6574,7 +6574,7 @@
         }
         if (document.getElementById('autoVerifyStatusBadge')) {
           const isAuto = (d.auto_approve_payment === '1' || d.auto_approve_payment === 'true' || d.auto_approve_payment === undefined);
-          document.getElementById('autoVerifyStatusBadge').textContent = isAuto ? `ACTIVE (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${d.default_payment_amount || 500})` : 'PAUSED';
+          document.getElementById('autoVerifyStatusBadge').innerHTML = isAuto ? `ACTIVE (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${d.default_payment_amount || 500})` : 'PAUSED';
           document.getElementById('autoVerifyStatusBadge').className = isAuto ? 'badge badge-paid' : 'badge badge-pending';
         }
 
@@ -6959,8 +6959,8 @@
     // Helpers & Modals
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function openConfirm(title, body, cb) {
-      document.getElementById('confirmTitle').textContent = title;
-      document.getElementById('confirmBody').textContent = body;
+      document.getElementById('confirmTitle').innerHTML = title;
+      document.getElementById('confirmBody').innerHTML = body;
       confirmCb = cb;
       document.getElementById('confirmModal').classList.remove('hidden');
     }
@@ -7659,20 +7659,20 @@
         const expMonthCount = document.getElementById('expSummaryMonthCount');
         const expNetPool = document.getElementById('expSummaryNetPool');
 
-        if (expTotal) expTotal.textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(res.total_expenses || 0).toLocaleString('en-IN')}`;
+        if (expTotal) expTotal.innerHTML = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(res.total_expenses || 0).toLocaleString('en-IN')}`;
         if (expTotalCount) expTotalCount.textContent = `${res.total_count || cachedExpensesList.length} total records`;
-        if (expMonth) expMonth.textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(res.month_expenses || 0).toLocaleString('en-IN')}`;
+        if (expMonth) expMonth.innerHTML = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(res.month_expenses || 0).toLocaleString('en-IN')}`;
         if (expMonthCount) expMonthCount.textContent = month ? `${month}: ${res.month_count || 0} entries` : 'Select month to view';
 
         // Fetch dashboard stats to get latest net available pool
         try {
           const dash = await api('/api/admin/members/dashboard-stats');
-          if (expNetPool) expNetPool.textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dash.current_balance || 0).toLocaleString('en-IN')}`;
+          if (expNetPool) expNetPool.innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dash.current_balance || 0).toLocaleString('en-IN')}`;
           if (document.getElementById('dTotalExpenses')) {
-            document.getElementById('dTotalExpenses').textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dash.total_expenses || 0).toLocaleString('en-IN')}`;
+            document.getElementById('dTotalExpenses').innerHTML = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dash.total_expenses || 0).toLocaleString('en-IN')}`;
           }
           if (document.getElementById('dCurrentBalance')) {
-            document.getElementById('dCurrentBalance').textContent = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dash.current_balance || 0).toLocaleString('en-IN')}`;
+            document.getElementById('dCurrentBalance').innerHTML = `<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(dash.current_balance || 0).toLocaleString('en-IN')}`;
           }
         } catch (e) {
           console.warn('Dashboard stats sync note:', e);

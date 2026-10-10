@@ -2226,7 +2226,7 @@
     document.getElementById('valTotalCollected').textContent = formatINR(m.available_amount || m.total_collected);
     document.getElementById('valTotalDistributed').textContent = formatINR(m.distributed_amount || m.total_distributed);
     if (document.getElementById('valTotalExpenses')) {
-      document.getElementById('valTotalExpenses').textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(m.total_expenses || 0).toLocaleString('en-IN')}`;
+      document.getElementById('valTotalExpenses').innerHTML = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(m.total_expenses || 0).toLocaleString('en-IN')}`;
     }
     if (document.getElementById('valAmountAfterExpenses')) {
       document.getElementById('valAmountAfterExpenses').textContent = formatINR(m.amount_after_expenses || ((m.available_amount || m.total_collected) - (m.total_expenses || 0)));
@@ -2433,7 +2433,7 @@
       if (inflowCntEl) inflowCntEl.textContent = `${s.inflow_count || 0} payments received`;
       if (outflowEl) outflowEl.textContent = formatINR(s.total_outflow || 0);
       if (outflowCntEl) outflowCntEl.textContent = `${s.outflow_count || 0} loans disbursed`;
-      if (expEl) expEl.textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}`;
+      if (expEl) expEl.innerHTML = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}`;
       if (expCntEl) expCntEl.textContent = `${s.expense_count || 0} expenses recorded`;
       if (netFlowEl) {
         const net = s.net_monthly_flow || 0;
