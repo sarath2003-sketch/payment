@@ -14,48 +14,59 @@
   <link rel="stylesheet" href="/css/gemini-assistant.css">
   
   <style>
+    
     :root {
-      --gold: #f5c842;
-      --gold-light: #fde68a;
-      --gold-dark: #b8972e;
-      --dark: #0d0800;
-      --dark2: #1a1200;
-      --dark3: #231a00;
-      --dark4: #2e2200;
-      --surface: #1e1500;
-      --surface2: #271d00;
-      --border: rgba(245,200,66,0.18);
-      --border2: rgba(245,200,66,0.35);
-      --text: #f0e6c0;
-      --text2: #c9b882;
-      --text3: #8a7a50;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --gold: #2563eb; /* Overriding old gold with blue */
+      --gold-light: #eff6ff;
+      --gold-dark: #1e40af;
+      
+      --bg: #f8fafc;
+      --dark: #f8fafc;
+      --dark2: #f1f5f9;
+      --dark3: #e2e8f0;
+      --dark4: #cbd5e1;
+      
+      --surface: #ffffff;
+      --surface2: #f8fafc;
+      
+      --border: #e2e8f0;
+      --border2: #cbd5e1;
+      
+      --text: #0f172a;
+      --text2: #334155;
+      --text3: #64748b;
+      
       --white: #ffffff;
-      --green: #22c55e;
-      --green-light: #86efac;
+      --green: #10b981;
       --red: #ef4444;
       --blue: #3b82f6;
-      --orange: #f97316;
-      --purple: #a855f7;
-      --radius: 20px;
-      --radius-sm: 12px;
-      --shadow: 0 12px 40px rgba(0,0,0,0.6);
-      --shadow-gold: 0 0 30px rgba(245,200,66,0.18);
-      --font-ta: 'Noto Sans Tamil', 'Inter', sans-serif;
-      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      --orange: #f59e0b;
+      
+      --radius: 8px;
+      --radius-sm: 4px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --shadow-gold: 0 4px 12px rgba(37, 99, 235, 0.1);
+      
+      --font-ta: 'Inter', sans-serif;
+      --transition: all 0.2s ease;
     }
+
 
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     
     body {
       font-family: 'Inter', var(--font-ta), sans-serif;
-      background: var(--dark);
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
       background-image: 
-        radial-gradient(circle at 10% 10%, rgba(245, 200, 66, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 90% 90%, rgba(34, 197, 94, 0.06) 0%, transparent 40%),
-        radial-gradient(circle at 50% 50%, rgba(13, 8, 0, 0.95) 0%, #0d0800 100%);
+        var(--bg) 0%, transparent 40%),
+        var(--bg) 0%, transparent 40%),
+        var(--bg) 0%, #0d0800 100%);
     }
 
     body[data-lang="ta"] { font-family: var(--font-ta); }
@@ -70,8 +81,8 @@
     /* ====== HEADER ====== */
     header {
       background: linear-gradient(135deg, rgba(26, 18, 0, 0.9), rgba(35, 26, 0, 0.85));
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      /* removed backdrop */;
+      -webkit-/* removed backdrop */;
       border: 1px solid var(--border2);
       border-radius: var(--radius);
       padding: 20px 28px;
@@ -288,8 +299,8 @@
     /* ====== SUMMARY CARDS ====== */
     .stat-card {
       background: linear-gradient(145deg, rgba(30, 21, 0, 0.85), rgba(39, 29, 0, 0.95));
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      /* removed backdrop */;
+      -webkit-/* removed backdrop */;
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 24px;
@@ -816,8 +827,8 @@
     /* ====== UNIVERSAL PORTAL SWITCHER BAR ====== */
     .universal-portal-bar {
       background: linear-gradient(90deg, rgba(20, 14, 0, 0.98), rgba(30, 22, 0, 0.98));
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      /* removed backdrop */;
+      -webkit-/* removed backdrop */;
       border: 1px solid var(--border2);
       border-radius: var(--radius-sm);
       padding: 10px 18px;
@@ -908,8 +919,8 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.82);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      /* removed backdrop */;
+      -webkit-/* removed backdrop */;
       z-index: 2000;
       display: flex;
       align-items: center;
@@ -1012,7 +1023,7 @@
         👤 <span id="txtUpbMember">Member Portal</span>
       </button>
       <button class="upb-tab" onclick="navigatePortal('admin')" id="upbTabAdmin">
-        🛡️ <span id="txtUpbAdmin">Admin Portal</span>
+        <i data-lucide="shield" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtUpbAdmin">Admin Portal</span>
       </button>
     </div>
     <div class="upb-lang">
@@ -1046,7 +1057,7 @@
       </button>
 
       <button type="button" class="nav-link-btn" onclick="navigatePortal('member')">
-        🔑 <span id="txtMemberLogin">Member Login</span>
+        <i data-lucide="key" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtMemberLogin">Member Login</span>
       </button>
 
       <button type="button" class="nav-link-btn" onclick="navigatePortal('admin')">
@@ -1057,9 +1068,9 @@
     <!-- BRAND VALUES & TRUST BANNER -->
     <div class="brand-values-banner">
       <div class="bvb-values">
-        <span class="bvb-item">🛡️ <span id="txtValTransp">Transparency</span></span>
+        <span class="bvb-item"><i data-lucide="shield" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtValTransp">Transparency</span></span>
         <span class="bvb-dot">✦</span>
-        <span class="bvb-item">🔒 <span id="txtValPrivacy">Data Privacy</span></span>
+        <span class="bvb-item"><i data-lucide="lock" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtValPrivacy">Data Privacy</span></span>
         <span class="bvb-dot">✦</span>
         <span class="bvb-item">✨ <span id="txtValClarity">Financial Clarity</span></span>
       </div>
@@ -1081,7 +1092,7 @@
 
   <!-- SECTION TITLE -->
   <div class="section-header">
-    <h2>📊 <span id="txtMainTitle">Overall Seed Fund Statistics</span></h2>
+    <h2><i data-lucide="bar-chart" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtMainTitle">Overall Seed Fund Statistics</span></h2>
     <div class="last-updated-text" id="txtLastUpdated">Last updated: Just now</div>
   </div>
 
@@ -1094,9 +1105,9 @@
         <span class="card-label" id="lblTotalFund">Total Fund Amount</span>
         <div class="card-icon">💼</div>
       </div>
-      <div class="card-value" id="valTotalFund">₹0</div>
+      <div class="card-value" id="valTotalFund"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
       <div class="card-subtext">
-        <span>📈 Overall fund portfolio value</span>
+        <span><i data-lucide="trending-up" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Overall fund portfolio value</span>
       </div>
     </div>
 
@@ -1104,11 +1115,11 @@
     <div class="stat-card card-emerald">
       <div class="card-top">
         <span class="card-label" id="lblTotalCollected">Available Amount (வரவு தொகை)</span>
-        <div class="card-icon">📥</div>
+        <div class="card-icon"><i data-lucide="arrow-down-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></div>
       </div>
-      <div class="card-value emerald" id="valTotalCollected">₹0</div>
+      <div class="card-value emerald" id="valTotalCollected"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
       <div class="card-subtext">
-        <span>✅ Total collections & repayments</span>
+        <span><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Total collections & repayments</span>
       </div>
     </div>
 
@@ -1116,9 +1127,9 @@
     <div class="stat-card" style="border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.05)">
       <div class="card-top">
         <span class="card-label" id="lblTotalExpenses" style="color:#ef4444;font-weight:700">Total Expenses (செலவு கணக்கு)</span>
-        <div class="card-icon">💸</div>
+        <div class="card-icon"><i data-lucide="coins" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></div>
       </div>
-      <div class="card-value" id="valTotalExpenses" style="color:#ef4444;font-weight:800">-₹0</div>
+      <div class="card-value" id="valTotalExpenses" style="color:#ef4444;font-weight:800">-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
       <div class="card-subtext">
         <span style="color:#ef4444">🔻 சங்க செலவுகள் (தானாக கழிக்கப்பட்டது)</span>
       </div>
@@ -1130,7 +1141,7 @@
         <span class="card-label" style="color:var(--gold);font-weight:700">Amount After Expenses</span>
         <div class="card-icon">🧮</div>
       </div>
-      <div class="card-value" id="valAmountAfterExpenses" style="color:var(--gold);font-weight:800">₹0</div>
+      <div class="card-value" id="valAmountAfterExpenses" style="color:var(--gold);font-weight:800"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
       <div class="card-subtext">
         <span style="color:var(--text2)">Available Amount - Total Expenses</span>
       </div>
@@ -1140,9 +1151,9 @@
     <div class="stat-card card-blue">
       <div class="card-top">
         <span class="card-label" id="lblTotalDistributed">Distributed Amount (வழங்கியது)</span>
-        <div class="card-icon">📤</div>
+        <div class="card-icon"><i data-lucide="arrow-up-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></div>
       </div>
-      <div class="card-value blue" id="valTotalDistributed">₹0</div>
+      <div class="card-value blue" id="valTotalDistributed"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
       <div class="card-subtext">
         <span>🤝 Total given to members as seed funds</span>
       </div>
@@ -1152,11 +1163,11 @@
     <div class="stat-card card-purple">
       <div class="card-top">
         <span class="card-label" id="lblCurrentBalance">Remaining Balance / கையிருப்பு தொகை</span>
-        <div class="card-icon">🏦</div>
+        <div class="card-icon"><i data-lucide="landmark" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></div>
       </div>
-      <div class="card-value purple" id="valCurrentBalance">₹0</div>
+      <div class="card-value purple" id="valCurrentBalance"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
       <div class="card-subtext">
-        <span>💵 Net cash currently in fund treasury</span>
+        <span><i data-lucide="banknote" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Net cash currently in fund treasury</span>
       </div>
     </div>
 
@@ -1169,7 +1180,7 @@
     <div class="stat-card card-orange">
       <div class="card-top">
         <span class="card-label" id="lblTotalMembers">Total Members</span>
-        <div class="card-icon">👥</div>
+        <div class="card-icon"><i data-lucide="users" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></div>
       </div>
       <div class="card-value orange" id="valTotalMembers">0</div>
       <div class="card-subtext">
@@ -1181,7 +1192,7 @@
     <div class="stat-card card-emerald">
       <div class="card-top">
         <span class="card-label" id="lblMembersReceived">Received Fund Amount</span>
-        <div class="card-icon">🎉</div>
+        <div class="card-icon"><i data-lucide="party-popper" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></div>
       </div>
       <div class="card-value emerald" id="valMembersReceived">0</div>
       <div class="card-subtext">
@@ -1193,7 +1204,7 @@
     <div class="stat-card card-red">
       <div class="card-top">
         <span class="card-label" id="lblMembersNotReceived">Not Yet Received</span>
-        <div class="card-icon">⏳</div>
+        <div class="card-icon"><i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></div>
       </div>
       <div class="card-value red" id="valMembersNotReceived">0</div>
       <div class="card-subtext">
@@ -1207,7 +1218,7 @@
         <span class="card-label" id="lblAmountOutside">Amount Outside Fund</span>
         <div class="card-icon">🔄</div>
       </div>
-      <div class="card-value purple" id="valAmountOutside">₹0</div>
+      <div class="card-value purple" id="valAmountOutside"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
       <div class="card-subtext">
         <span>Pending loan repayments in member hands</span>
       </div>
@@ -1247,8 +1258,8 @@
         <div class="progress-bar-fill emerald" id="barRecovery" style="width: 0%;"></div>
       </div>
       <div class="progress-details">
-        <span><strong id="valRepaidText">₹0</strong> Repaid</span>
-        <span>Out of <strong id="valPayableText">₹0</strong> Total Payable</span>
+        <span><strong id="valRepaidText"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</strong> Repaid</span>
+        <span>Out of <strong id="valPayableText"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</strong> Total Payable</span>
       </div>
     </div>
 
@@ -1258,7 +1269,7 @@
   <div class="chart-section">
     <div class="chart-header">
       <div class="chart-title">
-        <span>📈</span> <span id="lblChartTitle">Seed Fund Financial Overview Breakdown</span>
+        <span><i data-lucide="trending-up" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></span> <span id="lblChartTitle">Seed Fund Financial Overview Breakdown</span>
       </div>
       <div class="chart-legend">
         <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> <span id="lgdReceived">Received</span></div>
@@ -1273,7 +1284,7 @@
       <div class="chart-col-group">
         <div class="chart-bar-wrapper">
           <div class="chart-bar-inner" id="chartBarReceived" style="height: 0%; background: linear-gradient(0deg, #15803d, #22c55e);">
-            <div class="bar-value-tooltip" id="tipReceived">₹0</div>
+            <div class="bar-value-tooltip" id="tipReceived"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
           </div>
         </div>
         <div class="chart-col-label" id="lblBarReceived">Total Received</div>
@@ -1283,7 +1294,7 @@
       <div class="chart-col-group">
         <div class="chart-bar-wrapper">
           <div class="chart-bar-inner" id="chartBarDistributed" style="height: 0%; background: linear-gradient(0deg, #1d4ed8, #3b82f6);">
-            <div class="bar-value-tooltip" id="tipDistributed">₹0</div>
+            <div class="bar-value-tooltip" id="tipDistributed"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
           </div>
         </div>
         <div class="chart-col-label" id="lblBarDistributed">Total Distributed</div>
@@ -1293,7 +1304,7 @@
       <div class="chart-col-group">
         <div class="chart-bar-wrapper">
           <div class="chart-bar-inner" id="chartBarAvailable" style="height: 0%; background: linear-gradient(0deg, #6b21a8, #a855f7);">
-            <div class="bar-value-tooltip" id="tipAvailable">₹0</div>
+            <div class="bar-value-tooltip" id="tipAvailable"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
           </div>
         </div>
         <div class="chart-col-label" id="lblBarAvailable">Current Balance</div>
@@ -1303,7 +1314,7 @@
       <div class="chart-col-group">
         <div class="chart-bar-wrapper">
           <div class="chart-bar-inner" id="chartBarOutside" style="height: 0%; background: linear-gradient(0deg, #c2410c, #f97316);">
-            <div class="bar-value-tooltip" id="tipOutside">₹0</div>
+            <div class="bar-value-tooltip" id="tipOutside"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
           </div>
         </div>
         <div class="chart-col-label" id="lblBarOutside">Outside Fund</div>
@@ -1314,7 +1325,7 @@
   <!-- ADDITIONAL USEFUL STATISTICS TABLE -->
   <div class="table-card">
     <div class="chart-title" style="margin-bottom:16px">
-      <span>📋</span> <span id="lblTableTitle">Detailed Fund Breakdown & Metrics</span>
+      <span><i data-lucide="clipboard" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></span> <span id="lblTableTitle">Detailed Fund Breakdown & Metrics</span>
     </div>
     <table class="stats-table">
       <thead>
@@ -1328,17 +1339,17 @@
         <tr>
           <td><strong id="tb1Name">Total Amount Given to Members</strong></td>
           <td>Seed Fund Distributions</td>
-          <td style="text-align:right" class="val-highlight" id="tb1Val">₹0</td>
+          <td style="text-align:right" class="val-highlight" id="tb1Val"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</td>
         </tr>
         <tr>
           <td><strong id="tb2Name">Total Amount Received From Members</strong></td>
           <td>Member Contributions + Repayments</td>
-          <td style="text-align:right" class="val-highlight" id="tb2Val">₹0</td>
+          <td style="text-align:right" class="val-highlight" id="tb2Val"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</td>
         </tr>
         <tr>
           <td><strong id="tb3Name">Total Interest Earned / Expected</strong></td>
           <td>Fund Growth & Profit</td>
-          <td style="text-align:right" class="val-highlight" id="tb3Val">₹0</td>
+          <td style="text-align:right" class="val-highlight" id="tb3Val"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</td>
         </tr>
         <tr>
           <td><strong id="tb4Name">Active Fund Distributions</strong></td>
@@ -1368,7 +1379,7 @@
           <span id="txtLiveFeedTitle">Live Member Transactions & Contribution Feed</span>
         </div>
         <div class="feed-desc" id="txtLiveFeedDesc">
-          Real-time record of verified payments (₹500 PAID) & Seed Fund loans given to members. Reflects live when verified by Admin.
+          Real-time record of verified payments (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500 PAID) & Seed Fund loans given to members. Reflects live when verified by Admin.
         </div>
       </div>
       <div class="feed-filters">
@@ -1376,10 +1387,10 @@
           🌐 <span id="txtFilterAll">All</span> (<span id="countAllFeed">0</span>)
         </button>
         <button class="filter-chip" data-filter="PAYMENT" onclick="setFeedFilter('PAYMENT', this)">
-          ✅ <span id="txtFilterPaid">Paid Members</span> (<span id="countPaidFeed">0</span>)
+          <i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtFilterPaid">Paid Members</span> (<span id="countPaidFeed">0</span>)
         </button>
         <button class="filter-chip" data-filter="DISTRIBUTION" onclick="setFeedFilter('DISTRIBUTION', this)">
-          💰 <span id="txtFilterLoans">Loans Taken</span> (<span id="countDistFeed">0</span>)
+          <i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtFilterLoans">Loans Taken</span> (<span id="countDistFeed">0</span>)
         </button>
       </div>
     </div>
@@ -1412,11 +1423,11 @@
   <section class="live-feed-section" id="seedFundLoansSection" style="margin-bottom:30px">
     <div class="feed-header-row">
       <div>
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,200,66,0.15);color:var(--gold);border:1px solid var(--border);font-size:11px;font-weight:800;padding:3px 10px;border-radius:12px;margin-bottom:6px">
-          <span>📊 TRANSPARENT MONTHLY STATEMENT</span>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,200,66,0.15);color:var(--gold);border: 1px solid var(--border);font-size:11px;font-weight:800;padding:3px 10px;border-radius:12px;margin-bottom:6px">
+          <span><i data-lucide="bar-chart" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> TRANSPARENT MONTHLY STATEMENT</span>
         </div>
         <h2 class="feed-title" style="margin-bottom:4px" id="txtLoansSectionTitle">
-          💰 Monthly Statement & Loan Transparency
+          <i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Monthly Statement & Loan Transparency
         </h2>
         <div style="font-size:13px;color:var(--text3)" id="txtLoansSectionSub">
           மாதாந்திர வரவு (தேதி/நேரத்துடன்), 5% வட்டிக் கடன் (நாமினி விபரம்), தவணை செலுத்துகை & நிகர இருப்பு அறிக்கை
@@ -1425,18 +1436,18 @@
       
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <!-- Month Selector Dropdown -->
-        <div style="display:flex;align-items:center;gap:6px;background:var(--dark2);border:1px solid var(--gold);padding:4px 10px;border-radius:8px">
-          <span style="font-size:12px;font-weight:700;color:var(--gold)">📅 மாதம்:</span>
-          <select id="pubStatementMonthSelect" onchange="loadPublicMonthlyStatement(this.value)" style="background:transparent;border:none;color:#fff;font-weight:700;font-size:13px;outline:none;cursor:pointer">
+        <div style="display:flex;align-items:center;gap:6px;background:var(--dark2);border: 1px solid var(--primary);padding:4px 10px;border-radius:8px">
+          <span style="font-size:12px;font-weight:700;color:var(--gold)"><i data-lucide="calendar" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> மாதம்:</span>
+          <select id="pubStatementMonthSelect" onchange="loadPublicMonthlyStatement(this.value)" style="background:transparent;border:none;color: var(--text);font-weight:700;font-size:13px;outline:none;cursor:pointer">
             <!-- Populated dynamically -->
           </select>
         </div>
         <!-- Download Statement Button -->
-        <button type="button" class="nav-link-btn" onclick="downloadMonthlyStatementPublic()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-weight:700;padding:7px 14px;border:none;border-radius:8px;box-shadow:0 4px 12px rgba(37,99,235,0.3);cursor:pointer">
-          📥 <span id="txtDownloadStatement">Download Statement (Excel/CSV)</span>
+        <button type="button" class="nav-link-btn" onclick="downloadMonthlyStatementPublic()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color: var(--text);font-weight:700;padding:7px 14px;border:none;border-radius:8px;box-shadow:0 4px 12px rgba(37,99,235,0.3);cursor:pointer">
+          <i data-lucide="arrow-down-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtDownloadStatement">Download Statement (Excel/CSV)</span>
         </button>
-        <button type="button" class="nav-link-btn" onclick="printMonthlyStatementPublic()" style="background:var(--surface2);color:var(--text);font-weight:600;padding:7px 14px;border:1px solid var(--border);border-radius:8px;cursor:pointer">
-          🖨️ <span id="txtPrintStatement">Print / PDF</span>
+        <button type="button" class="nav-link-btn" onclick="printMonthlyStatementPublic()" style="background:var(--surface2);color:var(--text);font-weight:600;padding:7px 14px;border: 1px solid var(--border);border-radius:8px;cursor:pointer">
+          <i data-lucide="printer" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtPrintStatement">Print / PDF</span>
         </button>
       </div>
     </div>
@@ -1444,28 +1455,28 @@
     <!-- Monthly Summary 5 KPI Cards -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;margin-bottom:20px">
       <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:14px">
-        <div style="font-size:11px;color:var(--green-light);font-weight:700;text-transform:uppercase">📥 Monthly Inflow (மாத வரவு)</div>
-        <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="pubStmtInflow">₹0</div>
+        <div style="font-size:11px;color:var(--green-light);font-weight:700;text-transform:uppercase"><i data-lucide="arrow-down-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Monthly Inflow (மாத வரவு)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--green);margin-top:4px" id="pubStmtInflow"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px" id="pubStmtInflowCount">0 payments received</div>
       </div>
       <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px">
-        <div style="font-size:11px;color:#fca5a5;font-weight:700;text-transform:uppercase">📤 Monthly Loans (கடன் பட்டுவாடா)</div>
-        <div style="font-size:20px;font-weight:800;color:var(--red);margin-top:4px" id="pubStmtOutflow">₹0</div>
+        <div style="font-size:11px;color:#fca5a5;font-weight:700;text-transform:uppercase"><i data-lucide="arrow-up-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Monthly Loans (கடன் பட்டுவாடா)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--red);margin-top:4px" id="pubStmtOutflow"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px" id="pubStmtOutflowCount">0 loans disbursed</div>
       </div>
       <div style="background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.4);border-radius:12px;padding:14px">
-        <div style="font-size:11px;color:#ef4444;font-weight:700;text-transform:uppercase">💸 Monthly Expenses (சங்க செலவு)</div>
-        <div style="font-size:20px;font-weight:800;color:#ef4444;margin-top:4px" id="pubStmtExpenses">-₹0</div>
+        <div style="font-size:11px;color:#ef4444;font-weight:700;text-transform:uppercase"><i data-lucide="coins" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Monthly Expenses (சங்க செலவு)</div>
+        <div style="font-size:20px;font-weight:800;color:#ef4444;margin-top:4px" id="pubStmtExpenses">-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px" id="pubStmtExpensesCount">0 expenses recorded</div>
       </div>
       <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:14px">
         <div style="font-size:11px;color:#93c5fd;font-weight:700;text-transform:uppercase">⚖️ Net Monthly Flow (நிகர வரவு/செலவு)</div>
-        <div style="font-size:20px;font-weight:800;color:#60a5fa;margin-top:4px" id="pubStmtNetFlow">₹0</div>
+        <div style="font-size:20px;font-weight:800;color:#60a5fa;margin-top:4px" id="pubStmtNetFlow"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">Inflow - Outflow - Expenses</div>
       </div>
       <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:12px;padding:14px">
-        <div style="font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase">🏦 Total Pool Balance (மொத்த இருப்பு)</div>
-        <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px" id="pubStmtClosingBalance">₹0</div>
+        <div style="font-size:11px;color:var(--gold);font-weight:700;text-transform:uppercase"><i data-lucide="landmark" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Total Pool Balance (மொத்த இருப்பு)</div>
+        <div style="font-size:20px;font-weight:800;color:var(--gold);margin-top:4px" id="pubStmtClosingBalance"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>0</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">Available in Club Pool</div>
       </div>
     </div>
@@ -1473,13 +1484,13 @@
     <!-- Toggle Tabs: Inflows vs Loans vs Expenses -->
     <div style="display:flex;gap:10px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap">
       <button class="filter-chip active" id="tabBtnPubInflows" onclick="switchPubStatementTab('inflows', this)">
-        📥 <span style="font-weight:700">மாதாந்திர உள்வரவு (Inflows)</span> (<span id="cntPubInflows">0</span>)
+        <i data-lucide="arrow-down-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span style="font-weight:700">மாதாந்திர உள்வரவு (Inflows)</span> (<span id="cntPubInflows">0</span>)
       </button>
       <button class="filter-chip" id="tabBtnPubLoans" onclick="switchPubStatementTab('loans', this)">
-        💰 <span style="font-weight:700">கடன் & மறுசெலுத்துகை (Loans & Repayments)</span> (<span id="cntPubLoans">0</span>)
+        <i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span style="font-weight:700">கடன் & மறுசெலுத்துகை (Loans & Repayments)</span> (<span id="cntPubLoans">0</span>)
       </button>
       <button class="filter-chip" id="tabBtnPubExpenses" onclick="switchPubStatementTab('expenses', this)">
-        💸 <span style="font-weight:700">சங்கச் செலவுகள் (Expenses)</span> (<span id="cntPubExpenses">0</span>)
+        <i data-lucide="coins" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span style="font-weight:700">சங்கச் செலவுகள் (Expenses)</span> (<span id="cntPubExpenses">0</span>)
       </button>
     </div>
 
@@ -1515,17 +1526,17 @@
       <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:center;justify-content:space-between">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="filter-chip active" id="loanFilterAll" onclick="setLoanFilter('ALL', this)">
-            📋 <span>All Loans</span> (<span id="cntAllLoans">0</span>)
+            <i data-lucide="clipboard" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span>All Loans</span> (<span id="cntAllLoans">0</span>)
           </button>
           <button class="filter-chip" id="loanFilterPending" onclick="setLoanFilter('PENDING', this)" style="border-color:rgba(239,68,68,0.4)">
-            ⏳ <span style="color:#f87171">Pending / Partial</span> (<span id="cntPendingLoans">0</span>)
+            <i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span style="color:#f87171">Pending / Partial</span> (<span id="cntPendingLoans">0</span>)
           </button>
           <button class="filter-chip" id="loanFilterPaid" onclick="setLoanFilter('PAID', this)" style="border-color:rgba(34,197,94,0.4)">
-            ✅ <span style="color:var(--green-light)">Fully Paid</span> (<span id="cntPaidLoans">0</span>)
+            <i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span style="color:var(--green-light)">Fully Paid</span> (<span id="cntPaidLoans">0</span>)
           </button>
         </div>
         <div style="min-width:220px;flex:1;max-width:320px">
-          <input type="text" id="loanSearchInput" placeholder="🔍 Search Member / Nominee..." oninput="renderLoansTable()" style="width:100%;padding:8px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
+          <input type="text" id="loanSearchInput" placeholder="<i data-lucide="search" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Search Member / Nominee..." oninput="renderLoansTable()" style="width:100%;padding:8px 14px;background:var(--dark2);border: 1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none">
         </div>
       </div>
 
@@ -1569,7 +1580,7 @@
               <th>Category (வகை)</th>
               <th>Expense Purpose / Title (செலவு விவரம்)</th>
               <th>Remarks / Notes (குறிப்பு)</th>
-              <th style="text-align:right">Deducted Amount (₹)</th>
+              <th style="text-align:right">Deducted Amount (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)</th>
             </tr>
           </thead>
           <tbody id="pubStmtExpensesTableBody">
@@ -1583,34 +1594,34 @@
   </section>
 
   <!-- CLUB OFFICIAL QR CODE & PAYMENT DETAILS -->
-  <div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:30px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;box-shadow:0 8px 30px rgba(0,0,0,0.3)">
+  <div style="background:var(--dark2);border: 1px solid var(--border);border-radius: var(--radius);padding:24px;margin-bottom:30px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;box-shadow:0 8px 30px rgba(0,0,0,0.3)">
     <div style="background:#ffffff;padding:12px;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,0,0,0.2);flex-shrink:0;margin:0 auto">
       <img id="pubQrImg" src="/assets/qr.png" onerror="this.src='/assets/qr.svg'" alt="Club Payment QR Code" style="width:170px;height:170px;object-fit:contain;border-radius:8px">
     </div>
     <div style="flex:1;min-width:280px">
-      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,200,66,0.12);border:1px solid var(--border);color:var(--gold);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:10px">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,200,66,0.12);border: 1px solid var(--border);color:var(--gold);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:10px">
         <span>⚡ OFFICIAL PAYMENT SCANNER</span>
       </div>
       <h3 style="font-size:19px;color:var(--gold);margin-bottom:6px" id="txtPubQrHeader">Club Official QR & UPI Payment</h3>
       <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5" id="txtPubQrSub">
-        Scan this official QR code using Google Pay, PhonePe, Paytm or any UPI app to pay your monthly contribution (₹500).
+        Scan this official QR code using Google Pay, PhonePe, Paytm or any UPI app to pay your monthly contribution (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500).
       </p>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="background:rgba(255,255,255,0.04);border: 1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:12px;color:var(--text3)">Admin UPI ID:</span>
           <span style="font-weight:700;color:var(--text);font-size:14px" id="pubUpiId">sarath9025@cnrb</span>
         </div>
-        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="background:rgba(255,255,255,0.04);border: 1px solid var(--border);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:12px;color:var(--text3)">Account Holder:</span>
           <span style="font-weight:600;color:var(--text2);font-size:13px" id="pubUpiName">Canara Bank · Sarathkumar</span>
         </div>
       </div>
       <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-        <button type="button" class="nav-link-btn" onclick="openDirectUpiPay()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;padding:8px 16px;border:none;border-radius:10px;box-shadow:0 4px 15px rgba(34,197,94,0.3);cursor:pointer">
-          📱 <span>Pay ₹500 via GPay / PhonePe / Paytm</span>
+        <button type="button" class="nav-link-btn" onclick="openDirectUpiPay()" style="background:linear-gradient(135deg,#22c55e,#16a34a);color: var(--text);font-weight:800;padding:8px 16px;border:none;border-radius:10px;box-shadow:0 4px 15px rgba(34,197,94,0.3);cursor:pointer">
+          <i data-lucide="smartphone" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span>Pay <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500 via GPay / PhonePe / Paytm</span>
         </button>
         <button type="button" class="nav-link-btn" onclick="navigatePortal('member')" style="background:var(--gold);color:var(--dark);font-weight:700;padding:8px 16px">
-          🔑 Submit Payment Proof in Member Portal
+          <i data-lucide="key" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Submit Payment Proof in Member Portal
         </button>
       </div>
     </div>
@@ -1618,7 +1629,7 @@
 
   <!-- PRIVACY FOOTER -->
   <footer>
-    🔒 <strong>PUBLIC DATA PRIVACY NOTICE</strong><br>
+    <i data-lucide="lock" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <strong>PUBLIC DATA PRIVACY NOTICE</strong><br>
     This page displays only <strong>overall aggregated Seed Fund statistics</strong>. No login credentials, passwords, bank account numbers, UPI IDs, phone numbers, email addresses, or private personal data are exposed or stored on this public portal.
   </footer>
 
@@ -1642,7 +1653,7 @@
     </div>
     <div class="modal-footer" style="display:flex;gap:10px;margin-top:16px">
       <button type="button" class="nav-link-btn" style="flex:1;justify-content:center;background:var(--gold);color:var(--dark);font-weight:700" onclick="navigatePortal('member')">
-        🔑 <span id="txtModalLoginBtn">Member Login</span>
+        <i data-lucide="key" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <span id="txtModalLoginBtn">Member Login</span>
       </button>
       <button type="button" class="nav-link-btn" style="flex:1;justify-content:center" onclick="closeMemberModal()">
         ✕ <span id="txtModalCloseBtn">Close</span>
@@ -1728,12 +1739,12 @@
       lblBarOutside: "Outside Fund",
       tickerBadge: "LIVE ACTIVITY",
       liveFeedTitle: "Live Member Transactions & Contribution Feed",
-      liveFeedDesc: "Real-time record of verified payments (₹500 PAID) & Seed Fund loans given to members. Reflects live when verified by Admin.",
+      liveFeedDesc: "Real-time record of verified payments (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500 PAID) & Seed Fund loans given to members. Reflects live when verified by Admin.",
       filterAll: "All",
       filterPaid: "Paid Members",
       filterLoans: "Loans Taken",
       emptyFeed: "No transactions recorded yet.",
-      txtLoansSectionTitle: "💰 Monthly Fund Loans & Repayment Status",
+      txtLoansSectionTitle: "<i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Monthly Fund Loans & Repayment Status",
       txtLoansSectionSub: "Transparent record of member loans, 5% interest, nominee & repayment status (Pending / Paid)",
       txtDownloadStatement: "Download Statement (Excel/CSV)",
       txtPrintStatement: "Print / PDF",
@@ -1784,12 +1795,12 @@
       lblBarOutside: "வெளியே உள்ளது",
       tickerBadge: "நேரலை செயல்பாடுகள்",
       liveFeedTitle: "நேரலை உறுப்பினர் பரிவர்த்தனைகள் & வரவு செலவு பட்டியல்",
-      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (₹500 செலுத்தப்பட்டது) மற்றும் சீட்டு நிதி கடன்கள். அட்மின் சரிபார்த்தவுடன் உடனடியாக நேரலையில் புதுப்பிக்கப்படும்.",
+      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500 செலுத்தப்பட்டது) மற்றும் சீட்டு நிதி கடன்கள். அட்மின் சரிபார்த்தவுடன் உடனடியாக நேரலையில் புதுப்பிக்கப்படும்.",
       filterAll: "அனைத்தும்",
       filterPaid: "பணம் செலுத்தியவர்கள்",
       filterLoans: "கடன் பெற்றவர்கள்",
       emptyFeed: "இதுவரை பரிவர்த்தனைகள் ஏதுமில்லை.",
-      txtLoansSectionTitle: "💰 மாதாந்திர நிதி கடன்கள் & மறுசெலுத்துகை நிலை",
+      txtLoansSectionTitle: "<i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> மாதாந்திர நிதி கடன்கள் & மறுசெலுத்துகை நிலை",
       txtLoansSectionSub: "உறுப்பினர்கள் பெற்ற கடன், 5% வட்டி, நாமினி & மறுசெலுத்துகை நிலை (நிலுவை / செலுத்தப்பட்டது)",
       txtDownloadStatement: "கடன் அறிக்கை பதிவிறக்கு (Excel/CSV)",
       txtPrintStatement: "அச்சிடுக / PDF",
@@ -1840,12 +1851,12 @@
       lblBarOutside: "வெளியே (Outside Fund)",
       tickerBadge: "நேரலை (LIVE ACTIVITY)",
       liveFeedTitle: "நேரலை பரிவர்த்தனைகள் (Live Transactions Feed)",
-      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (₹500 PAID) & சீட்டு கடன்கள் நேரலையில் புதுப்பிக்கப்படும்.",
+      liveFeedDesc: "உறுப்பினர்கள் செலுத்திய மாதாந்திர தவணை (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>500 PAID) & சீட்டு கடன்கள் நேரலையில் புதுப்பிக்கப்படும்.",
       filterAll: "அனைத்தும் (All)",
       filterPaid: "கட்டியவர்கள் (Paid)",
       filterLoans: "கடன் பெற்றவர்கள் (Loans)",
       emptyFeed: "பரிவர்த்தனைகள் ஏதுமில்லை (No transactions yet).",
-      txtLoansSectionTitle: "💰 மாதாந்திர கடன்கள் & நிலுவை (Loans & Repayments)",
+      txtLoansSectionTitle: "<i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> மாதாந்திர கடன்கள் & நிலுவை (Loans & Repayments)",
       txtLoansSectionSub: "உறுப்பினர்கள் பெற்ற கடன், 5% வட்டி, நாமினி & நிலை (Pending / Paid)",
       txtDownloadStatement: "அறிக்கை பதிவிறக்கு (Download CSV)",
       txtPrintStatement: "அச்சிடுக (Print / PDF)",
@@ -1982,7 +1993,7 @@
 
   function formatINR(val) {
     const num = parseFloat(val) || 0;
-    return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    return '<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
   }
 
   function esc(str) {
@@ -2095,19 +2106,19 @@
       let actionText = '';
       if (isPaid) {
         if (currentLang === 'ta') {
-          actionText = `செலுத்தியுள்ளார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (செலுத்தப்பட்டது ✅)</span>${item.month_label ? ` - ${esc(item.month_label)}` : ''}`;
+          actionText = `செலுத்தியுள்ளார் <span class="${tagClass}"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')} (செலுத்தப்பட்டது <i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)</span>${item.month_label ? ` - ${esc(item.month_label)}` : ''}`;
         } else if (currentLang === 'tanglish') {
-          actionText = `கட்டணம் செலுத்தினார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (PAID ✅)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`;
+          actionText = `கட்டணம் செலுத்தினார் <span class="${tagClass}"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')} (PAID <i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`;
         } else {
-          actionText = `paid <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} (PAID ✅)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`;
+          actionText = `paid <span class="${tagClass}"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')} (PAID <i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)</span>${item.month_label ? ` for ${esc(item.month_label)}` : ''}`;
         }
       } else {
         if (currentLang === 'ta') {
-          actionText = `பெற்றுள்ளார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} விதை நிதி கடன் உதவி 💰</span>`;
+          actionText = `பெற்றுள்ளார் <span class="${tagClass}"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')} விதை நிதி கடன் உதவி <i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></span>`;
         } else if (currentLang === 'tanglish') {
-          actionText = `பெற்றார் <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} Seed Fund Loan 💰</span>`;
+          actionText = `பெற்றார் <span class="${tagClass}"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')} Seed Fund Loan <i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></span>`;
         } else {
-          actionText = `received <span class="${tagClass}">₹${item.amount.toLocaleString('en-IN')} Seed Fund Loan 💰</span>`;
+          actionText = `received <span class="${tagClass}"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')} Seed Fund Loan <i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i></span>`;
         }
       }
 
@@ -2157,25 +2168,25 @@
       const monthSub = item.month_label ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">Month: ${esc(item.month_label)}</div>` : '';
 
       const amountHtml = isPaid
-        ? `<span class="amount-paid">+ ₹${item.amount.toLocaleString('en-IN')}</span>`
-        : `<span class="amount-taken">₹${item.amount.toLocaleString('en-IN')}</span>`;
+        ? `<span class="amount-paid">+ <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')}</span>`
+        : `<span class="amount-taken"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${item.amount.toLocaleString('en-IN')}</span>`;
 
       let badgeHtml = '';
       if (isPaid) {
         if (currentLang === 'ta') {
-          badgeHtml = `<span class="badge-paid">✅ செலுத்தப்பட்டது</span>`;
+          badgeHtml = `<span class="badge-paid"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> செலுத்தப்பட்டது</span>`;
         } else if (currentLang === 'tanglish') {
-          badgeHtml = `<span class="badge-paid">✅ PAID / செலுத்தப்பட்டது</span>`;
+          badgeHtml = `<span class="badge-paid"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> PAID / செலுத்தப்பட்டது</span>`;
         } else {
-          badgeHtml = `<span class="badge-paid">✅ PAID</span>`;
+          badgeHtml = `<span class="badge-paid"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> PAID</span>`;
         }
       } else {
         if (currentLang === 'ta') {
-          badgeHtml = `<span class="badge-taken">💰 கடன் வழங்கப்பட்டது</span>`;
+          badgeHtml = `<span class="badge-taken"><i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> கடன் வழங்கப்பட்டது</span>`;
         } else if (currentLang === 'tanglish') {
-          badgeHtml = `<span class="badge-taken">💰 LOAN GIVEN / கடன்</span>`;
+          badgeHtml = `<span class="badge-taken"><i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> LOAN GIVEN / கடன்</span>`;
         } else {
-          badgeHtml = `<span class="badge-taken">💰 LOAN GIVEN</span>`;
+          badgeHtml = `<span class="badge-taken"><i data-lucide="circle-dollar-sign" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> LOAN GIVEN</span>`;
         }
       }
 
@@ -2215,7 +2226,7 @@
     document.getElementById('valTotalCollected').textContent = formatINR(m.available_amount || m.total_collected);
     document.getElementById('valTotalDistributed').textContent = formatINR(m.distributed_amount || m.total_distributed);
     if (document.getElementById('valTotalExpenses')) {
-      document.getElementById('valTotalExpenses').textContent = `-₹${parseFloat(m.total_expenses || 0).toLocaleString('en-IN')}`;
+      document.getElementById('valTotalExpenses').textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(m.total_expenses || 0).toLocaleString('en-IN')}`;
     }
     if (document.getElementById('valAmountAfterExpenses')) {
       document.getElementById('valAmountAfterExpenses').textContent = formatINR(m.amount_after_expenses || ((m.available_amount || m.total_collected) - (m.total_expenses || 0)));
@@ -2299,10 +2310,10 @@
         }
 
         bodyEl.innerHTML = `
-          <div style="background:rgba(245,200,66,0.06);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+          <div style="background:rgba(245,200,66,0.06);border: 1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
             <div style="display:flex;justify-content:space-between;margin-bottom:8px">
               <span style="color:var(--text2);font-size:13px">Status</span>
-              <span style="color:var(--green-light);font-weight:700;font-size:13px">✅ VERIFIED MEMBER</span>
+              <span style="color:var(--green-light);font-weight:700;font-size:13px"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> VERIFIED MEMBER</span>
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:8px">
               <span style="color:var(--text2);font-size:13px">Joined Date</span>
@@ -2317,25 +2328,25 @@
               <span style="color:var(--text);font-weight:600;font-size:13px">${m.loans_count > 0 ? `${formatINR(m.total_loan_amount)} (${m.loans_count})` : 'None'}</span>
             </div>
           </div>
-          <div style="font-size:11.5px;color:var(--text3);line-height:1.5;background:var(--dark2);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
-            🔒 <strong>Member Privacy Note:</strong> Personal phone numbers, password hashes, and bank nominee records are strictly protected and never displayed publicly.
+          <div style="font-size:11.5px;color:var(--text3);line-height:1.5;background:var(--dark2);padding:10px 12px;border-radius:8px;border: 1px solid var(--border)">
+            <i data-lucide="lock" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <strong>Member Privacy Note:</strong> Personal phone numbers, password hashes, and bank nominee records are strictly protected and never displayed publicly.
           </div>
         `;
       }
     } catch (e) {
       bodyEl.innerHTML = `
-        <div style="background:rgba(245,200,66,0.06);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="background:rgba(245,200,66,0.06);border: 1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px">
             <span style="color:var(--text2);font-size:13px">Member Code</span>
             <span style="color:var(--gold);font-weight:700;font-size:13px">${esc(memberCode)}</span>
           </div>
           <div style="display:flex;justify-content:space-between">
             <span style="color:var(--text2);font-size:13px">Verified Monthly Payments</span>
-            <span style="color:var(--green);font-weight:700;font-size:13px">✅ ACTIVE CONTRIBUTOR</span>
+            <span style="color:var(--green);font-weight:700;font-size:13px"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> ACTIVE CONTRIBUTOR</span>
           </div>
         </div>
-        <div style="font-size:11.5px;color:var(--text3);line-height:1.5;background:var(--dark2);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
-          🔒 Member verified in Chit Fund Club ledger.
+        <div style="font-size:11.5px;color:var(--text3);line-height:1.5;background:var(--dark2);padding:10px 12px;border-radius:8px;border: 1px solid var(--border)">
+          <i data-lucide="lock" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Member verified in Chit Fund Club ledger.
         </div>
       `;
     }
@@ -2422,7 +2433,7 @@
       if (inflowCntEl) inflowCntEl.textContent = `${s.inflow_count || 0} payments received`;
       if (outflowEl) outflowEl.textContent = formatINR(s.total_outflow || 0);
       if (outflowCntEl) outflowCntEl.textContent = `${s.outflow_count || 0} loans disbursed`;
-      if (expEl) expEl.textContent = `-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}`;
+      if (expEl) expEl.textContent = `-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}`;
       if (expCntEl) expCntEl.textContent = `${s.expense_count || 0} expenses recorded`;
       if (netFlowEl) {
         const net = s.net_monthly_flow || 0;
@@ -2453,11 +2464,11 @@
                 <div style="font-size:11px;color:var(--text3)">ID: ${esc(item.member_code || '—')}</div>
               </td>
               <td style="white-space:nowrap;font-size:13px;color:var(--text)">
-                📅 <strong>${esc(item.payment_date)}</strong>
+                <i data-lucide="calendar" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <strong>${esc(item.payment_date)}</strong>
                 <div style="font-size:11px;color:var(--text3)">⏰ ${esc(item.payment_time || '—')}</div>
               </td>
               <td>
-                <span style="display:inline-flex;align-items:center;padding:3px 9px;background:rgba(245,200,66,0.12);color:var(--gold);border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:700">
+                <span style="display:inline-flex;align-items:center;padding:3px 9px;background:rgba(245,200,66,0.12);color:var(--gold);border: 1px solid var(--border);border-radius:12px;font-size:11px;font-weight:700">
                   ${esc(item.category)}
                 </span>
               </td>
@@ -2482,7 +2493,7 @@
             <tr>
               <td style="text-align:center"><strong style="color:var(--text3)">#${idx + 1}</strong></td>
               <td style="white-space:nowrap;font-size:13px;color:var(--text)">
-                📅 <strong>${esc(e.expense_date)}</strong>
+                <i data-lucide="calendar" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> <strong>${esc(e.expense_date)}</strong>
                 <div style="font-size:11px;color:var(--text3)">${esc(e.expense_month)}</div>
               </td>
               <td>
@@ -2497,7 +2508,7 @@
                 ${esc(e.remarks || '—')}
               </td>
               <td style="text-align:right;color:#ef4444;font-weight:800;font-size:15px;white-space:nowrap">
-                -₹${parseFloat(e.amount || 0).toLocaleString('en-IN')}
+                -<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(e.amount || 0).toLocaleString('en-IN')}
               </td>
             </tr>
           `).join('');
@@ -2587,11 +2598,11 @@
       let statusBadge = '';
       if (isPaid) {
         if (currentLang === 'ta') {
-          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ முழுமையாக செலுத்தப்பட்டது</span>`;
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> முழுமையாக செலுத்தப்பட்டது</span>`;
         } else if (currentLang === 'tanglish') {
-          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ FULLY PAID / செலுத்தப்பட்டது</span>`;
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> FULLY PAID / செலுத்தப்பட்டது</span>`;
         } else {
-          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px">✅ FULLY PAID</span>`;
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(34,197,94,0.15);color:var(--green-light);border:1px solid rgba(34,197,94,0.4);border-radius:20px;font-weight:700;font-size:11.5px"><i data-lucide="check-circle" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> FULLY PAID</span>`;
         }
       } else if (isPartial) {
         if (currentLang === 'ta') {
@@ -2603,11 +2614,11 @@
         }
       } else {
         if (currentLang === 'ta') {
-          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ நிலுவை</span>`;
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px"><i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> நிலுவை</span>`;
         } else if (currentLang === 'tanglish') {
-          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ PENDING / நிலுவை</span>`;
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px"><i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> PENDING / நிலுவை</span>`;
         } else {
-          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px">⏳ PENDING</span>`;
+          statusBadge = `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.4);border-radius:20px;font-weight:700;font-size:11.5px"><i data-lucide="hourglass" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> PENDING</span>`;
         }
       }
 
@@ -2632,7 +2643,7 @@
             <div style="font-size:11px;color:var(--text3)">ID: ${esc(d.member_code || '—')}</div>
           </td>
           <td style="white-space:nowrap;font-size:13px;color:var(--text2)">
-            📅 ${esc(distDateStr)}
+            <i data-lucide="calendar" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> ${esc(distDateStr)}
           </td>
           <td style="font-weight:700;color:var(--text);font-size:14px">
             ${formatINR(principal)}
@@ -2764,7 +2775,7 @@
         <td style="font-size:11px;white-space:nowrap">${esc(item.payment_date)}<br><span style="color:#64748b;font-size:10px">${esc(item.payment_time)}</span></td>
         <td style="font-size:11px">${esc(item.category)}</td>
         <td style="font-family:monospace;font-size:11px;color:#334155;word-break:break-all"><code>${esc(item.transaction_reference)}</code></td>
-        <td style="text-align:right;font-weight:700;color:#15803d;font-size:12px">₹${parseFloat(item.amount || 0).toLocaleString('en-IN')}</td>
+        <td style="text-align:right;font-weight:700;color:#15803d;font-size:12px"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(item.amount || 0).toLocaleString('en-IN')}</td>
       </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:#94a3b8">No verified inflows recorded for this accounting month.</td></tr>';
 
@@ -2779,7 +2790,7 @@
       const statusColor = isRefund ? '#92400e' : (isPaid ? '#166534' : (isPartial ? '#9a3412' : '#991b1b'));
       const statusText = isRefund 
         ? 'MEMBER EXIT REFUND (அசல் ஒப்படைப்பு)' 
-        : (isPaid ? 'PAID / செலுத்தப்பட்டது' : (isPartial ? `PARTIAL (மீதம்: ₹${remaining.toLocaleString('en-IN')})` : 'ACTIVE DUE / நிலுவை'));
+        : (isPaid ? 'PAID / செலுத்தப்பட்டது' : (isPartial ? `PARTIAL (மீதம்: <i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${remaining.toLocaleString('en-IN')})` : 'ACTIVE DUE / நிலுவை'));
 
       return `
         <tr style="${isRefund ? 'background:#fffdf7;' : ''}">
@@ -2789,11 +2800,11 @@
             <span style="font-size:10px;color:#64748b;font-family:monospace">${esc(d.member_code || '')}</span>
           </td>
           <td style="font-size:11px;white-space:nowrap">${(d.distribution_date || d.start_date || '—').split('T')[0]}</td>
-          <td style="text-align:right;font-weight:600">₹${parseFloat(d.principal_amount || 0).toLocaleString('en-IN')}</td>
-          <td style="text-align:center;font-size:11px">${isRefund ? '—' : `${d.interest_percentage || 5}%<br><span style="font-size:10px;color:#64748b">₹${parseFloat(d.interest_amount || 0).toLocaleString('en-IN')}</span>`}</td>
-          <td style="text-align:right;font-weight:700">₹${parseFloat(d.total_payable || 0).toLocaleString('en-IN')}</td>
-          <td style="text-align:right;color:#15803d">₹${repaid.toLocaleString('en-IN')}</td>
-          <td style="text-align:right;font-weight:700;color:${remaining > 0 ? '#dc2626' : '#15803d'}">₹${remaining.toLocaleString('en-IN')}</td>
+          <td style="text-align:right;font-weight:600"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.principal_amount || 0).toLocaleString('en-IN')}</td>
+          <td style="text-align:center;font-size:11px">${isRefund ? '—' : `${d.interest_percentage || 5}%<br><span style="font-size:10px;color:#64748b"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.interest_amount || 0).toLocaleString('en-IN')}</span>`}</td>
+          <td style="text-align:right;font-weight:700"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(d.total_payable || 0).toLocaleString('en-IN')}</td>
+          <td style="text-align:right;color:#15803d"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${repaid.toLocaleString('en-IN')}</td>
+          <td style="text-align:right;font-weight:700;color:${remaining > 0 ? '#dc2626' : '#15803d'}"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${remaining.toLocaleString('en-IN')}</td>
           <td style="font-size:11px">${esc(d.nominee_name || '—')}</td>
           <td style="text-align:center">
             <span style="display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${statusBg};color:${statusColor}">${statusText}</span>
@@ -2811,7 +2822,7 @@
         <td><strong style="color:#0f172a;font-size:12px">${esc(e.title)}</strong></td>
         <td style="font-size:11px;color:#475569">${esc(e.remarks || '—')}</td>
         <td style="font-size:10px;color:#64748b">${esc(e.created_by_name || 'Admin')}</td>
-        <td style="text-align:right;font-weight:800;color:#dc2626;font-size:12px">-₹${parseFloat(e.amount || 0).toLocaleString('en-IN')}</td>
+        <td style="text-align:right;font-weight:800;color:#dc2626;font-size:12px">-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(e.amount || 0).toLocaleString('en-IN')}</td>
       </tr>
     `).join('') || '<tr><td colspan="7" style="text-align:center;padding:16px;color:#94a3b8">No operational expenses incurred in this accounting month (செலவுகள் இல்லை).</td></tr>';
 
@@ -2835,7 +2846,7 @@
           .official-seal .seal-no { font-family: monospace; font-size: 11px; font-weight: 700; color: #b45309; }
 
           .account-summary-table { width: 100%; border: 1.5px solid #0f2b5c; border-collapse: collapse; margin-bottom: 16px; background: #fdfefe; }
-          .account-summary-table th { background: #0f2b5c; color: #fff; text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+          .account-summary-table th { background: #0f2b5c; color: var(--text); text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
           .account-summary-table td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 11px; }
 
           .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
@@ -2855,7 +2866,7 @@
           .sign-box strong { color: #0f2b5c; display: block; }
           .sign-box span { color: #64748b; font-size: 10px; }
 
-          .no-print-bar { background: #0f2b5c; color: #fff; padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; }
+          .no-print-bar { background: #0f2b5c; color: var(--text); padding: 10px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; }
           .no-print-bar button { padding: 6px 14px; background: #f5c842; color: #0d0800; border: none; font-weight: 700; border-radius: 4px; cursor: pointer; }
           @media print {
             .no-print-bar { display: none !important; }
@@ -2866,7 +2877,7 @@
       <body>
         <div class="no-print-bar">
           <div><strong>PF Chit Fund Club — Official Bank Statement System</strong> · Ready to print / save as PDF</div>
-          <button onclick="window.print()">🖨️ Print / Download PDF</button>
+          <button onclick="window.print()"><i data-lucide="printer" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> Print / Download PDF</button>
         </div>
 
         <div class="bank-header">
@@ -2895,51 +2906,51 @@
             <td style="width:25%;color:#64748b">Accounting Period:</td>
             <td style="width:25%"><strong>${data.month} (01 to 30/31)</strong></td>
             <td style="width:25%;color:#64748b">Currency / Mode:</td>
-            <td style="width:25%"><strong>INR (₹) / Direct Bank & UPI</strong></td>
+            <td style="width:25%"><strong>INR (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>) / Direct Bank & UPI</strong></td>
           </tr>
           <tr>
             <td style="color:#64748b">Total Verified Inflows:</td>
-            <td style="color:#15803d;font-weight:700">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')} (${s.inflow_count || 0} txn)</td>
+            <td style="color:#15803d;font-weight:700"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')} (${s.inflow_count || 0} txn)</td>
             <td style="color:#64748b">Total Outflows & Loans:</td>
-            <td style="color:#b45309;font-weight:700">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')} (${s.outflow_count || 0} txn)</td>
+            <td style="color:#b45309;font-weight:700"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')} (${s.outflow_count || 0} txn)</td>
           </tr>
           <tr>
             <td style="color:#64748b">Total Club Expenses (செலவு):</td>
-            <td style="color:#dc2626;font-weight:800">-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')} (${s.expense_count || 0} items)</td>
+            <td style="color:#dc2626;font-weight:800">-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')} (${s.expense_count || 0} items)</td>
             <td style="color:#64748b">Net Month Movement:</td>
-            <td style="color:#0f2b5c;font-weight:700">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</td>
+            <td style="color:#0f2b5c;font-weight:700">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</td>
           </tr>
           <tr>
             <td colspan="2" style="color:#64748b;font-weight:600">Fund Pool Closing Balance (கையிருப்பு நிதி):</td>
-            <td colspan="2" style="color:#15803d;font-weight:800;font-size:13px;text-align:right">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
+            <td colspan="2" style="color:#15803d;font-weight:800;font-size:13px;text-align:right"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</td>
           </tr>
         </table>
 
         <div class="kpi-row">
           <div class="kpi-card">
             <div class="kpi-label">Verified Inflows (வரவு)</div>
-            <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-val" style="color:#15803d"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_inflow || 0).toLocaleString('en-IN')}</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Loans & Refunds (கடன்)</div>
-            <div class="kpi-val" style="color:#b45309">₹${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-val" style="color:#b45309"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_outflow || 0).toLocaleString('en-IN')}</div>
           </div>
           <div class="kpi-card" style="background:#fff5f5;border-color:#fecaca">
             <div class="kpi-label" style="color:#dc2626">Expenses (செலவு)</div>
-            <div class="kpi-val" style="color:#dc2626">-₹${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-val" style="color:#dc2626">-<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.total_expenses || 0).toLocaleString('en-IN')}</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Net Month Movement</div>
-            <div class="kpi-val" style="color:#0f2b5c">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}₹${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-val" style="color:#0f2b5c">${(s.net_monthly_flow || 0) >= 0 ? '+' : ''}<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.net_monthly_flow || 0).toLocaleString('en-IN')}</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Club Closing Cash Pool</div>
-            <div class="kpi-val" style="color:#15803d">₹${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
+            <div class="kpi-val" style="color:#15803d"><i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>${parseFloat(s.current_pool_balance || s.closing_pool_balance || 0).toLocaleString('en-IN')}</div>
           </div>
         </div>
 
         <div class="section-title">
-          <span>📥 1. VERIFIED INFLOW REGISTER (உறுப்பினர் உள்வரவு பட்டியல் - தேதி & நேரத்துடன்)</span>
+          <span><i data-lucide="arrow-down-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> 1. VERIFIED INFLOW REGISTER (உறுப்பினர் உள்வரவு பட்டியல் - தேதி & நேரத்துடன்)</span>
           <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${data.inflows?.length || 0} Transactions</span>
         </div>
         <table class="data-table">
@@ -2950,7 +2961,7 @@
               <th>Payment Date & Time</th>
               <th>Category / Purpose</th>
               <th>Bank UTR / Ref No</th>
-              <th style="text-align:right">Amount (₹)</th>
+              <th style="text-align:right">Amount (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)</th>
             </tr>
           </thead>
           <tbody>
@@ -2959,7 +2970,7 @@
         </table>
 
         <div class="section-title" style="margin-top:22px">
-          <span>📤 2. LOANS DISBURSED & MEMBER EXIT REFUNDS (கடன் மற்றும் உறுப்பினர் விலகல் தீர்வு)</span>
+          <span><i data-lucide="arrow-up-to-line" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> 2. LOANS DISBURSED & MEMBER EXIT REFUNDS (கடன் மற்றும் உறுப்பினர் விலகல் தீர்வு)</span>
           <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${loansToPrint?.length || 0} Records</span>
         </div>
         <table class="data-table">
@@ -2968,7 +2979,7 @@
               <th style="width:30px;text-align:center">#</th>
               <th>Member / Beneficiary</th>
               <th>Date</th>
-              <th style="text-align:right">Principal (₹)</th>
+              <th style="text-align:right">Principal (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)</th>
               <th style="text-align:center">Interest</th>
               <th style="text-align:right">Total Due</th>
               <th style="text-align:right">Repaid</th>
@@ -2983,7 +2994,7 @@
         </table>
 
         <div class="section-title" style="margin-top:22px;border-bottom:1.5px solid #fee2e2">
-          <span style="color:#b91c1c">💸 3. CLUB EXPENSES AUDIT REGISTER (சங்க செலவு கணக்கு அறிக்கை - விவரங்களுடன்)</span>
+          <span style="color:#b91c1c"><i data-lucide="coins" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> 3. CLUB EXPENSES AUDIT REGISTER (சங்க செலவு கணக்கு அறிக்கை - விவரங்களுடன்)</span>
           <span style="font-size:10px;font-weight:normal;color:#64748b">Total: ${expensesToPrint?.length || 0} Records</span>
         </div>
         <table class="data-table">
@@ -2995,7 +3006,7 @@
               <th>Expense Purpose / Title (செலவு விவரம்)</th>
               <th>Remarks / Reason (காரணம்)</th>
               <th>Authorized By</th>
-              <th style="text-align:right">Deducted Amount (₹)</th>
+              <th style="text-align:right">Deducted Amount (<i data-lucide="indian-rupee" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i>)</th>
             </tr>
           </thead>
           <tbody>
@@ -3004,7 +3015,7 @@
         </table>
 
         <div class="audit-callout">
-          <strong>📌 தணிக்கை மற்றும் விதிகள் சான்றிதழ் (Audit & Transparency Governance Note):</strong><br>
+          <strong><i data-lucide="pin" style="width: 1em; height: 1em; display: inline-block; vertical-align: middle;"></i> தணிக்கை மற்றும் விதிகள் சான்றிதழ் (Audit & Transparency Governance Note):</strong><br>
           1. <strong>உறுப்பினர் விலகல் (Member Exit Settlement):</strong> உறுப்பினர் கிளப்பில் இருந்து விலகும்போது, அவர் இதுவரை செலுத்திய மொத்த அசல் தொகை (Principal Contribution) துல்லியமாகக் கணக்கிடப்பட்டு அவருக்கு முழுமையாக திருப்பியளிக்கப்படுகிறது (<code>REFUNDED</code>). அந்த தொகை கிளப்பின் நடப்பு கணக்கிலிருந்து கழிக்கப்படும்.<br>
           2. <strong>தணிக்கைப் பாதுகாப்பு (Audit Trail Preservation):</strong> உறுப்பினரின் பெயர் மற்றும் தொலைபேசி எண் புதிய பதிவுக்கு விடுவிக்கப்பட்டாலும், கடந்த கால தணிக்கைக்காக அவர் செலுத்திய கட்டணங்கள் மற்றும் பரிவர்த்தனை வரலாறு நிரந்தரமாக பாதுகாக்கப்படும்.<br>
           3. ஈட்டிய 5% வட்டித் தொகை கிளப்பின் பொது நிதியிலேயே சேர்க்கப்பட்டு, தகுதியான உறுப்பினர்களுக்கு சீட்டு மற்றும் அவசரக் கடனாக மட்டுமே மறுசுழற்சி செய்யப்படுகிறது.<br>
@@ -3032,7 +3043,9 @@
         <div style="font-size:9.5px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:20px;text-align:center">
           This is an official, computer-generated bank-grade statement from PF Chit Fund Club System (${auditHash}). Generated on ${todayStr} IST.
         </div>
-      </body>
+        <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
       </html>
     `);
     printWindow.document.close();
